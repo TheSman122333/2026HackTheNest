@@ -4,7 +4,11 @@ ELEVENLABS_VOICE_ID=
 # Flash for frequent actions; try eleven_v3 for dramatic pre-generated clips.
 ELEVENLABS_MODEL_ID=eleven_flash_v2_5
 
-# Optional fresh AI phrasing. Pick a model ID available in your Claude console.
+# Default AI writer: your downloaded LOCAL model. No Claude API calls.
+NARRATION_WRITER=ollama
+OLLAMA_MODEL=qwen3:4b
+
+# Legacy paid writer: used ONLY if you explicitly set NARRATION_WRITER=claude.
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=
 ANTHROPIC_VERSION=2023-06-01

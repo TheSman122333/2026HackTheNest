@@ -17,7 +17,7 @@ const event = (id = 'event-1', patch = {}) => ({
   id, type: 'item_found', at, facts: { actor: 'Maya', item: 'tonic' }, ...patch,
 });
 const speechEnv = () => ({ ELEVENLABS_API_KEY: 'test-key-not-real', ELEVENLABS_VOICE_ID: 'test-voice' });
-const writerEnv = () => ({ ANTHROPIC_API_KEY: 'test-writer-not-real', ANTHROPIC_MODEL: 'test-model' });
+const writerEnv = () => ({ NARRATION_WRITER: 'claude', ANTHROPIC_API_KEY: 'test-writer-not-real', ANTHROPIC_MODEL: 'test-model' });
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { 'content-type': 'application/json' },
 });

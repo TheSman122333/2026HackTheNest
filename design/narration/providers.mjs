@@ -4,10 +4,42 @@ import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { composeScript, hash, normalizeRequest, VERSION } from './engine.mjs';
+import { createSubtitles } from './subtitles.mjs';
 
 export const DEFAULT_CACHE = fileURLToPath(new URL('./.cache/', import.meta.url));
 export class ProviderError extends Error {}
 const MODEL_IDS = new Set(['eleven_flash_v2_5', 'eleven_multilingual_v2', 'eleven_v3']);
+const WRITER_PROMPT = 'You are Old Brine, an original warm, wry pirate figurehead spirit. Write ONE short atmospheric lead-in, at most 180 characters, for game narration. Plain spoken text only. No digits, names, places, speech tags, quotes, lists, shame, or references to existing fiction. Do not assert events, rewards, losses or outcomes: authoritative event sentences follow your lead-in. For streak_reset be reassuring. For recap invite the player to hear the log. Event categories are tone cues only. Return only the lead-in.';
+
+export function writerConfig(env = process.env) {
+  const provider = env.NARRATION_WRITER || 'ollama';
+  if (!['ollama', 'claude', 'stock'].includes(provider)) throw new ProviderError('NARRATION_WRITER must be ollama, stock or claude.');
+  const model = provider === 'ollama' ? (env.OLLAMA_MODEL || 'qwen3:4b') : provider === 'claude' ? env.ANTHROPIC_MODEL : null;
+  if (provider === 'ollama' && (typeof model !== 'string' || !/^[A-Za-z0-9_./:-]{1,120}$/.test(model) || /cloud/i.test(model))) throw new ProviderError('Choose a downloaded local Ollama model.');
+  return { provider, model: model ?? null, configured: provider === 'ollama' || (provider === 'claude' && Boolean(env.ANTHROPIC_API_KEY && model)) };
+}
+
+export async function ollamaFlavor(context, { env = process.env, fetchImpl = fetch } = {}) {
+  const { model } = writerConfig({ ...env, NARRATION_WRITER: 'ollama' });
+  const response = await fetchImpl('http://127.0.0.1:11434/api/chat', {
+    method: 'POST', redirect: 'error', signal: AbortSignal.timeout(60_000),
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model, stream: false, think: false, keep_alive: '5m',
+      format: { type: 'object', properties: { leadIn: { type: 'string', maxLength: 180 } }, required: ['leadIn'], additionalProperties: false },
+      options: { temperature: 0.8, num_predict: 96, num_ctx: 2048 },
+      messages: [{ role: 'system', content: `${WRITER_PROMPT} Return JSON with a leadIn field containing only the spoken sentence, never analysis.` }, { role: 'user', content: JSON.stringify(context) }],
+    }),
+  });
+  if (!response.ok) throw new ProviderError(`Local Ollama request failed (${response.status}); start Ollama and check OLLAMA_MODEL.`);
+  const data = await response.json();
+  if (!data.done || (data.done_reason && data.done_reason !== 'stop') || typeof data.message?.content !== 'string') throw new ProviderError('Ollama did not finish the lead-in.');
+  let parsed;
+  try { parsed = JSON.parse(data.message.content); }
+  catch { throw new ProviderError('Ollama returned invalid narration JSON.'); }
+  if (!parsed || typeof parsed.leadIn !== 'string' || Object.keys(parsed).some((key) => key !== 'leadIn')) throw new ProviderError('Ollama returned an invalid lead-in.');
+  return parsed.leadIn.trim();
+}
 
 async function atomicWrite(path, value) {
   const temp = `${path}.${randomUUID()}.tmp`;
@@ -67,15 +99,17 @@ export function createNarrator({ env = process.env, cacheDir = DEFAULT_CACHE, fe
   };
   async function script(input) {
     const request = normalizeRequest(input);
-    const key = hash([VERSION, request, request.ai ? env.ANTHROPIC_MODEL : null]);
+    const writer = writerConfig(env);
+    const key = hash([VERSION, 'subtitles-2', request, request.ai ? writer : null, request.ai && writer.provider === 'claude' ? env.ANTHROPIC_VERSION : null]);
     return once(`script:${key}`, async () => {
       await mkdir(cacheDir, { recursive: true });
       const path = join(cacheDir, `${key}.json`);
       try { return JSON.parse(await readFile(path, 'utf8')); }
       catch (error) { if (error.code !== 'ENOENT') throw error; }
-      const generateFlavor = env.ANTHROPIC_API_KEY && env.ANTHROPIC_MODEL
-        ? (context) => claudeFlavor(context, { env, fetchImpl }) : undefined;
-      const result = await composeScript(request, { generateFlavor });
+      const generateFlavor = writer.configured
+        ? (context) => writer.provider === 'ollama' ? ollamaFlavor(context, { env, fetchImpl }) : claudeFlavor(context, { env, fetchImpl }) : undefined;
+      const composed = await composeScript(request, { generateFlavor });
+      const result = { ...composed, writer: composed.source === 'ai' ? writer.provider : 'stock', subtitles: createSubtitles(composed.text) };
       // A temporary provider failure must not permanently suppress future AI attempts.
       if (!result.warning) await atomicWrite(path, JSON.stringify(result));
       return result;

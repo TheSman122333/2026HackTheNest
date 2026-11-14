@@ -1,6 +1,6 @@
 # Old Brine narration sandbox
 
-A working, isolated prototype for The Last Voyage. **No existing tracked files were changed.** The Expo app, Hono server, game rules, root config, dependencies and lockfile are untouched. This work is staged in Codex-owned `design/` and `content/`; engineering can integrate it later using [INTEGRATION.md](INTEGRATION.md).
+A working, isolated prototype for The Last Voyage. The Expo app, Hono server, game rules, root config, dependencies and lockfile are untouched by this feature. All narration changes stay in `design/` and `content/`; engineering can integrate them later using [INTEGRATION.md](INTEGRATION.md).
 
 The original checkout remains on `narration`. This separate worktree is `C:\Users\sukhs\Downloads\2026HackTheNest-narration`, branch `codex/narration`, following the repository's Codex branch convention. Nothing is merged into `main`.
 
@@ -8,21 +8,22 @@ The original checkout remains on `narration`. This separate worktree is `C:\User
 
 ```text
 Confirmed game event → validated facts → varied stock sentence ─┐
-Event categories only → optional Claude → fresh lead-in ────────┤
+Event categories only → local Ollama → fresh lead-in ───────────┤
                                                               ↓
-                                        transcript → ElevenLabs → cached MP3
+                                        transcript → estimated subtitles
+                                                   → optional ElevenLabs → MP3
 ```
 
-ElevenLabs speaks the script; it does not decide game outcomes. The current game design names the narrator **Old Brine**, chooses Claude for Ship's Log writing, and uses MongoDB only. That is the implemented direction rather than the earlier LootLocker brainstorm.
+ElevenLabs speaks the script; it does not decide game outcomes. At the user's request, this branch uses **local Ollama by default** instead of the originally planned Claude writer. No Anthropic key is needed. `docs/GAME.md` is not modified. The narrator remains **Old Brine**, and the game backend remains MongoDB.
 
 Included:
 
 - 33 original stock lines across introductions, activities, movement, pickups, chaos, bosses, streaks, crew joins, arrivals and empty recaps.
 - Stable variation by event ID. Different events can select different lines; replaying one event preserves its line.
-- Optional fresh AI lead-ins, with exact factual sentences preserved afterward. Only event categories go to Claude, not player names or private journal data.
+- Optional fresh local AI lead-ins, with exact factual sentences preserved afterward. Only event categories go to Ollama, not player names or private journal data. Claude is a legacy explicit opt-in only.
 - Chronological return recaps, timestamp/ID cursors, eight-event pages, and a fixed snapshot bound. No database cursor is changed by this tool.
 - Real ElevenLabs REST integration, voice listing, configurable model, MP3 caching and in-process duplicate-request suppression.
-- CLI and local browser audition tool with editable event fixtures, transcripts and manual audio playback.
+- CLI and local browser audition tool with editable event fixtures, transcripts, silent subtitle playback, scrubbing, SRT/VTT export, and optional audio playback.
 - Offline tests using mocked providers. No npm dependencies are needed for the sandbox.
 
 AI adds personality to the opening rather than rewriting the factual body. The generated lead-in still needs review for meaning and tone; length/markup validation cannot prove that AI prose is accurate. See [VOICE_DIRECTION.md](../../content/narration/VOICE_DIRECTION.md).
@@ -38,7 +39,20 @@ node cli.mjs preview recap
 node server.mjs
 ```
 
-Open **http://127.0.0.1:8790**. Choose a scene and click **Write narration**. Text works immediately. Ctrl+C stops the server. This loopback-only development tool is for this computer; it is not a deployed or authenticated game API.
+Open **http://127.0.0.1:8790**. Choose a scene and click **Write subtitles**, then **Play subtitles**. Local AI is selected by default; start Ollama with `qwen3:4b` installed. Uncheck the AI box for instant stock narration. Text and subtitle export need no ElevenLabs key. Ctrl+C stops the server. This loopback-only tool is for this computer; it is not a deployed game API.
+
+The silent preview uses estimated reading times, not audio-synchronized captions. It has Play/Pause, Restart, a position slider, and SRT/VTT downloads. Full text stays visible for reading at your own pace. It pauses when the tab is hidden.
+
+CLI subtitle export:
+
+```powershell
+node cli.mjs subtitles recap
+node cli.mjs subtitles recap --ai --format=vtt
+New-Item -ItemType Directory -Force output | Out-Null
+node cli.mjs subtitles recap --ai | Set-Content -Encoding utf8 output/recap.srt
+```
+
+Timings should later be replaced with ElevenLabs character alignment when voice generation is enabled. The current plain MP3 speech adapter does not return alignment. See [INTEGRATION.md](INTEGRATION.md).
 
 ## 2. Choose Old Brine's voice
 
@@ -72,7 +86,7 @@ The implementation uses the official [voice listing endpoint](https://elevenlabs
 node --env-file-if-exists=.env server.mjs
 ```
 
-In the preview, write a script, review the transcript, click **Generate voice**, then press Play. Nothing autoplays. Generation can use provider credits; cached replay uses the existing MP3.
+In the preview, write subtitles, review the transcript, click **Generate voice**, then press Play. Nothing autoplays. Generation can use provider credits; cached replay uses the existing MP3.
 
 CLI alternative:
 
@@ -85,26 +99,27 @@ The CLI prints the generated file's full path under `.cache/`. Open that MP3 in 
 
 The default is **Flash v2.5** for frequent short action clips. Try **`eleven_v3`** for dramatic introductions and victories, or **`eleven_multilingual_v2`** for longer recaps, using the same sample script to compare. Those are the prototype's supported models; check current [ElevenLabs model guidance](https://elevenlabs.io/docs/eleven-creative/playground/text-to-speech) before expanding the allowlist. These are starting choices, not a measured latency or quality guarantee for your selected voice.
 
-## 4. Add fresh AI wording
+## 4. Add fresh AI wording with your local model
 
-The design source of truth selects Claude for scripts. Add an Anthropic API key and a model ID available in your account to the same `.env`:
+Ollama is now the default writer. With your installed model running, no API key or `.env` is required. To select another downloaded model, set these in `.env`:
 
 ```dotenv
-ANTHROPIC_API_KEY=your_key_here
-ANTHROPIC_MODEL=your_available_model_id
-ANTHROPIC_VERSION=2023-06-01
+NARRATION_WRITER=ollama
+OLLAMA_MODEL=qwen3:4b
 ```
 
-Choose the ID from the official [Claude model list](https://platform.claude.com/docs/en/models/overview). The writer calls the [Messages API](https://platform.claude.com/docs/en/api/messages). The API version is configurable; the prototype uses the documented older message contract by default.
+The writer calls only `http://127.0.0.1:11434/api/chat`, disables thinking output for this short writing task, and has a bounded timeout. This is your computer's Ollama, not on-device inference inside the mobile app. See the official [Ollama chat API](https://docs.ollama.com/api/chat).
 
-Restart the preview and select **Add a fresh AI lead-in**, or:
+Restart the preview and select **Add a fresh local Ollama lead-in**, or:
 
 ```powershell
 node --env-file-if-exists=.env cli.mjs preview recap --ai
 node --env-file-if-exists=.env cli.mjs speak recap --ai
 ```
 
-The first command generates text only; the second also generates speech. Identical event batches reuse the written script. New event IDs/batches produce another writer request, so there can be fresh wording without charging again on replay. A missing key, timeout, refused or malformed output falls back to stock narration. Speech failures keep the transcript available and do not automatically retry a potentially billed request.
+The first command generates text/subtitles only; the second also generates paid speech. Identical event batches reuse the written script. New event IDs/batches can produce fresh wording. An unavailable local model, timeout, or invalid output falls back to stock narration. Speech failures keep the transcript available and do not automatically retry a potentially billed request.
+
+`NARRATION_WRITER=stock` disables model calls. The legacy Claude adapter runs only with explicit `NARRATION_WRITER=claude` plus `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`; existing Anthropic keys alone never enable it. Cache keys separate writer providers and model IDs.
 
 ## 5. Customize lines and events
 
@@ -151,10 +166,14 @@ This path reads your text exactly (up to 4,000 characters), so it can also handl
 From the worktree root:
 
 ```powershell
-node --test design/narration/narration.test.mjs design/narration/server.test.mjs
+node --test design/narration/narration.test.mjs design/narration/server.test.mjs design/narration/subtitles.test.mjs design/narration/ollama.test.mjs
 npm run check
 ```
 
-The first command is standalone and never calls a paid provider. The second is the repository's existing gate and needs its normal workspace dependencies installed. No live AI or speech call was made during implementation; you must add your keys and audition your chosen voice to verify account access and the final audio quality.
+The first command is standalone with mocked providers and no external requests. The second is the repository's existing gate and needs its normal workspace dependencies installed. Local Ollama can be smoke-tested separately. No paid speech or music generation is performed by the subtitle workflow; audition the voice later when you enable your keys.
 
 Read [INTEGRATION.md](INTEGRATION.md) for the exact backend/mobile hooks. The existing ledger is incomplete for full recaps, and `expo-audio` is not installed. Engineering still needs to add durable events, authenticated narration/audio routes, playback and explicit unread acknowledgements. Future spoken quest negotiation needs an ElevenLabs Agent plus a real authenticated quest-update tool; this prototype does not implement conversational voice or change quests.
+
+## Situational music later
+
+ElevenLabs has a separate Music API. [MUSIC.md](MUSIC.md) describes the proposed cached soundtrack and links seven original instrumental briefs in [music-cues.json](../../content/narration/music-cues.json). No music is generated by this sandbox. Generate and audition tracks first, then switch/crossfade the saved cues when the situation changes rather than generating a new song on each action.

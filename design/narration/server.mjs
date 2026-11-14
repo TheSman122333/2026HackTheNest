@@ -3,12 +3,14 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createNarrator, DEFAULT_CACHE, ProviderError } from './providers.mjs';
+import { createNarrator, DEFAULT_CACHE, ProviderError, writerConfig } from './providers.mjs';
 import { examples, InputError } from './engine.mjs';
+import { toSrt, toVtt } from './subtitles.mjs';
 
 const page = fileURLToPath(new URL('./preview.html', import.meta.url));
 export function createPreviewServer({ env = process.env, cacheDir = DEFAULT_CACHE, fetchImpl = fetch } = {}) {
   const narrator = createNarrator({ env, cacheDir, fetchImpl });
+  const writer = writerConfig(env);
   const scripts = new Map();
   let active = 0;
   return createServer(async (req, res) => {
@@ -24,11 +26,26 @@ export function createPreviewServer({ env = process.env, cacheDir = DEFAULT_CACH
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       return res.end(await readFile(page));
     }
+    if (req.method === 'GET' && path === '/subtitles.mjs') {
+      res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
+      return res.end(await readFile(new URL('./subtitles.mjs', import.meta.url)));
+    }
     if (req.method === 'GET' && path === '/api/config') return json(200, {
       speechReady: Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_VOICE_ID),
-      writerReady: Boolean(env.ANTHROPIC_API_KEY && env.ANTHROPIC_MODEL),
+      writerReady: writer.configured, writer,
       model: env.ELEVENLABS_MODEL_ID || 'eleven_flash_v2_5', examples,
     });
+    const subtitleFile = /^\/api\/subtitles\/([a-f0-9]{64})\.(srt|vtt)$/.exec(path);
+    if (req.method === 'GET' && subtitleFile) {
+      const script = scripts.get(subtitleFile[1]);
+      if (!script) return json(404, { error: 'Generate the script in this session before exporting subtitles.' });
+      const format = subtitleFile[2];
+      res.writeHead(200, {
+        'content-type': format === 'vtt' ? 'text/vtt; charset=utf-8' : 'application/x-subrip; charset=utf-8',
+        'content-disposition': `attachment; filename="old-brine-estimated.${format}"`,
+      });
+      return res.end(format === 'srt' ? toSrt(script.subtitles) : toVtt(script.subtitles));
+    }
     if (req.method === 'GET' && /^\/api\/audio\/[a-f0-9]{64}\.mp3$/.test(path)) {
       try { const audio = await readFile(join(cacheDir, path.split('/').at(-1))); res.writeHead(200, { 'content-type': 'audio/mpeg', 'content-length': audio.length }); return res.end(audio); }
       catch { return json(404, { error: 'Audio not found.' }); }

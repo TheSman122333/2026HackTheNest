@@ -20,7 +20,7 @@ async function fixture(t, options = {}) {
 }
 
 test('local preview and config are usable without keys; configs never expose secrets', async (t) => {
-  const { base } = await fixture(t, { env: { ELEVENLABS_API_KEY: 'secret-tts', ANTHROPIC_API_KEY: 'secret-writer' } });
+  const { base } = await fixture(t, { env: { NARRATION_WRITER: 'claude', ELEVENLABS_API_KEY: 'secret-tts', ANTHROPIC_API_KEY: 'secret-writer' } });
   const page = await fetch(base);
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
@@ -56,11 +56,29 @@ test('text works offline and speech requires a script generated in this session'
   assert.equal(response.status, 200);
   const script = await response.json();
   assert.match(script.text, /Maya/);
+  assert.equal(script.subtitles.timingBasis, 'estimated');
+  assert.ok(script.subtitles.cues.length);
   assert.equal((await post('/api/speech', { scriptId: 'fake' })).status, 400);
   const speech = await post('/api/speech', { scriptId: script.id });
   assert.equal(speech.status, 502);
   assert.match((await speech.json()).error, /ELEVENLABS_VOICE_ID/);
   assert.equal((await post('/api/script', { mode: 'event', event: { ...examples.activity.event, photo: 'private' } })).status, 400);
+});
+
+test('subtitles are exported without AI, speech or API keys', async (t) => {
+  const { base, post } = await fixture(t, { fetchImpl: () => assert.fail('stock subtitles must not call a provider') });
+  const script = await (await post('/api/script', examples.recap)).json();
+  const srt = await fetch(`${base}/api/subtitles/${script.id}.srt`);
+  assert.equal(srt.status, 200);
+  assert.match(srt.headers.get('content-disposition'), /estimated.srt/);
+  assert.match(await srt.text(), /00:00:00,000 -->/);
+  const vtt = await fetch(`${base}/api/subtitles/${script.id}.vtt`);
+  assert.equal(vtt.headers.get('content-type'), 'text/vtt; charset=utf-8');
+  assert.match(await vtt.text(), /^WEBVTT/);
+  assert.equal((await fetch(`${base}/api/subtitles/${'0'.repeat(64)}.srt`)).status, 404);
+  const module = await fetch(`${base}/subtitles.mjs`);
+  assert.equal(module.status, 200);
+  assert.match(module.headers.get('content-type'), /javascript/);
 });
 
 test('speech generation, replay cache and audio delivery work with a mocked provider', async (t) => {

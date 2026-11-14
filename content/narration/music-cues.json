@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "cues": [
+    {
+      "id": "ship_calm",
+      "situation": "Resting aboard the ship or viewing the ship home screen",
+      "prompt": "Original instrumental seafaring adventure underscore. Warm plucked acoustic strings, soft wooden percussion, gentle flute and a quiet low drum, relaxed swaying pulse around 76 BPM. Sunny, companionable and unhurried. Sparse melody leaves space for narration. Stable dynamics and a repeating phrase suitable for a loop edit. No vocals, chanting or lyrics.",
+      "durationMs": 60000,
+      "loopIntent": true
+    },
+    {
+      "id": "island_exploration",
+      "situation": "Exploring an island outside combat or danger",
+      "prompt": "Original instrumental seafaring adventure underscore. Curious plucked acoustic strings, light wooden percussion, flute answers and a soft low drum, buoyant walking pulse around 98 BPM. Bright discovery and friendly mischief. Keep the arrangement clear and the melody modest so speech remains intelligible. Repeating phrases suitable for a loop edit. No vocals, chanting or lyrics.",
+      "durationMs": 60000,
+      "loopIntent": true
+    },
+    {
+      "id": "ruins_mystery",
+      "situation": "Entering ruins or inspecting a lore discovery",
+      "prompt": "Original instrumental seafaring adventure underscore. Muted plucked acoustic strings, hollow wooden taps, airy flute fragments, faint bell notes and a restrained low drone around 68 BPM. Wonder and ancient mystery without horror or jump scares. Sparse texture leaves room for narration. End on a texture suitable for a loop edit. No vocals, chanting or lyrics.",
+      "durationMs": 45000,
+      "loopIntent": true
+    },
+    {
+      "id": "boss_battle",
+      "situation": "An active fight against an island guardian",
+      "prompt": "Original instrumental seafaring adventure battle underscore. Fast plucked acoustic strings, driving low drums, crisp wooden percussion and short bold flute calls around 132 BPM. Courageous, playful crew teamwork against a mighty guardian. Build energy through rhythm rather than loudness; keep space for spoken action lines. Repeating battle phrase suitable for a loop edit. No vocals, chanting or lyrics.",
+      "durationMs": 60000,
+      "loopIntent": true
+    },
+    {
+      "id": "storm_disaster",
+      "situation": "A hurricane, eruption or active island disaster",
+      "prompt": "Original instrumental seafaring adventure danger underscore. Rolling low drums, tense plucked acoustic strings, rattling wooden percussion and brief breathy flute notes around 112 BPM. Swelling uncertainty and determined seamanship, dramatic but cartoony. Avoid startling impacts and keep the mix clear beneath narration. Repeating tension phrase suitable for a loop edit. No vocals, chanting or lyrics.",
+      "durationMs": 45000,
+      "loopIntent": true
+    },
+    {
+      "id": "crew_victory",
+      "situation": "The crew defeats a guardian or conquers an island",
+      "prompt": "Original instrumental seafaring adventure victory cue. A short rising flute melody over warm plucked acoustic strings, bright bell accents, wooden percussion and a confident low drum around 116 BPM. Joyful shared achievement with a clear uplifting resolution and a gentle final decay. Leave space for a spoken victory announcement. No vocals, chanting or lyrics.",
+      "durationMs": 12000,
+      "loopIntent": false
+    },
+    {
+      "id": "return_recap",
+      "situation": "Old Brine presents the returning player's ship log",
+      "prompt": "Original instrumental seafaring adventure storytelling bed. Very soft plucked acoustic strings, occasional wooden taps and a distant gentle flute around 72 BPM. Welcoming, reflective and lightly amused, like opening a well-kept ship log. Minimal melodic movement, no dramatic peaks, ample space for speech. Repeating texture suitable for a loop edit. No vocals, chanting or lyrics.",
+      "durationMs": 60000,
+      "loopIntent": true
+    }
+  ]
+}
