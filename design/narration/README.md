@@ -2,7 +2,7 @@
 
 A working, isolated prototype for The Last Voyage. The Expo app, Hono server, game rules, root config, dependencies and lockfile are untouched by this feature. All narration changes stay in `design/` and `content/`; engineering can integrate them later using [INTEGRATION.md](INTEGRATION.md).
 
-The original checkout remains on `narration`. This separate worktree is `C:\Users\sukhs\Downloads\2026HackTheNest-narration`, branch `codex/narration`, following the repository's Codex branch convention. Nothing is merged into `main`.
+Merged into `main` from `codex/narration`. Still a sandbox: nothing here is wired into the app or server yet.
 
 ## How it works
 
@@ -33,7 +33,7 @@ AI adds personality to the opening rather than rewriting the factual body. The g
 PowerShell, using the installed Node 22+:
 
 ```powershell
-cd C:\Users\sukhs\Downloads\2026HackTheNest-narration\design\narration
+cd design\narration
 node cli.mjs preview activity
 node cli.mjs preview recap
 node server.mjs
