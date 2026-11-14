@@ -16,14 +16,21 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 
 import type { Collections, UserDoc } from './db';
-import { createIsland, registerIsland } from './island';
+import { createIsland, registerIsland, resumeVoyage } from './island';
 import { ledger, spendMoves, todayMoves } from './moves';
+import { exchangeSsojetCode, SsojetAuthenticationError, SsojetRequestError, SsojetUnavailableError } from './ssojet';
 
 type Env = { Variables: { user: UserDoc } };
 
-export type AppDeps = { c: Collections; jwtSecret: string; allowDevLogin: boolean };
+export type AppDeps = {
+  c: Collections;
+  jwtSecret: string;
+  allowDevLogin: boolean;
+  env?: NodeJS.ProcessEnv;
+  fetchImpl?: typeof fetch;
+};
 
-export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
+export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetchImpl = fetch }: AppDeps) {
   const key = new TextEncoder().encode(jwtSecret);
   const app = new Hono<Env>();
   app.use('*', cors());
@@ -36,6 +43,19 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
 
   const sign = (userId: ObjectId) =>
     new SignJWT({}).setProtectedHeader({ alg: 'HS256' }).setSubject(userId.toHexString()).setExpirationTime('30d').sign(key);
+
+  const defaultUser = (name: string, tz: string): UserDoc => ({
+    _id: new ObjectId(),
+    name,
+    tz,
+    crewId: null,
+    skills: Object.fromEntries(SKILLS.map((s) => [s, 10])) as UserDoc['skills'],
+    supplies: 0,
+    legend: 0,
+    streak: EMPTY_STREAK,
+    limits: DEFAULT_LIMITS,
+    createdAt: new Date(),
+  });
 
   const publicUser = (u: UserDoc) => ({
     id: u._id.toHexString(),
@@ -51,22 +71,68 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
   app.get('/health', (ctx) => ctx.json({ ok: true }));
 
   // ---------- auth ----------
-  // Dev login: name → user + JWT. SSOJet exchange will mint the same JWT (POST /auth/ssojet, TODO).
+  app.post('/auth/ssojet', async (ctx) => {
+    const parsed = z
+      .object({
+        authorizationCode: z.string().min(1).max(4096),
+        codeVerifier: z.string().regex(/^[A-Za-z0-9._~-]{43,128}$/),
+        redirectUri: z.string().url(),
+        tz: z.string().default('UTC').refine((value) => {
+          try {
+            new Intl.DateTimeFormat('en-US', { timeZone: value });
+            return true;
+          } catch {
+            return false;
+          }
+        }, 'tz must be a valid IANA timezone'),
+      })
+      .strict()
+      .safeParse(await ctx.req.json().catch(() => ({})));
+    if (!parsed.success) throw new HTTPException(400, { message: parsed.error.message });
+
+    let identity: { sub: string; name: string | null };
+    try {
+      identity = await exchangeSsojetCode(
+        parsed.data,
+        env,
+        fetchImpl,
+      );
+    } catch (error) {
+      if (error instanceof SsojetAuthenticationError) throw new HTTPException(401, { message: error.message });
+      if (error instanceof SsojetRequestError) throw new HTTPException(400, { message: error.message });
+      if (error instanceof SsojetUnavailableError) throw new HTTPException(503, { message: error.message });
+      throw new HTTPException(502, { message: 'SSOJet sign-in could not be completed' });
+    }
+
+    let user = await c.users.findOne({ ssojetSub: identity.sub });
+    if (!user) {
+      const created = defaultUser(identity.name ?? 'Sailor', parsed.data.tz);
+      created.ssojetSub = identity.sub;
+      try {
+        await c.users.insertOne(created);
+        user = created;
+      } catch (error) {
+        if (!(typeof error === 'object' && error !== null && 'code' in error && error.code === 11000)) throw error;
+        user = await c.users.findOne({ ssojetSub: identity.sub });
+        if (!user) throw error;
+      }
+    }
+
+    const resumed = await resumeVoyage(c, user);
+    const freshUser = (await c.users.findOne({ _id: user._id })) ?? user;
+    return ctx.json({
+      token: await sign(freshUser._id),
+      user: publicUser(freshUser),
+      ...resumed,
+      nextStep: resumed.crew ? 'ship' : 'crew_setup',
+    });
+  });
+
+  // Dev login: name → user + JWT.
   app.post('/auth/dev', async (ctx) => {
     if (!allowDevLogin) throw new HTTPException(403, { message: 'dev login disabled' });
     const { name, tz } = await body(ctx, z.object({ name: z.string().trim().min(1).max(32), tz: z.string().default('UTC') }));
-    const user: UserDoc = {
-      _id: new ObjectId(),
-      name,
-      tz,
-      crewId: null,
-      skills: Object.fromEntries(SKILLS.map((s) => [s, 10])) as UserDoc['skills'],
-      supplies: 0,
-      legend: 0,
-      streak: EMPTY_STREAK,
-      limits: DEFAULT_LIMITS,
-      createdAt: new Date(),
-    };
+    const user = defaultUser(name, tz);
     await c.users.insertOne(user);
     return ctx.json({ token: await sign(user._id), user: publicUser(user) });
   });
@@ -82,6 +148,7 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
   app.use('/crew/*', auth);
   app.use('/island', auth);
   app.use('/island/*', auth);
+  app.use('/voice/*', auth);
 
   async function auth(ctx: Context<Env>, next: () => Promise<void>) {
     const h = ctx.req.header('authorization') ?? '';
@@ -249,7 +316,7 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
     });
   });
 
-  registerIsland(app, c);
+  registerIsland(app, c, { env, fetchImpl });
 
   app.onError((err, ctx) => {
     if (err instanceof HTTPException) return ctx.json({ error: err.message }, err.status);

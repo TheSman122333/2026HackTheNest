@@ -66,6 +66,7 @@ export type LedgerDoc = {
   item: string;
   delta: number;
   reason: string;
+  eventId?: string;
   /** human-readable line for the Log feed */
   text?: string;
   at: Date;
@@ -95,6 +96,52 @@ export type ExplorerDoc = {
   day: DayKey;
 };
 
+export type GmEventSource = {
+  title: string;
+  url: string;
+  publishedAt: string | null;
+};
+
+export type GmWorldEvent = {
+  id: string;
+  narration: string;
+  sources: GmEventSource[];
+  effect: { type: 'spawn_item'; at: string; item: string } | { type: 'none' };
+  createdAt: Date;
+};
+
+export type GmEventDoc = {
+  _id: string;
+  eventKey: string;
+  crewId: ObjectId;
+  islandDocId: ObjectId;
+  userId: ObjectId;
+  day: string;
+  status: 'pending' | 'applied' | 'already_applied' | 'no_event';
+  event: GmWorldEvent;
+  changedTile: { hex: string; terrain: string; item: string } | null;
+  audit: { id: string; reason: 'gm:event'; text: string };
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type VoiceConversationDoc = {
+  _id: string;
+  userId: ObjectId;
+  createdAt: Date;
+  expiresAt: Date;
+};
+
+export type VoiceTurnDoc = {
+  _id?: ObjectId;
+  userId: ObjectId;
+  requestId: string;
+  status: 'processing' | 'completed';
+  response?: Record<string, unknown>;
+  createdAt: Date;
+  expiresAt: Date;
+};
+
 export type Collections = {
   users: Collection<UserDoc>;
   crews: Collection<CrewDoc>;
@@ -103,6 +150,9 @@ export type Collections = {
   ledger: Collection<LedgerDoc>;
   islands: Collection<IslandDoc>;
   explorers: Collection<ExplorerDoc>;
+  gmEvents: Collection<GmEventDoc>;
+  voiceConversations: Collection<VoiceConversationDoc>;
+  voiceTurns: Collection<VoiceTurnDoc>;
 };
 
 export function collections(db: Db): Collections {
@@ -114,6 +164,9 @@ export function collections(db: Db): Collections {
     ledger: db.collection<LedgerDoc>('ledger'),
     islands: db.collection<IslandDoc>('islands'),
     explorers: db.collection<ExplorerDoc>('explorers'),
+    gmEvents: db.collection<GmEventDoc>('gm_events'),
+    voiceConversations: db.collection<VoiceConversationDoc>('voice_conversations'),
+    voiceTurns: db.collection<VoiceTurnDoc>('voice_turns'),
   };
 }
 
@@ -125,8 +178,13 @@ export async function ensureIndexes(c: Collections) {
     c.dayLogs.createIndex({ userId: 1, day: 1 }, { unique: true }),
     c.ledger.createIndex({ crewId: 1, at: -1 }),
     c.ledger.createIndex({ userId: 1, at: -1 }),
+    c.ledger.createIndex({ eventId: 1 }, { unique: true, sparse: true }),
     c.islands.createIndex({ crewId: 1, index: -1 }),
     c.explorers.createIndex({ userId: 1, islandDocId: 1 }, { unique: true }),
+    c.gmEvents.createIndex({ eventKey: 1 }, { unique: true }),
+    c.voiceConversations.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    c.voiceTurns.createIndex({ userId: 1, requestId: 1 }, { unique: true }),
+    c.voiceTurns.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
   ]);
 }
 
