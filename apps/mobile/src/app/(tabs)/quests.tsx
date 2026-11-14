@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { useSentinelPermissions } from '@/features/scroll/useScrollSentinel';
 import { useTodaySteps } from '@/features/steps/steps';
 import { syncToday } from '@/features/sync/deviceSync';
 import { api } from '@/lib/api';
@@ -28,6 +29,7 @@ export default function Quests() {
   const me = useSession((s) => s.me);
   const setMe = useSession((s) => s.setMe);
   const steps = useTodaySteps();
+  const perms = useSentinelPermissions();
   const [busy, setBusy] = useState<ActivityKind | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   if (!me) return null;
@@ -101,6 +103,12 @@ export default function Quests() {
 
       <Panel>
         <H>🌊 Calm Seas (short-form budget)</H>
+        {perms.supported && !perms.accessibility ? (
+          <Panel color="#FFD3CF">
+            <P>⚠️ Swipe tracker is OFF, so swipes aren&apos;t counted and minutes are your total time in TikTok, Instagram and YouTube.</P>
+            <Btn small label="Turn tracker on" onPress={() => router.push('/dev/scroll-lab')} />
+          </Panel>
+        ) : null}
         <Bar value={t.screen.swipes} max={limits.swipes} color={t.screen.swipes > limits.swipes ? C.red : C.jungle} label={`Swipes ${t.screen.swipes}/${limits.swipes}`} />
         <Bar value={t.screen.minutes} max={limits.minutes} color={t.screen.minutes > limits.minutes ? C.red : C.jungle} label={`Minutes ${t.screen.minutes}/${limits.minutes}`} />
         <P dim>
