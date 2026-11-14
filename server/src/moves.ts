@@ -56,7 +56,25 @@ export async function todayMoves(c: Collections, user: UserDoc, now = new Date()
 
 export async function ledger(
   c: Collections,
-  entry: { crewId: ObjectId | null; userId: ObjectId | null; item: string; delta: number; reason: string },
+  entry: { crewId: ObjectId | null; userId: ObjectId | null; item: string; delta: number; reason: string; text?: string },
 ) {
   await c.ledger.insertOne({ ...entry, at: new Date() });
+}
+
+/** Atomically spend `n` of today's Moves. Throws 'not_enough_moves' if short. */
+export async function spendMoves(c: Collections, user: UserDoc, n: number, now = new Date()) {
+  const t = await todayMoves(c, user, now);
+  if (t.moves.remaining < n) throw new Error('not_enough_moves');
+  // Make sure today's log exists, then increment only if it still fits (guards double-spend races).
+  await c.dayLogs.updateOne(
+    { userId: user._id, day: t.day },
+    { $setOnInsert: { steps: 0, screen: { swipes: 0, minutes: 0, opens: 0, tracked: false }, movesSpent: 0, updatedAt: now } },
+    { upsert: true },
+  );
+  const res = await c.dayLogs.updateOne(
+    { userId: user._id, day: t.day, movesSpent: { $lte: t.moves.total - n } },
+    { $inc: { movesSpent: n }, $set: { updatedAt: now } },
+  );
+  if (res.modifiedCount === 0) throw new Error('not_enough_moves');
+  return t.day;
 }

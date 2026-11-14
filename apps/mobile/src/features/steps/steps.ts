@@ -50,6 +50,13 @@ function startOfToday(): Date {
   return d;
 }
 
+/** Today's steps, or 0 if Health Connect is unavailable or not permitted. Never prompts. */
+export async function readTodaySteps(): Promise<number> {
+  if (!(await ensureInit())) return 0;
+  if (!(await hasStepsPermission())) return 0;
+  return readStepsBetween(startOfToday(), new Date());
+}
+
 /** Shows the Health Connect permission sheet. Returns true if steps access was granted. */
 export async function requestStepsAccess(): Promise<boolean> {
   if (!(await ensureInit())) return false;

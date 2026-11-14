@@ -146,35 +146,53 @@ class ScrollSentinelModule : Module() {
     val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
     val events = usm.queryEvents(startMs, endMs)
     val e = UsageEvents.Event()
-    val resumedAt = HashMap<String, Long>()
-    val totalMs = HashMap<String, Long>()
+    // Track each ACTIVITY separately (apps resume/pause several activities), only count
+    // properly paired RESUMED→PAUSED intervals, then union overlaps per package.
+    // Unpaired events are ignored: undercounting a few minutes beats inventing hours.
+    val openAct = HashMap<String, Long>() // "pkg/class" -> resumedAt
+    val intervals = HashMap<String, MutableList<LongArray>>()
     val opens = HashMap<String, Int>()
     val lastPausedAt = HashMap<String, Long>()
-    val seen = HashSet<String>()
 
     while (events.hasNextEvent()) {
       events.getNextEvent(e)
       val pkg = e.packageName ?: continue
       if (packages.isNotEmpty() && pkg !in packages) continue
+      val act = "$pkg/${e.className ?: ""}"
       when (e.eventType) {
         RESUMED -> {
-          seen.add(pkg)
-          if (resumedAt[pkg] == null) {
-            // A new "open" if the app wasn't just switching activities internally.
+          val pkgAlreadyOpen = openAct.keys.any { it.startsWith("$pkg/") }
+          if (!pkgAlreadyOpen) {
             val paused = lastPausedAt[pkg]
             if (paused == null || e.timeStamp - paused > OPEN_GAP_MS) opens[pkg] = (opens[pkg] ?: 0) + 1
-            resumedAt[pkg] = e.timeStamp
           }
+          openAct[act] = e.timeStamp
         }
         PAUSED -> {
-          val start = resumedAt.remove(pkg) ?: if (pkg !in seen) startMs else null
-          seen.add(pkg)
-          if (start != null) totalMs[pkg] = (totalMs[pkg] ?: 0L) + (e.timeStamp - start)
+          val start = openAct.remove(act) ?: continue
+          if (e.timeStamp > start) intervals.getOrPut(pkg) { mutableListOf() }.add(longArrayOf(start, e.timeStamp))
           lastPausedAt[pkg] = e.timeStamp
         }
       }
     }
-    resumedAt.forEach { (pkg, start) -> totalMs[pkg] = (totalMs[pkg] ?: 0L) + (endMs - start) }
+
+    val totalMs = intervals.mapValues { (_, list) ->
+      list.sortBy { it[0] }
+      var total = 0L
+      var curStart = -1L
+      var curEnd = -1L
+      for (iv in list) {
+        if (iv[0] > curEnd) {
+          if (curEnd > curStart) total += curEnd - curStart
+          curStart = iv[0]
+          curEnd = iv[1]
+        } else if (iv[1] > curEnd) {
+          curEnd = iv[1]
+        }
+      }
+      if (curEnd > curStart) total += curEnd - curStart
+      total
+    }
 
     return (totalMs.keys + opens.keys).associateWith { pkg ->
       mapOf("minutes" to (totalMs[pkg] ?: 0L) / 60000.0, "opens" to (opens[pkg] ?: 0))

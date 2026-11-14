@@ -1,4 +1,14 @@
-import type { ActivityKind, DayKey, ScreenDay, ScreenLimits, Skill, StreakState } from '@last-voyage/game';
+import type {
+  ActivityKind,
+  DayKey,
+  Explorer,
+  Fight,
+  Island,
+  ScreenDay,
+  ScreenLimits,
+  Skill,
+  StreakState,
+} from '@last-voyage/game';
 import { MongoClient, type Collection, type Db, type ObjectId } from 'mongodb';
 
 export type UserDoc = {
@@ -20,7 +30,8 @@ export type CrewDoc = {
   name: string;
   inviteCode: string;
   memberIds: ObjectId[];
-  stores: { supplies: number };
+  /** supplies + materials (timber, iron, spice, shard) */
+  stores: Record<string, number>;
   createdAt: Date;
 };
 
@@ -55,7 +66,33 @@ export type LedgerDoc = {
   item: string;
   delta: number;
   reason: string;
+  /** human-readable line for the Log feed */
+  text?: string;
   at: Date;
+};
+
+/** The crew's current island (one active per crew). */
+export type IslandDoc = {
+  _id: ObjectId;
+  crewId: ObjectId;
+  /** 0, 1, 2… voyage order */
+  index: number;
+  island: Island;
+  fight: Fight;
+  /** day the fighters map was last reset */
+  fightDay: DayKey | null;
+  conqueredAt: Date | null;
+  createdAt: Date;
+};
+
+/** A player's position/HP/bag on the crew's current island. */
+export type ExplorerDoc = {
+  _id?: ObjectId;
+  userId: ObjectId;
+  islandDocId: ObjectId;
+  explorer: Explorer;
+  /** last day HP was restored */
+  day: DayKey;
 };
 
 export type Collections = {
@@ -64,6 +101,8 @@ export type Collections = {
   activities: Collection<ActivityDoc>;
   dayLogs: Collection<DayLogDoc>;
   ledger: Collection<LedgerDoc>;
+  islands: Collection<IslandDoc>;
+  explorers: Collection<ExplorerDoc>;
 };
 
 export function collections(db: Db): Collections {
@@ -73,6 +112,8 @@ export function collections(db: Db): Collections {
     activities: db.collection<ActivityDoc>('activities'),
     dayLogs: db.collection<DayLogDoc>('day_logs'),
     ledger: db.collection<LedgerDoc>('ledger'),
+    islands: db.collection<IslandDoc>('islands'),
+    explorers: db.collection<ExplorerDoc>('explorers'),
   };
 }
 
@@ -84,6 +125,8 @@ export async function ensureIndexes(c: Collections) {
     c.dayLogs.createIndex({ userId: 1, day: 1 }, { unique: true }),
     c.ledger.createIndex({ crewId: 1, at: -1 }),
     c.ledger.createIndex({ userId: 1, at: -1 }),
+    c.islands.createIndex({ crewId: 1, index: -1 }),
+    c.explorers.createIndex({ userId: 1, islandDocId: 1 }, { unique: true }),
   ]);
 }
 

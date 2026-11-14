@@ -1,25 +1,11 @@
-/** Temporary home: replaced by the Ship screen once onboarding and tabs land. */
-import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+/** Router gate: no login → welcome, no crew → crew setup, else the game. */
+import { Redirect } from 'expo-router';
 
-export default function Home() {
-  return (
-    <View style={s.screen}>
-      <Text style={s.title}>THE LAST VOYAGE</Text>
-      <Text style={s.sub}>Go live. The sea will wait.</Text>
-      <Link href="/dev/scroll-lab" asChild>
-        <Pressable style={s.btn}>
-          <Text style={s.btnText}>Scroll Lab</Text>
-        </Pressable>
-      </Link>
-    </View>
-  );
+import { useSession } from '@/state/session';
+
+export default function Index() {
+  const { token, me } = useSession();
+  if (!token || !me) return <Redirect href="/welcome" />;
+  if (!me.crew) return <Redirect href="/crew-setup" />;
+  return <Redirect href="/ship" />;
 }
-
-const s = StyleSheet.create({
-  screen: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: '#FFF6E3' },
-  title: { fontFamily: 'Bangers_400Regular', fontSize: 48, color: '#141414', letterSpacing: 1 },
-  sub: { fontFamily: 'Nunito_600SemiBold', fontSize: 16, color: '#141414' },
-  btn: { borderWidth: 3, borderColor: '#141414', backgroundColor: '#FFC72C', paddingVertical: 12, paddingHorizontal: 28 },
-  btnText: { fontFamily: 'Baloo2_800ExtraBold', fontSize: 18, color: '#141414' },
-});

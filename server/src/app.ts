@@ -16,7 +16,8 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 
 import type { Collections, UserDoc } from './db';
-import { ledger, todayMoves } from './moves';
+import { createIsland, registerIsland } from './island';
+import { ledger, spendMoves, todayMoves } from './moves';
 
 type Env = { Variables: { user: UserDoc } };
 
@@ -77,6 +78,10 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
   app.use('/activities', auth);
   app.use('/moves/*', auth);
   app.use('/log', auth);
+  app.use('/crew', auth);
+  app.use('/crew/*', auth);
+  app.use('/island', auth);
+  app.use('/island/*', auth);
 
   async function auth(ctx: Context<Env>, next: () => Promise<void>) {
     const h = ctx.req.header('authorization') ?? '';
@@ -110,7 +115,7 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
   });
 
   // ---------- crews ----------
-  const publicCrew = (cr: { _id: ObjectId; name: string; inviteCode: string; memberIds: ObjectId[]; stores: { supplies: number } }) => ({
+  const publicCrew = (cr: { _id: ObjectId; name: string; inviteCode: string; memberIds: ObjectId[]; stores: Record<string, number> }) => ({
     id: cr._id.toHexString(),
     name: cr.name,
     inviteCode: cr.inviteCode,
@@ -131,6 +136,7 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
       createdAt: new Date(),
     };
     await c.crews.insertOne(crew);
+    await createIsland(c, crew._id, 0);
     await c.users.updateOne({ _id: user._id }, { $set: { crewId: crew._id } });
     return ctx.json({ crew: publicCrew(crew) });
   });
@@ -206,19 +212,12 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
   app.post('/moves/spend', async (ctx) => {
     const user = ctx.get('user');
     const { n } = await body(ctx, z.object({ n: z.number().int().min(1).max(50) }));
-    const now = new Date();
-    const w = await todayMoves(c, user, now);
-    if (w.moves.remaining < n) throw new HTTPException(409, { message: 'not enough moves' });
-    await c.dayLogs.updateOne(
-      { userId: user._id, day: w.day },
-      {
-        $inc: { movesSpent: n },
-        $setOnInsert: { steps: 0, screen: { swipes: 0, minutes: 0, opens: 0, tracked: false } },
-        $set: { updatedAt: now },
-      },
-      { upsert: true },
-    );
-    return ctx.json({ today: await todayMoves(c, user, now) });
+    try {
+      await spendMoves(c, user, n);
+    } catch {
+      throw new HTTPException(409, { message: 'not enough moves' });
+    }
+    return ctx.json({ today: await todayMoves(c, user) });
   });
 
   // ---------- log (audit feed) ----------
@@ -226,11 +225,35 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
     const user = ctx.get('user');
     const filter = user.crewId ? { $or: [{ crewId: user.crewId }, { userId: user._id }] } : { userId: user._id };
     const entries = await c.ledger.find(filter).sort({ at: -1 }).limit(100).toArray();
-    return ctx.json({ entries });
+    return ctx.json({
+      entries: entries.map((e) => ({
+        id: e._id!.toHexString(),
+        text: e.text ?? `${e.delta > 0 ? '+' : ''}${e.delta} ${e.item} (${e.reason})`,
+        item: e.item,
+        delta: e.delta,
+        reason: e.reason,
+        at: e.at,
+      })),
+    });
   });
+
+  // ---------- crew roster ----------
+  app.get('/crew', async (ctx) => {
+    const user = ctx.get('user');
+    if (!user.crewId) return ctx.json({ crew: null, members: [] });
+    const crew = await c.crews.findOne({ _id: user.crewId });
+    const members = await c.users.find({ crewId: user.crewId }).toArray();
+    return ctx.json({
+      crew: crew && publicCrew(crew),
+      members: members.map((m) => ({ id: m._id.toHexString(), name: m.name, legend: m.legend, skills: m.skills, calmDays: m.streak.calmDays })),
+    });
+  });
+
+  registerIsland(app, c);
 
   app.onError((err, ctx) => {
     if (err instanceof HTTPException) return ctx.json({ error: err.message }, err.status);
+    if (err instanceof z.ZodError) return ctx.json({ error: err.message }, 400);
     console.error(err);
     return ctx.json({ error: 'internal' }, 500);
   });
