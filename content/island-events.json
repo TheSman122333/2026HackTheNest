@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "allowedItems": [
+    "tonic",
+    "cannon",
+    "cutlass",
+    "supplies",
+    "timber",
+    "iron",
+    "spice",
+    "shard",
+    "clue"
+  ],
+  "fallbacks": {
+    "unavailable": [
+      "The old charts are quiet today. The Tidekeeper keeps watch while the crew makes its own legend.",
+      "No new dispatch reached the ship. Your course and everything you have earned remain safe."
+    ],
+    "noTile": [
+      "Every safe landing place is occupied. The Tidekeeper marks the tale, but changes nothing on the island."
+    ],
+    "briefing": [
+      "Welcome back aboard. Your crew's voyage is waiting, and every Move you earned is yours to spend."
+    ],
+    "question": [
+      "I can tell you about your Moves, the island, the guardian, or your Calm Seas streak."
+    ],
+    "unclear": [
+      "I didn't catch a safe action. Ask me a question, name a revealed hex, or choose a combat action."
+    ]
+  },
+  "templates": [
+    {
+      "id": "tropical-calm-current",
+      "themes": ["tropical"],
+      "streakContexts": ["calm", "shore_leave"],
+      "query": "tropical island maritime survival folklore safe water navigation natural history",
+      "allowedItems": ["tonic", "supplies", "clue"],
+      "fallback": "A calm current carries a sealed chart toward the landing. The Tidekeeper marks it for the crew."
+    },
+    {
+      "id": "tropical-storm-watch",
+      "themes": ["tropical"],
+      "streakContexts": ["stormy", "unknown"],
+      "query": "tropical maritime survival weather navigation historical sea stories",
+      "allowedItems": ["tonic", "supplies", "clue"],
+      "fallback": "A gull circles above a sheltered cove. Something useful rests among the palms."
+    },
+    {
+      "id": "spooky-calm-lantern",
+      "themes": ["spooky"],
+      "streakContexts": ["calm", "shore_leave"],
+      "query": "bog marsh folklore will-o-wisp natural history safe travel wetlands",
+      "allowedItems": ["tonic", "clue", "cutlass"],
+      "fallback": "A lantern-beetle drifts above the old stones and leaves a tonic where the crew can see it."
+    },
+    {
+      "id": "spooky-storm-watch",
+      "themes": ["spooky"],
+      "streakContexts": ["stormy", "unknown"],
+      "query": "marsh survival folklore wetlands safe navigation historical accounts",
+      "allowedItems": ["tonic", "clue", "supplies"],
+      "fallback": "The bog grows quiet. The Tidekeeper finds a dry patch of stone and leaves a clue."
+    },
+    {
+      "id": "winter-calm-star",
+      "themes": ["winter"],
+      "streakContexts": ["calm", "shore_leave"],
+      "query": "winter sea survival navigation stars cold weather maritime history",
+      "allowedItems": ["tonic", "iron", "clue"],
+      "fallback": "A clear patch of sky reveals an old navigator's mark pressed into the snow."
+    },
+    {
+      "id": "winter-storm-watch",
+      "themes": ["winter"],
+      "streakContexts": ["stormy", "unknown"],
+      "query": "cold weather survival winter maritime shelter navigation history",
+      "allowedItems": ["tonic", "iron", "supplies"],
+      "fallback": "The wind eases near the ridge. A bundle of useful supplies lies sheltered there."
+    },
+    {
+      "id": "volcanic-calm-glass",
+      "themes": ["volcanic"],
+      "streakContexts": ["calm", "shore_leave"],
+      "query": "volcanic island survival geology obsidian historical navigation",
+      "allowedItems": ["tonic", "shard", "clue"],
+      "fallback": "Warm glass glints beside a cooled lava flow. The Tidekeeper leaves it untouched until the crew arrives."
+    },
+    {
+      "id": "volcanic-storm-watch",
+      "themes": ["volcanic"],
+      "streakContexts": ["stormy", "unknown"],
+      "query": "volcanic island geology safe travel historical survival advice",
+      "allowedItems": ["tonic", "shard", "supplies"],
+      "fallback": "The mountain only rumbles in the distance. A sheltered trail holds a useful tonic."
+    }
+  ]
+}

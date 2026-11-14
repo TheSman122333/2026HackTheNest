@@ -196,6 +196,17 @@ Authenticated route. The app records audio only during a visible, user-started p
 }
 ```
 
+**Request: text turn (fallback or accessibility)**
+
+```json
+{
+  "requestId": "c86530fc-61ef-4f2e-8e11-6ead7a4be1d2",
+  "mode": "command",
+  "conversationId": "server-issued-opaque-id",
+  "text": "Strike the guardian."
+}
+```
+
 **Request: login/return briefing**
 
 ```json
@@ -206,7 +217,7 @@ Authenticated route. The app records audio only during a visible, user-started p
 }
 ```
 
-For the first command, `conversationId` may be omitted or `null`; later turns send the opaque ID returned by the server. Audio is limited to 15 seconds and 2 MiB decoded, and the app deletes the temporary recording after upload.
+For the first command, `conversationId` may be omitted or `null`; later turns send the opaque ID returned by the server. The app records for at most 15 seconds and deletes the temporary recording after upload; the server enforces a 2 MiB decoded payload limit.
 
 **Response**
 
@@ -230,11 +241,12 @@ For the first command, `conversationId` may be omitted or `null`; later turns se
     "url": "/voice/audio/voice-turn-id",
     "expiresAt": "2026-11-14T20:47:00.000Z"
   },
+  "audioError": null,
   "sfxCueKeys": ["combat.strike", "combat.boss_hit"]
 }
 ```
 
-The intent is a tagged union: `{ "type": "briefing" }`, `{ "type": "question" }`, `{ "type": "island.move", "to": "2,-1" }`, or `{ "type": "fight", "action": "strike" }` (with the other `FightAction` values). For a question, `result` is `null` and state is read-only. For a briefing, `transcript` is `null`, `result` is `null`, and the reply summarizes crew/island/Moves/streak state. Supported mutation intents are limited to legal `island.move` and `fight` actions. If speech is ambiguous or an action is invalid/unaffordable, ask a follow-up or explain the game error; do not mutate state. The server issues the opaque `conversationId`, binds it to the authenticated user, and returns it for the next turn; reject IDs owned by another user. `audio.url` is an authenticated, short-lived server proxy URL, not a provider credential or permanent public URL. Cue keys are a closed enum, for example `island.move`, `island.loot_found`, `island.hazard`, `combat.strike`, `combat.cannon`, `combat.boss_hit`, `combat.boss_defeated`, `streak.calm_day`, `streak.shield_earned`, and `gm.event_applied`.
+The intent is a tagged union: `{ "type": "briefing" }`, `{ "type": "question" }`, `{ "type": "island.move", "to": "2,-1" }`, or `{ "type": "fight", "action": "strike" }` (with the other `FightAction` values). For a question, `result` is `null` and state is read-only. For a briefing, `transcript` is `null`, `result` is `null`, and the reply summarizes crew/island/Moves/streak state. Supported mutation intents are limited to legal `island.move` and `fight` actions. If speech is ambiguous or an action is invalid/unaffordable, ask a follow-up or explain the game error; do not mutate state. The server issues the opaque `conversationId`, binds it to the authenticated user, and returns it for the next turn; reject IDs owned by another user. `audio` is `null` when ElevenLabs speech is unconfigured or unavailable; `audioError` is `null` when audio is returned, otherwise a short code such as `speech_not_configured`, `speech_unavailable`, `speech_too_large`, or `speech_expired`. `audio.url` is an authenticated, short-lived server proxy URL, not a provider credential or permanent public URL. Cue keys are a closed enum, for example `island.move`, `island.loot_found`, `island.hazard`, `combat.strike`, `combat.cannon`, `combat.boss_hit`, `combat.boss_defeated`, `streak.calm_day`, `streak.shield_earned`, `streak.shore_leave`, and `gm.event_applied`.
 
 The JSON is our app contract. If the selected ElevenLabs conversational-agent transport requires WebSocket or a different media encoding, keep that provider-specific protocol behind the server/mobile adapter rather than exposing provider tokens or changing game mutation rules.
 

@@ -14,22 +14,38 @@ import {
   newExplorer,
   newFightDay,
   nextToBoss,
+  passable,
   reachable,
   respawn,
   rngFrom,
   spawnChaos,
   startFight,
   type Explorer,
+  type FightAction,
+  type FightEvent,
   type HexKey,
+  type IslandEvent,
   type Item,
 } from '@last-voyage/game';
 import type { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { ObjectId } from 'mongodb';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
-import type { Collections, IslandDoc, UserDoc } from './db';
+import type { Collections, GmEventDoc, IslandDoc, UserDoc } from './db';
+import { fallbackLine, generateGmProposal, type StreakContext } from './gm';
 import { ledger, spendMoves, todayMoves } from './moves';
+import {
+  resolveVoiceIntent,
+  responseForQuestion,
+  sfxCueKeys,
+  synthesizeSpeech,
+  transcribeAudio,
+  VoiceProviderError,
+  voiceCommandReply,
+  type VoiceIntent,
+} from './voice';
 
 /** Found materials go to the crew store; gear stays in the explorer's bag. */
 const MATERIALS: readonly Item[] = ['supplies', 'timber', 'iron', 'spice', 'shard'];
@@ -57,7 +73,35 @@ export async function currentIsland(c: Collections, crewId: ObjectId): Promise<I
   return doc ?? createIsland(c, crewId, 0);
 }
 
-async function loadExplorer(c: Collections, user: UserDoc, isle: IslandDoc, day: string): Promise<Explorer> {
+export async function resumeVoyage(c: Collections, user: UserDoc) {
+  if (!user.crewId) return { crew: null, island: null };
+  const [crew, isle] = await Promise.all([
+    c.crews.findOne({ _id: user.crewId }),
+    currentIsland(c, user.crewId),
+  ]);
+  if (!crew) return { crew: null, island: null };
+
+  const day = dayKeyInTz(new Date(), user.tz);
+  const [explorer, today] = await Promise.all([
+    loadExplorer(c, user, isle, day),
+    todayMoves(c, user),
+  ]);
+  return {
+    crew: { id: crew._id.toHexString(), name: crew.name, stores: crew.stores },
+    island: {
+      id: isle._id.toHexString(),
+      index: isle.index,
+      theme: isle.island.theme,
+      conquered: isle.conqueredAt !== null,
+      explorer,
+      boss: { key: isle.fight.boss.key, hp: isle.fight.bossHp, maxHp: isle.fight.boss.maxHp },
+      moves: { total: today.moves.total, spent: today.moves.spent, remaining: today.moves.remaining },
+      streak: today.streak,
+    },
+  };
+}
+
+export async function loadExplorer(c: Collections, user: UserDoc, isle: IslandDoc, day: string): Promise<Explorer> {
   const maxHp = fighterFromSkills('x', 'x', user.skills).maxHp;
   const doc = await c.explorers.findOne({ userId: user._id, islandDocId: isle._id });
   if (!doc) {
@@ -90,7 +134,14 @@ async function charge(c: Collections, user: UserDoc, n: number) {
   }
 }
 
-export function registerIsland(app: Hono<{ Variables: { user: UserDoc } }>, c: Collections) {
+export function registerIsland(
+  app: Hono<{ Variables: { user: UserDoc } }>,
+  c: Collections,
+  options: { env?: NodeJS.ProcessEnv; fetchImpl?: typeof fetch } = {},
+) {
+  const env = options.env ?? process.env;
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const voiceAudio = new Map<string, { userId: string; bytes: Uint8Array; expiresAt: number }>();
   const view = async (user: UserDoc) => {
     const crewId = requireCrew(user);
     const isle = await currentIsland(c, crewId);
@@ -126,31 +177,24 @@ export function registerIsland(app: Hono<{ Variables: { user: UserDoc } }>, c: C
     };
   };
 
-  app.get('/island', async (ctx) => ctx.json(await view(ctx.get('user'))));
-
-  app.post('/island/move', async (ctx) => {
-    const user = ctx.get('user');
-    const { to } = z.object({ to: z.string().regex(/^-?\d+,-?\d+$/) }).parse(await ctx.req.json());
+  const performMove = async (user: UserDoc, to: string) => {
     const isle = await currentIsland(c, requireCrew(user));
     const day = dayKeyInTz(new Date(), user.tz);
     const explorer = await loadExplorer(c, user, isle, day);
     const today = await todayMoves(c, user);
-
     const res = moveTo(isle.island, explorer, to as HexKey, today.moves.remaining, rngFrom(user._id.toHexString(), Date.now()));
     if (!res.ok) throw new HTTPException(409, { message: res.reason });
     await charge(c, user, res.spent);
 
-    // Split loot: materials → crew store, gear stays in the bag, chests open on the spot.
     const ex = { ...res.explorer, inventory: { ...res.explorer.inventory } };
     const toStore: Record<string, number> = {};
-    for (const e of res.events) {
-      if (e.type !== 'found') continue;
-      if (MATERIALS.includes(e.item)) {
-        ex.inventory[e.item] = (ex.inventory[e.item] ?? 1) - 1;
-        if (!ex.inventory[e.item]) delete ex.inventory[e.item];
-        const qty = e.item === 'supplies' ? 3 : 1;
-        toStore[e.item] = (toStore[e.item] ?? 0) + qty;
-      } else if (e.item === 'chest') {
+    for (const event of res.events) {
+      if (event.type !== 'found') continue;
+      if (MATERIALS.includes(event.item)) {
+        ex.inventory[event.item] = (ex.inventory[event.item] ?? 1) - 1;
+        if (!ex.inventory[event.item]) delete ex.inventory[event.item];
+        toStore[event.item] = (toStore[event.item] ?? 0) + (event.item === 'supplies' ? 3 : 1);
+      } else if (event.item === 'chest') {
         ex.inventory.chest = (ex.inventory.chest ?? 1) - 1;
         if (!ex.inventory.chest) delete ex.inventory.chest;
         toStore.supplies = (toStore.supplies ?? 0) + 5;
@@ -164,18 +208,15 @@ export function registerIsland(app: Hono<{ Variables: { user: UserDoc } }>, c: C
         await ledger(c, { crewId: isle.crewId, userId: user._id, item, delta, reason: 'island:loot', text: `${user.name} found ${delta} ${item}` });
       }
     }
-    if (res.events.some((e) => e.type === 'washed_overboard')) {
+    if (res.events.some((event) => event.type === 'washed_overboard')) {
       await ledger(c, { crewId: isle.crewId, userId: user._id, item: 'hp', delta: 0, reason: 'island:ko', text: `${user.name} was washed overboard!` });
     }
-
     await c.islands.updateOne({ _id: isle._id }, { $set: { island: res.island } });
     await saveExplorer(c, user, isle, ex);
-    return ctx.json({ events: res.events, spent: res.spent, ...(await view(user)) });
-  });
+    return { events: res.events, spent: res.spent, view: await view(user) };
+  };
 
-  app.post('/island/fight', async (ctx) => {
-    const user = ctx.get('user');
-    const { action } = z.object({ action: z.enum(['strike', 'cannon', 'tonic', 'brace']) }).parse(await ctx.req.json());
+  const performFight = async (user: UserDoc, action: FightAction) => {
     const isle = await currentIsland(c, requireCrew(user));
     const day = dayKeyInTz(new Date(), user.tz);
     const explorer = await loadExplorer(c, user, isle, day);
@@ -183,37 +224,454 @@ export function registerIsland(app: Hono<{ Variables: { user: UserDoc } }>, c: C
     if (explorer.hp <= 0) throw new HTTPException(409, { message: 'washed overboard until tomorrow' });
     if (!nextToBoss(isle.island, explorer)) throw new HTTPException(409, { message: 'not next to the boss' });
 
-    // Fighters map resets daily; this fighter enters with their island HP.
     let fight = isle.fightDay === day ? isle.fight : newFightDay(isle.fight);
     const fighter = { ...fighterFromSkills(user._id.toHexString(), user.name, user.skills), maxHp: explorer.maxHp };
     fight = { ...fight, fighters: { ...fight.fighters, [fighter.id]: { hp: explorer.hp, braced: false } } };
-
-    const r = act(fight, fighter, action, explorer.inventory, rngFrom(fighter.id, Date.now()));
-    if (!r.ok) throw new HTTPException(409, { message: r.reason });
+    const result = act(fight, fighter, action, explorer.inventory, rngFrom(fighter.id, Date.now()));
+    if (!result.ok) throw new HTTPException(409, { message: result.reason });
     await charge(c, user, 1);
 
-    const ex: Explorer = { ...explorer, hp: r.fight.fighters[fighter.id]!.hp, inventory: { ...explorer.inventory } };
-    if (r.used) {
-      ex.inventory[r.used] = (ex.inventory[r.used] ?? 1) - 1;
-      if (!ex.inventory[r.used]) delete ex.inventory[r.used];
+    const ex: Explorer = { ...explorer, hp: result.fight.fighters[fighter.id]!.hp, inventory: { ...explorer.inventory } };
+    if (result.used) {
+      ex.inventory[result.used] = (ex.inventory[result.used] ?? 1) - 1;
+      if (!ex.inventory[result.used]) delete ex.inventory[result.used];
     }
 
-    const set: Partial<IslandDoc> = { fight: r.fight, fightDay: day };
-    const won = r.events.some((e) => e.type === 'boss_defeated');
+    const set: Partial<IslandDoc> = { fight: result.fight, fightDay: day };
+    const won = result.events.some((event) => event.type === 'boss_defeated');
     if (won) {
       set.conqueredAt = new Date();
       const boss = isle.fight.boss;
       await ledger(c, { crewId: isle.crewId, userId: user._id, item: 'island', delta: 1, reason: 'island:conquered', text: `${user.name} defeated ${boss.name} ${boss.title}! The island is ours!` });
-      for (const id of Object.keys(r.fight.damageBy)) {
-        const pts = LEGEND.bossParticipant + (id === fighter.id ? LEGEND.bossFinisher : 0);
-        await c.users.updateOne({ _id: new ObjectId(id) }, { $inc: { legend: pts } });
+      for (const id of Object.keys(result.fight.damageBy)) {
+        const points = LEGEND.bossParticipant + (id === fighter.id ? LEGEND.bossFinisher : 0);
+        await c.users.updateOne({ _id: new ObjectId(id) }, { $inc: { legend: points } });
       }
     } else if (ex.hp <= 0) {
       await ledger(c, { crewId: isle.crewId, userId: user._id, item: 'hp', delta: 0, reason: 'fight:ko', text: `${isle.fight.boss.name} knocked ${user.name} overboard!` });
     }
     await c.islands.updateOne({ _id: isle._id }, { $set: set });
     await saveExplorer(c, user, isle, ex);
-    return ctx.json({ events: r.events, ...(await view(user)) });
+    return { events: result.events, view: await view(user) };
+  };
+
+  app.get('/island', async (ctx) => ctx.json(await view(ctx.get('user'))));
+
+  app.post('/island/move', async (ctx) => {
+    const parsed = z.object({ to: z.string().regex(/^-?\d+,-?\d+$/) }).safeParse(await ctx.req.json().catch(() => ({})));
+    if (!parsed.success) throw new HTTPException(400, { message: parsed.error.message });
+    const result = await performMove(ctx.get('user'), parsed.data.to);
+    return ctx.json({ events: result.events, spent: result.spent, ...result.view });
+  });
+
+  app.post('/island/fight', async (ctx) => {
+    const parsed = z.object({ action: z.enum(['strike', 'cannon', 'tonic', 'brace']) }).safeParse(await ctx.req.json().catch(() => ({})));
+    if (!parsed.success) throw new HTTPException(400, { message: parsed.error.message });
+    const result = await performFight(ctx.get('user'), parsed.data.action);
+    return ctx.json({ events: result.events, ...result.view });
+  });
+
+  const gmResponse = (doc: GmEventDoc, requestId: string, status = doc.status) => ({
+    requestId,
+    status,
+    event: doc.event,
+    island: { id: doc.islandDocId.toHexString(), changedTile: doc.changedTile },
+    audit: doc.audit,
+  });
+
+  const saveGmAudit = async (doc: GmEventDoc) => {
+    try {
+      await ledger(c, {
+        crewId: doc.crewId,
+        userId: doc.userId,
+        item: 'world_event',
+        delta: 0,
+        reason: 'gm:event',
+        eventId: doc.event.id,
+        text: doc.audit.text,
+      });
+    } catch (error) {
+      if (!(typeof error === 'object' && error !== null && 'code' in error && error.code === 11000)) throw error;
+    }
+  };
+
+  const completePendingGmEvent = async (doc: GmEventDoc) => {
+    if (doc.status !== 'pending' || doc.event.effect.type !== 'spawn_item') return doc;
+    const isle = await c.islands.findOne({ _id: doc.islandDocId });
+    const hex = doc.event.effect.at;
+    const tile = isle?.island.tiles[hex as HexKey];
+    if (!isle || !tile || !passable(isle.island, hex as HexKey)) {
+      const noEvent = {
+        ...doc,
+        status: 'no_event' as const,
+        event: { ...doc.event, effect: { type: 'none' as const } },
+        changedTile: null,
+        audit: { ...doc.audit, text: 'No safe world effect was applied.' },
+        updatedAt: new Date(),
+      };
+      await c.gmEvents.updateOne({ _id: doc._id, status: 'pending' }, { $set: noEvent });
+      return noEvent;
+    }
+
+    let applied = tile.item === doc.event.effect.item;
+    if (!tile.item) {
+      const terrainPath = `island.tiles.${hex}.terrain`;
+      const itemPath = `island.tiles.${hex}.item`;
+      const write = await c.islands.updateOne(
+        { _id: isle._id, [terrainPath]: tile.terrain, [itemPath]: null },
+        { $set: { [itemPath]: doc.event.effect.item } },
+      );
+      applied = write.modifiedCount === 1;
+    }
+
+    const completed: GmEventDoc = applied
+      ? {
+          ...doc,
+          status: 'applied',
+          changedTile: { hex, terrain: tile.terrain, item: doc.event.effect.item },
+          audit: { ...doc.audit, text: `The Tidekeeper placed ${doc.event.effect.item} on a revealed ${tile.terrain} tile.` },
+          updatedAt: new Date(),
+        }
+      : {
+          ...doc,
+          status: 'no_event',
+          event: { ...doc.event, effect: { type: 'none' } },
+          changedTile: null,
+          audit: { ...doc.audit, text: 'The selected tile was no longer safe to change; the island was left untouched.' },
+          updatedAt: new Date(),
+        };
+    await c.gmEvents.updateOne({ _id: doc._id, status: 'pending' }, { $set: completed });
+    const saved = (await c.gmEvents.findOne({ _id: doc._id })) ?? completed;
+    return saved;
+  };
+
+  const persistNoGmEvent = async (
+    eventKey: string,
+    user: UserDoc,
+    isle: IslandDoc,
+    narration: string,
+  ): Promise<GmEventDoc> => {
+    const now = new Date();
+    const doc: GmEventDoc = {
+      _id: eventKey,
+      eventKey,
+      crewId: isle.crewId,
+      islandDocId: isle._id,
+      userId: user._id,
+      day: now.toISOString().slice(0, 10),
+      status: 'no_event',
+      event: { id: eventKey, narration, sources: [], effect: { type: 'none' }, createdAt: now },
+      changedTile: null,
+      audit: { id: eventKey, reason: 'gm:event', text: 'No safe world effect was applied.' },
+      createdAt: now,
+      updatedAt: now,
+    };
+    try {
+      await c.gmEvents.insertOne(doc);
+    } catch (error) {
+      if (!(typeof error === 'object' && error !== null && 'code' in error && error.code === 11000)) throw error;
+    }
+    const saved = (await c.gmEvents.findOne({ eventKey }))!;
+    await saveGmAudit(saved);
+    return saved;
+  };
+
+  app.post('/island/gm-event', async (ctx) => {
+    const parsed = z
+      .object({ requestId: z.string().uuid(), trigger: z.enum(['daily_briefing', 'advance_night']) })
+      .safeParse(await ctx.req.json().catch(() => ({})));
+    if (!parsed.success) throw new HTTPException(400, { message: parsed.error.message });
+
+    const user = ctx.get('user');
+    const crewId = requireCrew(user);
+    const isle = await currentIsland(c, crewId);
+    if (isle.conqueredAt) throw new HTTPException(409, { message: 'island already conquered' });
+    const day = new Date().toISOString().slice(0, 10);
+    const eventKey = `${crewId.toHexString()}:${isle._id.toHexString()}:${day}`;
+    const existing = await c.gmEvents.findOne({ eventKey });
+    if (existing) {
+      const complete = await completePendingGmEvent(existing);
+      await saveGmAudit(complete);
+      return ctx.json(gmResponse(complete, parsed.data.requestId, complete.status === 'applied' ? 'already_applied' : complete.status));
+    }
+
+    const today = await todayMoves(c, user);
+    const streakContext: StreakContext = today.streak.shoreLeaveBonus
+      ? 'shore_leave'
+      : today.streak.calmDays > 0
+        ? 'calm'
+        : today.screen.tracked && (today.screen.swipes > user.limits.swipes || today.screen.minutes > user.limits.minutes)
+          ? 'stormy'
+          : 'unknown';
+    await loadExplorer(c, user, isle, dayKeyInTz(new Date(), user.tz));
+    const explorers = await c.explorers.find({ islandDocId: isle._id }).toArray();
+    const revealed = new Set(explorers.flatMap((entry) => entry.explorer.revealed));
+    const candidates = [...revealed]
+      .filter((hex) => {
+        const key = hex as HexKey;
+        const tile = isle.island.tiles[key];
+        return !!tile && !tile.item && passable(isle.island, key);
+      })
+      .sort();
+    if (!candidates.length) {
+      const narration = await fallbackLine('noTile', isle.island.theme, streakContext);
+      const doc = await persistNoGmEvent(eventKey, user, isle, narration);
+      return ctx.json(gmResponse(doc, parsed.data.requestId));
+    }
+
+    const proposal = await generateGmProposal({
+      theme: isle.island.theme,
+      streakContext,
+      islandIndex: isle.index,
+      bossName: isle.fight.boss.name,
+      bossHp: isle.fight.bossHp,
+      bossMaxHp: isle.fight.boss.maxHp,
+      env,
+      fetchImpl,
+    });
+    if (!proposal) {
+      const narration = await fallbackLine('unavailable', isle.island.theme, streakContext);
+      const doc = await persistNoGmEvent(eventKey, user, isle, narration);
+      return ctx.json(gmResponse(doc, parsed.data.requestId));
+    }
+
+    const hex = candidates[0]!;
+    const tile = isle.island.tiles[hex as HexKey]!;
+    const now = new Date();
+    const doc: GmEventDoc = {
+      _id: eventKey,
+      eventKey,
+      crewId,
+      islandDocId: isle._id,
+      userId: user._id,
+      day,
+      status: 'pending',
+      event: {
+        id: eventKey,
+        narration: proposal.narration,
+        sources: proposal.sources,
+        effect: { type: 'spawn_item', at: hex, item: proposal.item },
+        createdAt: now,
+      },
+      changedTile: null,
+      audit: { id: eventKey, reason: 'gm:event', text: 'The Tidekeeper world event is being applied.' },
+      createdAt: now,
+      updatedAt: now,
+    };
+    try {
+      await c.gmEvents.insertOne(doc);
+    } catch (error) {
+      if (!(typeof error === 'object' && error !== null && 'code' in error && error.code === 11000)) throw error;
+      const winner = (await c.gmEvents.findOne({ eventKey }))!;
+      const complete = await completePendingGmEvent(winner);
+      await saveGmAudit(complete);
+      return ctx.json(gmResponse(complete, parsed.data.requestId, complete.status === 'applied' ? 'already_applied' : complete.status));
+    }
+    const complete = await completePendingGmEvent(doc);
+    await saveGmAudit(complete);
+    return ctx.json(gmResponse(complete, parsed.data.requestId));
+  });
+
+  app.post('/island/voice-turn', async (ctx) => {
+    const length = Number(ctx.req.header('content-length') ?? 0);
+    if (length > 3 * 1024 * 1024) throw new HTTPException(413, { message: 'voice request is too large' });
+    const parsed = z
+      .object({
+        requestId: z.string().uuid(),
+        mode: z.enum(['briefing', 'command']),
+        conversationId: z.string().min(1).max(80).nullable().optional(),
+        text: z.string().trim().min(1).max(400).optional(),
+        audio: z
+          .object({
+            mimeType: z.enum(['audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/webm']),
+            base64: z.string().min(1).max(2_900_000),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .safeParse(await ctx.req.json().catch(() => ({})));
+    if (!parsed.success) throw new HTTPException(400, { message: parsed.error.message });
+    const input = parsed.data;
+    if (
+      (input.mode === 'briefing' && (input.audio || input.text)) ||
+      (input.mode === 'command' && Number(Boolean(input.audio)) + Number(Boolean(input.text)) !== 1)
+    ) {
+      throw new HTTPException(400, { message: 'briefing takes no input; command requires exactly one audio or text input' });
+    }
+
+    const user = ctx.get('user');
+    requireCrew(user);
+    let conversationId = input.conversationId ?? null;
+    if (conversationId) {
+      const conversation = await c.voiceConversations.findOne({ _id: conversationId });
+      if (!conversation || !conversation.userId.equals(user._id) || conversation.expiresAt <= new Date()) {
+        throw new HTTPException(404, { message: 'conversation not found' });
+      }
+    } else {
+      conversationId = randomUUID();
+      const now = new Date();
+      await c.voiceConversations.insertOne({
+        _id: conversationId,
+        userId: user._id,
+        createdAt: now,
+        expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      });
+    }
+
+    const existingTurn = await c.voiceTurns.findOne({ userId: user._id, requestId: input.requestId });
+    if (existingTurn) {
+      if (existingTurn.status === 'processing' || !existingTurn.response) {
+        throw new HTTPException(409, { message: 'voice turn is still processing; refresh the game state' });
+      }
+      const previousAudio = existingTurn.response.audio as { url?: unknown } | null | undefined;
+      const audioId = typeof previousAudio?.url === 'string' ? /\/voice\/audio\/([^/]+)$/.exec(previousAudio.url)?.[1] : null;
+      if (audioId) {
+        const cached = voiceAudio.get(audioId);
+        if (!cached || cached.expiresAt <= Date.now() || cached.userId !== user._id.toHexString()) {
+          return ctx.json({ ...existingTurn.response, audio: null, audioError: 'speech_expired' });
+        }
+      }
+      return ctx.json(existingTurn.response);
+    }
+
+    let transcript: string | null = null;
+    if (input.audio) {
+      try {
+        transcript = await transcribeAudio(input.audio, env.ELEVENLABS_API_KEY, fetchImpl);
+      } catch (error) {
+        if (error instanceof VoiceProviderError) {
+          const status = error.message.includes('invalid') || error.message.includes('unsupported') || error.message.includes('15 seconds') ? 400 : 503;
+          throw new HTTPException(status, { message: error.message });
+        }
+        throw error;
+      }
+    } else if (input.text) {
+      transcript = input.text;
+    }
+
+    const intent: VoiceIntent = input.mode === 'briefing' ? { type: 'briefing' } : resolveVoiceIntent(transcript ?? '') ?? { type: 'question' };
+    const userForTurn: UserDoc = (await c.users.findOne({ _id: user._id })) ?? user;
+    const current = await view(userForTurn);
+    const today = await todayMoves(c, userForTurn);
+    try {
+      const now = new Date();
+      await c.voiceTurns.insertOne({
+        userId: user._id,
+        requestId: input.requestId,
+        status: 'processing',
+        createdAt: now,
+        expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      });
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) {
+        throw new HTTPException(409, { message: 'voice turn already submitted; refresh the game state' });
+      }
+      throw error;
+    }
+
+    let reply: string;
+    let result: {
+      events: IslandEvent[] | FightEvent[];
+      movesRemaining: number;
+      playerHp: number;
+      bossHp: number;
+    } | null = null;
+    let cues: string[] = [];
+
+    if (intent.type === 'briefing') {
+      reply = `Welcome back, ${user.name}. Your crew is exploring a ${current.island.theme} island. You have ${current.movesRemaining} Moves, ${current.explorer.hp} health, and a ${today.streak.calmDays}-day Calm Seas streak. ${current.boss.name} has ${current.boss.hp} health remaining.`;
+      cues = today.streakEvents.flatMap((event) => {
+        if (event.type === 'calm_day') return ['streak.calm_day'];
+        if (event.type === 'shield_earned') return ['streak.shield_earned'];
+        if (event.type === 'shield_used') return ['streak.shield_used'];
+        if (event.type === 'streak_reset') return ['streak.reset'];
+        if (event.type === 'shore_leave') return ['streak.shore_leave'];
+        return [];
+      });
+    } else if (intent.type === 'question') {
+      reply = transcript && resolveVoiceIntent(transcript)?.type === 'question'
+        ? responseForQuestion(transcript, current, today.streak.calmDays)
+        : await fallbackLine('unclear');
+    } else {
+      try {
+        if (intent.type === 'island.move') {
+          const moved = await performMove(userForTurn, intent.to);
+          reply = voiceCommandReply(intent, moved.view);
+          result = {
+            events: moved.events,
+            movesRemaining: moved.view.movesRemaining,
+            playerHp: moved.view.explorer.hp,
+            bossHp: moved.view.boss.hp,
+          };
+          cues = sfxCueKeys(moved.events);
+        } else {
+          const fought = await performFight(userForTurn, intent.action);
+          reply = voiceCommandReply(intent, fought.view);
+          result = {
+            events: fought.events,
+            movesRemaining: fought.view.movesRemaining,
+            playerHp: fought.view.explorer.hp,
+            bossHp: fought.view.boss.hp,
+          };
+          cues = sfxCueKeys(fought.events);
+        }
+      } catch (error) {
+        if (!(error instanceof HTTPException)) throw error;
+        reply = error.message;
+      }
+    }
+
+    let audio: { url: string; expiresAt: string } | null = null;
+    let audioError: string | null = null;
+    try {
+      const bytes = await synthesizeSpeech(reply, env, fetchImpl);
+      if (bytes?.length && bytes.byteLength <= 1024 * 1024) {
+        const id = randomUUID();
+        const expiresAt = Date.now() + 60_000;
+        for (const [key, cached] of voiceAudio) if (cached.expiresAt <= Date.now()) voiceAudio.delete(key);
+        if (voiceAudio.size >= 50) voiceAudio.delete(voiceAudio.keys().next().value!);
+        voiceAudio.set(id, { userId: user._id.toHexString(), bytes, expiresAt });
+        audio = { url: `/voice/audio/${id}`, expiresAt: new Date(expiresAt).toISOString() };
+      } else {
+        audioError = !env.ELEVENLABS_API_KEY ? 'speech_not_configured' : bytes?.length ? 'speech_too_large' : 'speech_unavailable';
+      }
+    } catch {
+      audioError = 'speech_unavailable';
+    }
+
+    const response = {
+      requestId: input.requestId,
+      conversationId,
+      transcript: input.mode === 'briefing' ? null : transcript,
+      reply,
+      intent,
+      result,
+      audio,
+      audioError,
+      sfxCueKeys: cues,
+    };
+    await c.voiceTurns.updateOne(
+      { userId: user._id, requestId: input.requestId, status: 'processing' },
+      { $set: { status: 'completed', response } },
+    );
+    return ctx.json(response);
+  });
+
+  app.get('/voice/audio/:id', async (ctx) => {
+    const user = ctx.get('user');
+    const id = ctx.req.param('id');
+    const cached = voiceAudio.get(id);
+    if (!cached || cached.expiresAt <= Date.now()) {
+      voiceAudio.delete(id);
+      throw new HTTPException(404, { message: 'audio expired' });
+    }
+    if (cached.userId !== user._id.toHexString()) throw new HTTPException(403, { message: 'audio belongs to another player' });
+    const audioBuffer = new ArrayBuffer(cached.bytes.byteLength);
+    new Uint8Array(audioBuffer).set(cached.bytes);
+    return new Response(audioBuffer, {
+      headers: { 'content-type': 'audio/mpeg', 'cache-control': 'private, no-store', 'content-length': String(cached.bytes.length) },
+    });
   });
 
   /**
