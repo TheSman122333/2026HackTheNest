@@ -14,3 +14,6 @@ apps/mobile/ios/
 *.ipa
 .DS_Store
 design/raw/
+
+# local MongoDB data (dev)
+server/.data/
