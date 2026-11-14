@@ -17,3 +17,6 @@ design/raw/
 
 # local MongoDB data (dev)
 server/.data/
+output/
+tmp/
+apps/mobile/modules/*/android/build/
