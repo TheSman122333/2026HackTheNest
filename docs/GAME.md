@@ -28,7 +28,7 @@ A co-op pirate adventure, inspired by the shonen manga *genre*. **Your crew is y
 |---|---|---|
 | **Steps** | Health Connect (Android), HealthKit (iOS) | Island Moves (e.g. 1 Move per 1,000 steps, capped per day) |
 | **Logged activities** | Honor-system stamps: walk, workout, read, hobby, friends, outdoors, chores, study | Supplies + skill XP + Moves |
-| **Calm Seas streak** | Scroll Sentinel: short-form swipes and minutes (TikTok, Reels, Shorts) stay under the daily limit you set | Streak multiplier on Moves and Supplies, plus streak badges |
+| **Calm Seas streak** | Scroll Sentinel: short-form swipes and minutes (TikTok, Reels, Shorts) stay under the daily limit you set | Streak multiplier on Island Moves (+10% per day, max ×2), plus a Streak Shield every 7 days |
 | **Shore Leave streak** | Days you don't open the tracked apps at all | Bigger streak bonus |
 | **Focus sessions** (stretch) | A timer in the app where the phone stays untouched | Moves |
 

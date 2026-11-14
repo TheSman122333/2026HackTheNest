@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="scroll_sentinel_label">The Last Voyage: Calm Seas tracker</string>
+  <string name="scroll_sentinel_description">Counts how many short-form videos you swipe through in TikTok, Instagram Reels and YouTube Shorts, so The Last Voyage can reward you for phone-free time. It only looks at app names and screen layout IDs. It never reads text, messages, captions or anything you type, and the data stays on your phone.</string>
+</resources>

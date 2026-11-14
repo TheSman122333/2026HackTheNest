@@ -1,0 +1,16 @@
+{
+  "name": "last-voyage",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test -w @last-voyage/game",
+    "typecheck": "npm run typecheck -w @last-voyage/game && npm run typecheck -w mobile"
+  },
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}
