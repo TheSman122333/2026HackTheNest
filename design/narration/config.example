@@ -1,0 +1,12 @@
+# Local sandbox only. Copy config.example to .env; never use EXPO_PUBLIC_ for these values.
+ELEVENLABS_API_KEY=
+ELEVENLABS_VOICE_ID=
+# Flash for frequent actions; try eleven_v3 for dramatic pre-generated clips.
+ELEVENLABS_MODEL_ID=eleven_flash_v2_5
+
+# Optional fresh AI phrasing. Pick a model ID available in your Claude console.
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=
+ANTHROPIC_VERSION=2023-06-01
+
+NARRATION_PORT=8790
