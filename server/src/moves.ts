@@ -56,7 +56,7 @@ export async function todayMoves(c: Collections, user: UserDoc, now = new Date()
 
 export async function ledger(
   c: Collections,
-  entry: { crewId: ObjectId | null; userId: ObjectId | null; item: string; delta: number; reason: string; text?: string },
+  entry: { crewId: ObjectId | null; userId: ObjectId | null; item: string; delta: number; reason: string; eventId?: string; text?: string },
 ) {
   await c.ledger.insertOne({ ...entry, at: new Date() });
 }
