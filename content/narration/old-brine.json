@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "narrator": "Old Brine",
+  "lines": {
+    "intro": [
+      "Old Brine, at your service. I am the spirit in the figurehead. You bring the life; I will keep the tale.",
+      "Welcome aboard. I am Old Brine. Every fine voyage begins with somebody getting out the door.",
+      "Aye, I am the wooden fellow at the bow. Old Brine. Go live a little, then come tell me what we are sailing on."
+    ],
+    "activity_logged": [
+      "{actor} logged {activity}. Into the log: {supplies} Supplies, {moves} Island Moves, and {legend} Legend. Real life keeps us sailing.",
+      "Aye, {actor}: {activity}, logged. That adds {supplies} Supplies, {moves} Island Moves, and {legend} Legend. A useful page in our tale.",
+      "Put it in ink: {actor} logged {activity}, earning {supplies} Supplies, {moves} Island Moves, and {legend} Legend. Well lived, well logged."
+    ],
+    "move": [
+      "{actor} steps onto {terrain}. {movesRemaining} Island Moves remain. Every good map starts under somebody's boots.",
+      "Boots down, {actor}: {terrain}. {movesRemaining} Island Moves left. I shall admire the view from my wooden nose.",
+      "{terrain} beneath your boots, {actor}. {movesRemaining} Island Moves remain. A fine place for the next sentence."
+    ],
+    "item_found": [
+      "{actor} found {item}. A discovery worth a line in the log!",
+      "Well spotted, {actor}: {item}. That deserves a satisfying underline.",
+      "{item}, found by {actor}. My wooden eyes would have sailed straight past it."
+    ],
+    "chaos": [
+      "{disaster} at {island}! Steady, crew. I am putting an enormous exclamation mark in the log.",
+      "News from {island}: {disaster}. A dramatic turn of the page, that.",
+      "{island} reports {disaster}. Hold your hats, crew; the tale has found its loud bit."
+    ],
+    "boss_victory": [
+      "{actor} defeated {boss} on {island}! A victory worth telling with your whole chest.",
+      "Ring it out: {actor} defeated {boss} on {island}. I would applaud, but the shipwright forgot my hands.",
+      "{boss} on {island}, defeated by {actor}! There is a sentence I shall enjoy reading again."
+    ],
+    "streak_milestone": [
+      "{actor} has reached {days} Calm Seas days. Quiet choices can make a mighty fine story.",
+      "{days} Calm Seas days for {actor}. That is some patient seamanship, mate.",
+      "Mark it proudly: {actor}, {days} Calm Seas days. A little space for life, day by day."
+    ],
+    "streak_reset": [
+      "{actor}, the streak begins afresh. Your earned progress stays yours. Take the next day as it comes.",
+      "A fresh start for {actor}'s streak. Nothing earned is lost. There is room in this tale for an ordinary day.",
+      "{actor}'s streak has reset; earned progress remains. No scolding from an old piece of driftwood. Onward when you are ready."
+    ],
+    "crew_joined": [
+      "{actor} has joined {crew}. Welcome aboard; there is room for another voice in this tale.",
+      "A new name in the log: {actor}, now with {crew}. Good to have you aboard.",
+      "{crew}, meet {actor}, your newest crewmate. I shall try to remember the name before the next introduction."
+    ],
+    "island_arrival": [
+      "{crew} has arrived at {island}. A new shore, a fresh page. Take a good look around.",
+      "Arrival logged: {crew}, at {island}. Every shore deserves a proper introduction.",
+      "There it is: {island}. {crew} has arrived. I do enjoy this part of the tale."
+    ],
+    "recap_empty": [
+      "No new entries since your last visit. A quiet page is still part of the voyage.",
+      "The log has nothing new to report. Take your time, mate; a good tale has breathing room.",
+      "All caught up. No new entries in the log. Go enjoy a little life; I will mind the bookmark."
+    ]
+  }
+}
