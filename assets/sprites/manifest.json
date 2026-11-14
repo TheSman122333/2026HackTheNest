@@ -12,7 +12,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
       "feedback": "",
       "sourceName": "Twelve colorful boss cosmetic rewards-8.png",
@@ -31,7 +31,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
       "feedback": "",
       "sourceName": "A year of colorful adventure tiles-7.png",
@@ -50,7 +50,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 6 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
       "feedback": "",
       "sourceName": "Six colorful raid boss sprites-6.png",
@@ -69,7 +69,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 6 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
       "feedback": "",
       "sourceName": "Six vivid raid bosses in formation-5.png",
@@ -88,7 +88,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 6 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use. Character styling needs review against docs/DESIGN_BRIEF.md before production use. Includes recognizable existing-character styling; source reference only, requiring review/redesign before production.",
       "feedback": "",
       "sourceName": "Six colorful pirate class avatars-4.png",
@@ -107,7 +107,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 6 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use. Character styling needs review against docs/DESIGN_BRIEF.md before production use. Includes a straw-hat motif and recognizable existing-character styling; source reference only, requiring review/redesign before production.",
       "feedback": "",
       "sourceName": "Pirate Crew Class Avatar Atlas-3.png",
@@ -126,7 +126,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
       "feedback": "",
       "sourceName": "Bright seafaring adventure token atlas-1.png",
@@ -145,7 +145,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
       "feedback": "",
       "sourceName": "Twelve seafaring boss ability effects-2.png",
@@ -164,7 +164,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
       "feedback": "",
       "sourceName": "Twelve colorful productivity quest icons.png",
@@ -183,7 +183,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied unsliced atlas with 16 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
       "feedback": "",
       "sourceName": "Colorful seafaring adventure inventory atlas.png",
@@ -202,7 +202,7 @@
         0.5,
         0.5
       ],
-      "status": "pending",
+      "status": "approved",
       "notes": "User-supplied palette reference, including its original labels/branding. Stored unchanged; not an app sprite.",
       "feedback": "",
       "sourceName": "palette.png",
