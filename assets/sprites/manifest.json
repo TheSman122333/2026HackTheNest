@@ -1,3 +1,213 @@
 {
-  "sprites": []
+  "sprites": [
+    {
+      "id": "boss_cosmetic_rewards_12",
+      "file": "atlases/boss_cosmetic_rewards_12.png",
+      "category": "cosmetics",
+      "size": [
+        1448,
+        1086
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
+      "feedback": "",
+      "sourceName": "Twelve colorful boss cosmetic rewards-8.png",
+      "sha256": "927027970cf5016fd91aef82baa0bce236275097cd57cfd844e7b84a8d4e9f24",
+      "bytes": 1433096
+    },
+    {
+      "id": "monthly_adventure_tiles_12",
+      "file": "atlases/monthly_adventure_tiles_12.png",
+      "category": "tiles",
+      "size": [
+        1448,
+        1086
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
+      "feedback": "",
+      "sourceName": "A year of colorful adventure tiles-7.png",
+      "sha256": "330ada151e97f4575880593bb8eed8758d62e4cf978f09e20d557c19442ff244",
+      "bytes": 1767229
+    },
+    {
+      "id": "raid_bosses_set_02",
+      "file": "atlases/raid_bosses_set_02.png",
+      "category": "bosses",
+      "size": [
+        1536,
+        1024
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 6 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
+      "feedback": "",
+      "sourceName": "Six colorful raid boss sprites-6.png",
+      "sha256": "20cf2787776cd4459ebc924a1d27b5d38b628e94306504ac2388419df71c4daf",
+      "bytes": 1918366
+    },
+    {
+      "id": "raid_bosses_set_01",
+      "file": "atlases/raid_bosses_set_01.png",
+      "category": "bosses",
+      "size": [
+        1536,
+        1024
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 6 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
+      "feedback": "",
+      "sourceName": "Six vivid raid bosses in formation-5.png",
+      "sha256": "228435d24d344999e330c64f5e18841217336c4f29f2778865ec6f908062c0ae",
+      "bytes": 1944145
+    },
+    {
+      "id": "class_avatars_set_02",
+      "file": "atlases/class_avatars_set_02.png",
+      "category": "characters",
+      "size": [
+        1536,
+        1024
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 6 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use. Character styling needs review against docs/DESIGN_BRIEF.md before production use. Includes recognizable existing-character styling; source reference only, requiring review/redesign before production.",
+      "feedback": "",
+      "sourceName": "Six colorful pirate class avatars-4.png",
+      "sha256": "83c22d0d7423d833fc31a6d5e8cb6b2946f2804fc5cbccb41768a9b7ad15b03a",
+      "bytes": 1922810
+    },
+    {
+      "id": "class_avatars_set_01",
+      "file": "atlases/class_avatars_set_01.png",
+      "category": "characters",
+      "size": [
+        1536,
+        1024
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 6 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use. Character styling needs review against docs/DESIGN_BRIEF.md before production use. Includes a straw-hat motif and recognizable existing-character styling; source reference only, requiring review/redesign before production.",
+      "feedback": "",
+      "sourceName": "Pirate Crew Class Avatar Atlas-3.png",
+      "sha256": "a2f6d03cdc8e268603f9bb0d83b8242977bfa610fa90d074618ee73932970e51",
+      "bytes": 1964921
+    },
+    {
+      "id": "adventure_tokens_12",
+      "file": "atlases/adventure_tokens_12.png",
+      "category": "icons",
+      "size": [
+        1448,
+        1086
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
+      "feedback": "",
+      "sourceName": "Bright seafaring adventure token atlas-1.png",
+      "sha256": "44e667ae99362522578037115ebf49fb2b5b48fbf5183c84ca033f7734dab05d",
+      "bytes": 1263270
+    },
+    {
+      "id": "boss_ability_effects_12",
+      "file": "atlases/boss_ability_effects_12.png",
+      "category": "effects",
+      "size": [
+        1448,
+        1086
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
+      "feedback": "",
+      "sourceName": "Twelve seafaring boss ability effects-2.png",
+      "sha256": "d95b606072480f5389885aacd966b5b928f73f7b2d9abab14b286de5c6b0a1ef",
+      "bytes": 1059464
+    },
+    {
+      "id": "productivity_quest_icons_12",
+      "file": "atlases/productivity_quest_icons_12.png",
+      "category": "icons",
+      "size": [
+        1448,
+        1086
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 12 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
+      "feedback": "",
+      "sourceName": "Twelve colorful productivity quest icons.png",
+      "sha256": "d5888faa721ad5fab7c7eec08d6ed1c4108a04a67b8260bc14c836da5cce9bd5",
+      "bytes": 1031911
+    },
+    {
+      "id": "inventory_items_16",
+      "file": "atlases/inventory_items_16.png",
+      "category": "items",
+      "size": [
+        1254,
+        1254
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied unsliced atlas with 16 illustrations. Stored unchanged; preserve its supplied background and transparency. Review and prepare individual sprites before app use.",
+      "feedback": "",
+      "sourceName": "Colorful seafaring adventure inventory atlas.png",
+      "sha256": "1638f815e1695850eda926257bde4226b6e55ee62688a9414444bfc8ae302bd7",
+      "bytes": 1243020
+    },
+    {
+      "id": "palette_reference",
+      "file": "atlases/palette_reference.png",
+      "category": "reference",
+      "size": [
+        1600,
+        1200
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "pending",
+      "notes": "User-supplied palette reference, including its original labels/branding. Stored unchanged; not an app sprite.",
+      "feedback": "",
+      "sourceName": "palette.png",
+      "sha256": "a1f13f918c443fc8cadb792f4ae820233a566a1e5b56b7a86240ab3b0acb5fd9",
+      "bytes": 37053
+    }
+  ]
 }
