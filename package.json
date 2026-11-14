@@ -7,9 +7,11 @@
     "server"
   ],
   "scripts": {
+    "server": "npm run dev -w @last-voyage/server",
     "test": "npm run test -w @last-voyage/game && npm run test -w @last-voyage/server",
-    "typecheck": "npm run typecheck -w @last-voyage/game && npm run typecheck -w mobile",
-    "server": "npm run dev -w @last-voyage/server"
+    "typecheck": "npm run typecheck -w @last-voyage/game && npm run typecheck -w @last-voyage/server && npm run typecheck -w mobile",
+    "lint": "npm run lint -w mobile",
+    "check": "npm run typecheck && npm run lint && npm test"
   },
   "overrides": {
     "react": "19.3.0",
