@@ -16,3 +16,12 @@ export function daysBetween(a: DayKey, b: DayKey): number {
   };
   return Math.round((toUtc(b) - toUtc(a)) / 86_400_000);
 }
+
+/** Day key for an instant in a given IANA time zone (e.g. 'America/Detroit'). Falls back to UTC. */
+export function dayKeyInTz(at: Date, timeZone: string): DayKey {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
+  } catch {
+    return at.toISOString().slice(0, 10);
+  }
+}

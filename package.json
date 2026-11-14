@@ -3,11 +3,13 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "server"
   ],
   "scripts": {
-    "test": "npm run test -w @last-voyage/game",
-    "typecheck": "npm run typecheck -w @last-voyage/game && npm run typecheck -w mobile"
+    "test": "npm run test -w @last-voyage/game && npm run test -w @last-voyage/server",
+    "typecheck": "npm run typecheck -w @last-voyage/game && npm run typecheck -w mobile",
+    "server": "npm run dev -w @last-voyage/server"
   },
   "overrides": {
     "react": "19.3.0",
