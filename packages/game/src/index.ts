@@ -3,3 +3,7 @@ export * from './date';
 export * from './activities';
 export * from './streaks';
 export * from './wind';
+export * from './rng';
+export * from './hex';
+export * from './island';
+export * from './combat';
