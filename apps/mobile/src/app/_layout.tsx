@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useApplySurfaceRules } from '@/features/scroll/useScrollSentinel';
+import { useSession } from '@/state/session';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -20,18 +21,24 @@ export default function RootLayout() {
     Nunito_600SemiBold,
     Nunito_800ExtraBold,
   });
+  const ready = useSession((s) => s.ready);
   useApplySurfaceRules();
 
   useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync().catch(() => {});
-  }, [loaded, error]);
+    useSession.getState().boot();
+  }, []);
 
-  if (!loaded && !error) return null;
+  useEffect(() => {
+    if ((loaded || error) && ready) SplashScreen.hideAsync().catch(() => {});
+  }, [loaded, error, ready]);
+
+  if ((!loaded && !error) || !ready) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FFF6E3' } }}>
+        <Stack.Screen name="fight" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="dev/scroll-lab" options={{ headerShown: true, title: 'Scroll Lab' }} />
       </Stack>
     </GestureHandlerRootView>

@@ -23,7 +23,8 @@ async function localMongo(): Promise<string> {
   return mongod.getUri();
 }
 
-const uri = process.env.MONGODB_URI || (await localMongo());
+const envUri = process.env.MONGODB_URI;
+const uri = envUri && !envUri.includes('<db_password>') ? envUri : await localMongo();
 const { c } = await connect(uri, process.env.MONGODB_DB ?? 'last_voyage');
 const app = createApp({
   c,
