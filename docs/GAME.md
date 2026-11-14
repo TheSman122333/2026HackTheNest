@@ -64,9 +64,9 @@ A co-op pirate adventure, inspired by the shonen manga *genre*. **Your crew is y
 - **Debug-only:** Scroll Lab, Sprite Gallery, Advance Night, End the Year.
 
 ## 10. Tech (locked unless noted)
-- **App:** React Native + Expo SDK 58, TypeScript strict, Expo Router, **development build** (not Expo Go). Android first (test device: Pixel 10 Pro XL), iOS through EAS.
-- **Native:** `modules/scroll-sentinel` (Android AccessibilityService + UsageStats; iOS Screen Time stub). Steps via Health Connect and HealthKit.
-- **Backend:** **MongoDB Atlas** behind a thin Node API in `server/`. Hosting TBD (Vercel functions are the likely choice). LootLocker dropped.
+- **App:** React Native + Expo SDK 58, TypeScript strict, Expo Router, **development build** (not Expo Go). **Android only for the hackathon** (demo device: Pixel 10 Pro XL). There's no Apple developer account, so iOS is post-hackathon. Code must not crash on iOS, but nothing is built for it.
+- **Native:** `modules/scroll-sentinel` (Android AccessibilityService + UsageStats). Steps via Android Health Connect (`react-native-health-connect`).
+- **Backend: MongoDB only** (Atlas) behind a thin Node API in `server/` (Hono + `mongodb` driver). No Supabase, no LootLocker. Our own JWT auth (SSOJet ID token or a dev login, exchanged for our JWT). Face photos are stored in Mongo GridFS. The nightly turn is a scheduled job plus an "Advance Night" demo button.
 - **AI:** Claude (journal → traits, Ship's Log text). ElevenLabs (Old Brine). Intro and stock lines are pre-generated, the Ship's Log is dynamic for the demo.
 - **Integrations:** SSOJet (auth), Google Calendar (stretch: suggest quests in free time).
 

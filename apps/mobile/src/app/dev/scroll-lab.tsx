@@ -6,7 +6,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import ScrollSentinel, { type DiscoveryEntry } from 'scroll-sentinel';
 
+import { EMPTY_STREAK, dailyMoves, stepsToNextMove } from '@last-voyage/game';
+
 import { APP_LABEL, SURFACE_RULES } from '@/features/scroll/rules';
+import { useTodaySteps } from '@/features/steps/steps';
 import {
   useLiveSwipes,
   useSentinelPermissions,
@@ -17,6 +20,8 @@ export default function ScrollLab() {
   const perms = useSentinelPermissions();
   const live = useLiveSwipes();
   const today = useTodayScreen(perms);
+  const steps = useTodaySteps();
+  const moves = dailyMoves({ steps: steps.steps, activityMoves: 0, streak: EMPTY_STREAK });
   const [disclosure, setDisclosure] = useState(false);
   const [discovery, setDiscovery] = useState(false);
   const [entries, setEntries] = useState<DiscoveryEntry[]>([]);
@@ -75,6 +80,21 @@ export default function ScrollLab() {
         <Btn label="Open accessibility settings" onPress={() => setDisclosure(true)} />
         <Row label="Usage access (minutes and opens)" ok={perms.usageAccess} />
         <Btn label="Open usage access settings" onPress={ScrollSentinel.openUsageAccessSettings} />
+      </Card>
+
+      <Card title={`Steps today: ${steps.steps.toLocaleString()}`}>
+        {!steps.supported ? (
+          <Text style={s.dim}>Health Connect is unavailable on this device.</Text>
+        ) : !steps.granted ? (
+          <Btn label="Allow step access (Health Connect)" onPress={steps.request} />
+        ) : (
+          <Text style={s.body}>
+            Moves: {moves.base} base + {moves.fromSteps} steps + 0 activities × {moves.multiplier} ={' '}
+            {moves.total}
+            {stepsToNextMove(steps.steps) !== null ? ` · ${stepsToNextMove(steps.steps)} steps to next` : ''}
+          </Text>
+        )}
+        {steps.error ? <Text style={s.dim}>{steps.error}</Text> : null}
       </Card>
 
       <Card title={`Calm Seas today: ${today.verdict.verdict.toUpperCase()}`}>

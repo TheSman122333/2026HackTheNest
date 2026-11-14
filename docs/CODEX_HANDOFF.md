@@ -10,7 +10,22 @@ Read first: `AGENTS.md` (ownership and git rules), then `docs/GAME.md` (the game
 ## 0. TL;DR of the game
 A co-op pirate game whose look is inspired by the shonen-adventure manga genre. Friends share one ship. A BitLife-style life sim plays out on deck. The crew sails to islands, and each island is a big **hex board** (Catan-like layout, Mario Party-like variety) explored point-and-click, with a **boss fight** at the center. Conquer, upgrade the ship, repeat. **Moves come from real life:** steps, logged activities, and streaks of *not* doom-scrolling. Narrator: **Old Brine**, the ship's spirit in the figurehead. The yearly prize is **the Lodestar**, a fallen star.
 
-Platform: phone, portrait, Android first (Pixel 10 Pro XL, about 1344×2992 px, 20:9 aspect) with iOS as well. Design at **412×915 dp**.
+Platform: **Android only for the hackathon.** Phone, portrait, Pixel 10 Pro XL (about 1344×2992 px, 20:9 aspect). Design at **412×915 dp**.
+- Respect Android system UI: the status bar (top, about 24–32 dp), the gesture nav bar (bottom, about 24 dp; keep tap targets clear of it), and the system back gesture from both screen edges (no edge-swipe interactions within 24 dp of the left or right edge).
+- No iOS-specific design work.
+
+**Timebox: the hackathon has about 20 hours left.** Favor fewer, finished, consistent assets over many rough ones. When unsure, ship a clean v1 and note what you'd improve.
+
+**Backend:** MongoDB plus a small Node API, which Claude owns. You never need to touch it.
+
+**Real-life inputs available to the UI:**
+- Today's steps (Health Connect)
+- Logged activities (walk, workout, outdoors, read, study, hobby, friends, chores, journal)
+- Short-form swipes, minutes and app opens (TikTok, Instagram Reels, YouTube Shorts)
+- The Calm Seas streak (days under your scroll limit), the Shore Leave bonus (a day without opening those apps), and Streak Shields (one per 7 calm days, max 2)
+- Island Moves = (2 base + 1 per 1,000 steps (max 10) + activity Moves (max 6)) × streak multiplier (1.0–2.0)
+
+Numbers live in `packages/game/src/config.ts`. Design HUDs around **Moves** (the hero currency), **Supplies**, **Streak** and **Legend**.
 
 ---
 

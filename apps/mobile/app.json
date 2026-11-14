@@ -18,7 +18,11 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.hackthenest.lastvoyage"
+      "package": "com.hackthenest.lastvoyage",
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.ACTIVITY_RECOGNITION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +36,16 @@
           "backgroundColor": "#FFF6E3",
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
+        }
+      ],
+      "react-native-health-connect",
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
         }
       ]
     ],
