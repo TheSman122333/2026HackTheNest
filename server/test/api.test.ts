@@ -37,7 +37,7 @@ describe('api', () => {
     expect((await call('GET', '/me')).status).toBe(401);
   });
 
-  it('full real-life loop: login, crew, activity, wind, spend', async () => {
+  it('full real-life loop: login, crew, activity, moves, spend', async () => {
     const a = (await call('POST', '/auth/dev', undefined, { name: 'Ana', tz: 'America/Detroit' })).json;
     const b = (await call('POST', '/auth/dev', undefined, { name: 'Ben', tz: 'America/Detroit' })).json;
 
@@ -50,16 +50,16 @@ describe('api', () => {
     expect(act.status).toBe(200);
     expect(act.json.grant).toMatchObject({ supplies: 3, moves: 2 });
 
-    const wind = await call('PUT', '/wind/today', a.token, {
+    const day = await call('PUT', '/moves/today', a.token, {
       steps: 4200,
       screen: { swipes: 12, minutes: 4, opens: 1, tracked: true },
     });
     // base 2 + steps 4 + activity 2 = 8, ×1.0
-    expect(wind.json.wind.moves).toMatchObject({ total: 8, remaining: 8 });
+    expect(day.json.today.moves).toMatchObject({ total: 8, remaining: 8 });
 
-    const spent = await call('POST', '/wind/spend', a.token, { n: 5 });
-    expect(spent.json.wind.moves.remaining).toBe(3);
-    expect((await call('POST', '/wind/spend', a.token, { n: 5 })).status).toBe(409);
+    const spent = await call('POST', '/moves/spend', a.token, { n: 5 });
+    expect(spent.json.today.moves.remaining).toBe(3);
+    expect((await call('POST', '/moves/spend', a.token, { n: 5 })).status).toBe(409);
 
     const me = (await call('GET', '/me', a.token)).json;
     expect(me.crew.stores.supplies).toBe(3);

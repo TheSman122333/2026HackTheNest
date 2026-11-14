@@ -17,8 +17,8 @@ REAL LIFE ──► MOVES ──► ISLAND (explore + loot) ──► BOSS FIGHT
 - **Midnight:** the crew turn resolves: sail, arrive, chaos spawns, disasters, rival moves.
 - **Morning:** Old Brine (the narrator) tells you what happened while you were away.
 
-## 3. Wind = real-life fuel ✅
-"Wind" is the name for everything real life gives you. Wind fills your sails, so it becomes **Moves** (and Supplies, XP and Legend).
+## 3. Moves: earned from real life ✅
+Everything you do in real life turns into **Moves** (plus Supplies, XP and Legend). Moves are what you spend on islands and in boss fights.
 
 ### 3a. Logging activities ✅ (honor system with hard caps)
 | Activity | Supplies | Moves | Skill XP (+5 each) |

@@ -1,4 +1,4 @@
-import { ACTIVITIES, WIND, type ActivityKind, type Skill } from './config';
+import { ACTIVITIES, REWARDS, type ActivityKind, type Skill } from './config';
 
 /** One logged real-life activity (what the server stores). */
 export type ActivityLog = {
@@ -29,17 +29,17 @@ const sum = (logs: readonly ActivityLog[], f: (l: ActivityLog) => number) =>
 export function grantForActivity(today: readonly ActivityLog[], kind: ActivityKind): ActivityGrant {
   const def = ACTIVITIES[kind];
   const sameKind = today.filter((l) => l.kind === kind).length;
-  const diminished = sameKind >= WIND.diminishAfterSameKind;
+  const diminished = sameKind >= REWARDS.diminishAfterSameKind;
 
   const wantSupplies = diminished ? 1 : def.supplies;
   const wantMoves = diminished ? 0 : def.moves;
 
-  const supplies = clampToCap(wantSupplies, sum(today, (l) => l.supplies), WIND.suppliesPerDay);
-  const moves = clampToCap(wantMoves, sum(today, (l) => l.moves), WIND.movesFromActivitiesPerDay);
-  const legend = clampToCap(1, sum(today, (l) => l.legend), WIND.legendFromActivitiesPerDay);
+  const supplies = clampToCap(wantSupplies, sum(today, (l) => l.supplies), REWARDS.suppliesPerDay);
+  const moves = clampToCap(wantMoves, sum(today, (l) => l.moves), REWARDS.movesFromActivitiesPerDay);
+  const legend = clampToCap(1, sum(today, (l) => l.legend), REWARDS.legendFromActivitiesPerDay);
 
   const xp: Partial<Record<Skill, number>> = {};
-  for (const s of def.skills) xp[s] = WIND.xpPerActivity;
+  for (const s of def.skills) xp[s] = REWARDS.xpPerActivity;
 
   return {
     kind,

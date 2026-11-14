@@ -37,7 +37,7 @@ export type ActivityDoc = {
   at: Date;
 };
 
-export type WindDayDoc = {
+export type DayLogDoc = {
   _id?: ObjectId;
   userId: ObjectId;
   day: DayKey;
@@ -62,7 +62,7 @@ export type Collections = {
   users: Collection<UserDoc>;
   crews: Collection<CrewDoc>;
   activities: Collection<ActivityDoc>;
-  windDays: Collection<WindDayDoc>;
+  dayLogs: Collection<DayLogDoc>;
   ledger: Collection<LedgerDoc>;
 };
 
@@ -71,7 +71,7 @@ export function collections(db: Db): Collections {
     users: db.collection<UserDoc>('users'),
     crews: db.collection<CrewDoc>('crews'),
     activities: db.collection<ActivityDoc>('activities'),
-    windDays: db.collection<WindDayDoc>('wind_days'),
+    dayLogs: db.collection<DayLogDoc>('day_logs'),
     ledger: db.collection<LedgerDoc>('ledger'),
   };
 }
@@ -81,7 +81,7 @@ export async function ensureIndexes(c: Collections) {
     c.crews.createIndex({ inviteCode: 1 }, { unique: true }),
     c.users.createIndex({ ssojetSub: 1 }, { unique: true, sparse: true }),
     c.activities.createIndex({ userId: 1, day: 1 }),
-    c.windDays.createIndex({ userId: 1, day: 1 }, { unique: true }),
+    c.dayLogs.createIndex({ userId: 1, day: 1 }, { unique: true }),
     c.ledger.createIndex({ crewId: 1, at: -1 }),
     c.ledger.createIndex({ userId: 1, at: -1 }),
   ]);

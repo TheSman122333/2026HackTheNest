@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   EMPTY_STREAK,
-  WIND,
+  REWARDS,
   advanceStreak,
   dailyMoves,
   daysBetween,
@@ -21,7 +21,7 @@ describe('activities', () => {
   it('grants supplies, moves, xp and legend', () => {
     const g = grantForActivity([], 'workout');
     expect(g).toMatchObject({ supplies: 3, moves: 2, legend: 1, reduced: false });
-    expect(g.xp).toEqual({ grit: WIND.xpPerActivity });
+    expect(g.xp).toEqual({ grit: REWARDS.xpPerActivity });
   });
 
   it('diminishes the 3rd log of the same kind', () => {
@@ -37,9 +37,9 @@ describe('activities', () => {
     const kinds = ['workout', 'outdoors', 'friends', 'hobby', 'study', 'walk', 'chores'] as const;
     for (let i = 0; i < 20; i++) day.push(log(grantForActivity(day, kinds[i % kinds.length]!)));
     const total = (k: 'supplies' | 'moves' | 'legend') => day.reduce((n, l) => n + l[k], 0);
-    expect(total('supplies')).toBe(WIND.suppliesPerDay);
-    expect(total('moves')).toBe(WIND.movesFromActivitiesPerDay);
-    expect(total('legend')).toBe(WIND.legendFromActivitiesPerDay);
+    expect(total('supplies')).toBe(REWARDS.suppliesPerDay);
+    expect(total('moves')).toBe(REWARDS.movesFromActivitiesPerDay);
+    expect(total('legend')).toBe(REWARDS.legendFromActivitiesPerDay);
   });
 });
 
@@ -48,7 +48,7 @@ describe('steps', () => {
     expect(stepsToMoves(0)).toBe(0);
     expect(stepsToMoves(999)).toBe(0);
     expect(stepsToMoves(4500)).toBe(4);
-    expect(stepsToMoves(1e9)).toBe(WIND.movesFromStepsPerDay);
+    expect(stepsToMoves(1e9)).toBe(REWARDS.movesFromStepsPerDay);
     expect(stepsToMoves(Number.NaN)).toBe(0);
     expect(stepsToNextMove(4500)).toBe(500);
     expect(stepsToNextMove(1e9)).toBeNull();

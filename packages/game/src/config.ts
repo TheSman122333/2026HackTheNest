@@ -1,5 +1,5 @@
 /**
- * ALL economy constants for real-life fuel ("Wind"). Tune here only — UI and server import these.
+ * ALL economy constants for real-life rewards (activities, steps, streaks → Moves). Tune here only — UI and server import these.
  */
 export const SKILLS = ['grit', 'charm', 'lore', 'craft', 'seacraft'] as const;
 export type Skill = (typeof SKILLS)[number];
@@ -37,7 +37,7 @@ export const ACTIVITIES: Record<ActivityKind, ActivityDef> = {
   journal: { label: 'Journal', skills: ['lore'], supplies: 1, moves: 0 },
 };
 
-export const WIND = {
+export const REWARDS = {
   /** XP per logged activity, per listed skill */
   xpPerActivity: 5,
   /** Honor-system caps (per local day) */

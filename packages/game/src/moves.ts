@@ -1,4 +1,4 @@
-import { WIND } from './config';
+import { REWARDS } from './config';
 import { streakMultiplier, type StreakState } from './streaks';
 
 export type MovesBreakdown = {
@@ -16,9 +16,9 @@ export function dailyMoves(input: {
   activityMoves: number;
   streak: StreakState;
 }): MovesBreakdown {
-  const base = WIND.baseMovesPerDay;
+  const base = REWARDS.baseMovesPerDay;
   const fromSteps = stepsToMoves(input.steps);
-  const fromActivities = Math.max(0, Math.min(input.activityMoves, WIND.movesFromActivitiesPerDay));
+  const fromActivities = Math.max(0, Math.min(input.activityMoves, REWARDS.movesFromActivitiesPerDay));
   const multiplier = streakMultiplier(input.streak);
   return {
     base,
@@ -31,14 +31,14 @@ export function dailyMoves(input: {
 
 export function stepsToMoves(steps: number): number {
   if (!Number.isFinite(steps) || steps <= 0) return 0;
-  return Math.min(Math.floor(steps / WIND.stepsPerMove), WIND.movesFromStepsPerDay);
+  return Math.min(Math.floor(steps / REWARDS.stepsPerMove), REWARDS.movesFromStepsPerDay);
 }
 
 /** Steps still needed for the next Move (for a progress ring). null when capped. */
 export function stepsToNextMove(steps: number): number | null {
-  if (stepsToMoves(steps) >= WIND.movesFromStepsPerDay) return null;
+  if (stepsToMoves(steps) >= REWARDS.movesFromStepsPerDay) return null;
   const s = Math.max(0, Math.floor(steps));
-  return WIND.stepsPerMove - (s % WIND.stepsPerMove);
+  return REWARDS.stepsPerMove - (s % REWARDS.stepsPerMove);
 }
 
 /** Moves left to spend on the island today. */

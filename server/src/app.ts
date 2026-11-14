@@ -16,7 +16,7 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 
 import type { Collections, UserDoc } from './db';
-import { ledger, todayWind } from './wind';
+import { ledger, todayMoves } from './moves';
 
 type Env = { Variables: { user: UserDoc } };
 
@@ -75,7 +75,7 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
   app.use('/crews/*', auth);
   app.use('/crews', auth);
   app.use('/activities', auth);
-  app.use('/wind/*', auth);
+  app.use('/moves/*', auth);
   app.use('/log', auth);
 
   async function auth(ctx: Context<Env>, next: () => Promise<void>) {
@@ -95,11 +95,11 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
   // ---------- me ----------
   app.get('/me', async (ctx) => {
     const user = ctx.get('user');
-    const [crew, wind] = await Promise.all([
+    const [crew, today] = await Promise.all([
       user.crewId ? c.crews.findOne({ _id: user.crewId }) : null,
-      todayWind(c, user),
+      todayMoves(c, user),
     ]);
-    return ctx.json({ user: publicUser(user), crew: crew && publicCrew(crew), wind });
+    return ctx.json({ user: publicUser(user), crew: crew && publicCrew(crew), today });
   });
 
   app.put('/me/limits', async (ctx) => {
@@ -174,11 +174,11 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
     if (g.supplies > 0) await ledger(c, { crewId: user.crewId, userId: user._id, item: 'supplies', delta: g.supplies, reason: `activity:${kind}` });
 
     const fresh = (await c.users.findOne({ _id: user._id }))!;
-    return ctx.json({ grant: g, wind: await todayWind(c, fresh, now) });
+    return ctx.json({ grant: g, today: await todayMoves(c, fresh, now) });
   });
 
   /** The app pushes today's device numbers (steps + scroll aggregates). Only totals, never raw data. */
-  app.put('/wind/today', async (ctx) => {
+  app.put('/moves/today', async (ctx) => {
     const user = ctx.get('user');
     const input = await body(
       ctx,
@@ -194,22 +194,22 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
     );
     const now = new Date();
     const day = dayKeyInTz(now, user.tz);
-    await c.windDays.updateOne(
+    await c.dayLogs.updateOne(
       { userId: user._id, day },
       { $set: { steps: input.steps, screen: input.screen, updatedAt: now }, $setOnInsert: { movesSpent: 0 } },
       { upsert: true },
     );
-    return ctx.json({ wind: await todayWind(c, user, now) });
+    return ctx.json({ today: await todayMoves(c, user, now) });
   });
 
   /** Island board spends Moves. Atomic: fails if not enough left. */
-  app.post('/wind/spend', async (ctx) => {
+  app.post('/moves/spend', async (ctx) => {
     const user = ctx.get('user');
     const { n } = await body(ctx, z.object({ n: z.number().int().min(1).max(50) }));
     const now = new Date();
-    const w = await todayWind(c, user, now);
+    const w = await todayMoves(c, user, now);
     if (w.moves.remaining < n) throw new HTTPException(409, { message: 'not enough moves' });
-    await c.windDays.updateOne(
+    await c.dayLogs.updateOne(
       { userId: user._id, day: w.day },
       {
         $inc: { movesSpent: n },
@@ -218,7 +218,7 @@ export function createApp({ c, jwtSecret, allowDevLogin }: AppDeps) {
       },
       { upsert: true },
     );
-    return ctx.json({ wind: await todayWind(c, user, now) });
+    return ctx.json({ today: await todayMoves(c, user, now) });
   });
 
   // ---------- log (audit feed) ----------

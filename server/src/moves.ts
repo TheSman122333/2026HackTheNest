@@ -1,4 +1,4 @@
-/** Server-side Wind: folds finished days into the streak and computes today's Moves. */
+/** Server-side Moves: folds finished days into the streak and computes today's Moves. */
 import {
   advanceStreak,
   dailyMoves,
@@ -14,12 +14,12 @@ import type { Collections, UserDoc } from './db';
 
 /**
  * Fold every finished (before today) day with data into the user's streak. Idempotent:
- * advanceStreak ignores days <= lastDay, and days without a wind doc simply pause the streak.
+ * advanceStreak ignores days <= lastDay, and days without a day log simply pause the streak.
  */
 export async function foldStreak(c: Collections, user: UserDoc, today: DayKey) {
   const filter: Record<string, unknown> = { userId: user._id, day: { $lt: today } };
   if (user.streak.lastDay) filter.day = { $lt: today, $gt: user.streak.lastDay };
-  const days = await c.windDays.find(filter).sort({ day: 1 }).toArray();
+  const days = await c.dayLogs.find(filter).sort({ day: 1 }).toArray();
   if (days.length === 0) return { streak: user.streak, events: [] as StreakEvent[] };
 
   let streak = user.streak;
@@ -33,11 +33,11 @@ export async function foldStreak(c: Collections, user: UserDoc, today: DayKey) {
   return { streak, events };
 }
 
-export async function todayWind(c: Collections, user: UserDoc, now = new Date()) {
+export async function todayMoves(c: Collections, user: UserDoc, now = new Date()) {
   const today = dayKeyInTz(now, user.tz);
   const { streak, events } = await foldStreak(c, user, today);
   const [doc, acts] = await Promise.all([
-    c.windDays.findOne({ userId: user._id, day: today }),
+    c.dayLogs.findOne({ userId: user._id, day: today }),
     c.activities.find({ userId: user._id, day: today }).toArray(),
   ]);
   const activityMoves = acts.reduce((n, a) => n + a.moves, 0);
