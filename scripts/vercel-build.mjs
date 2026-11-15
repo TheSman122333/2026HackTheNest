@@ -20,6 +20,10 @@ execSync('npx expo export --platform web --output-dir dist', {
 });
 mkdirSync(`${OUT}/static`, { recursive: true });
 cpSync('apps/mobile/dist', `${OUT}/static`, { recursive: true });
+// Landing page for the apex domain (the game lives on play.).
+mkdirSync(`${OUT}/static/_landing`, { recursive: true });
+cpSync('site/index.html', `${OUT}/static/_landing/index.html`);
+cpSync('apps/mobile/assets/icon.png', `${OUT}/static/_landing/icon.png`);
 
 // 2) API function, bundled to a single file.
 console.log('▶ bundle API');
@@ -48,6 +52,9 @@ writeFileSync(
       version: 3,
       routes: [
         { src: '^/api(/.*)?$', dest: '/api' },
+        // lastvoyageplease.work: the landing page at /, every other path forwards to the game.
+        { src: '^/$', has: [{ type: 'host', value: 'lastvoyageplease.work' }], dest: '/_landing/index.html' },
+        { src: '^/(?!_landing/|favicon\\.ico$)(.+)$', has: [{ type: 'host', value: 'lastvoyageplease.work' }], status: 308, headers: { Location: 'https://play.lastvoyageplease.work/$1' } },
         { handle: 'filesystem' },
         { src: '/(.*)', dest: '/index.html' },
       ],

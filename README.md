@@ -8,7 +8,7 @@
 A game that makes you excited to put your phone down and go live your life.</p>
 
 <p align="center">
-  <a href="https://lastvoyageplease.work"><b>▶ Play now: lastvoyageplease.work</b></a>
+  <a href="https://lastvoyageplease.work"><b>🌊 lastvoyageplease.work</b></a> · <a href="https://play.lastvoyageplease.work"><b>▶ Play now</b></a>
 </p>
 
 Built for **Hack The Nest 2026**.
@@ -19,8 +19,8 @@ Built for **Hack The Nest 2026**.
 | Platform | How |
 |---|---|
 | **Android** | Download the APK from the [Releases](../../releases) page and install it (allow "install unknown apps" once). Includes automatic steps and scroll tracking. |
-| **iPhone** | Open **https://lastvoyageplease.work** in Safari → **Share → Add to Home Screen**. |
-| **Desktop** | Open **https://lastvoyageplease.work** in any browser. |
+| **iPhone** | Open **https://play.lastvoyageplease.work** in Safari → **Share → Add to Home Screen**. |
+| **Desktop** | Open **https://play.lastvoyageplease.work** in any browser. |
 
 ## What it is
 Your real friends are your **crew**, and you share one ship. Everything you do in real life (walking, reading, working out, time with friends, staying off short-form video) becomes **Moves**. The crew spends Moves exploring a 721-tile island, looting, and fighting a shared boss.
