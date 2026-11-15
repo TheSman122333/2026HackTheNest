@@ -167,7 +167,7 @@ export function AvatarEditor({ user, onboarding = false }: { user: User; onboard
 
     <Panel>
       <H>Make it your face</H>
-      <P dim>Take a centered portrait or choose a photo. Saving stores it securely with your account on our server. Photos are never sent to AI.</P>
+      <P dim>Take a centered portrait or choose a photo. Saving stores it with your account on our server. Photos are never sent to AI.</P>
       <Row>
         <Btn small label={photo ? 'Retake photo' : 'Take a photo'} onPress={() => capture('camera')} disabled={!supported || off} busy={picking} />
         <Btn small label="Choose photo" color={C.sky} onPress={() => capture('library')} disabled={!supported || off} />

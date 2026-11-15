@@ -197,7 +197,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     const token = h.startsWith('Bearer ') ? h.slice(7) : '';
     try {
       const { payload } = await jwtVerify(token, key);
-      const user = await c.users.findOne({ _id: new ObjectId(payload.sub) });
+      const user = await c.users.findOne({ _id: new ObjectId(payload.sub) }, { projection: { profilePhoto: 0 } });
       if (!user) throw new Error('no user');
       ctx.set('user', user);
     } catch {

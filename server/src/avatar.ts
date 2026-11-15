@@ -53,10 +53,11 @@ export function registerAvatar(app: Hono<{ Variables: { user: UserDoc } }>, c: C
     });
     return ctx.json({ avatarId: input.avatarId });
   });
-  app.get('/me/avatar/photo', (ctx) => {
-    const photo = ctx.get('user').profilePhoto;
+  app.get('/me/avatar/photo', async (ctx) => {
+    const user = await c.users.findOne({ _id: ctx.get('user')._id }, { projection: { profilePhoto: 1, profilePhotoUpdatedAt: 1 } });
+    const photo = user?.profilePhoto;
     ctx.header('Cache-Control', 'private, no-store');
-    if (!photo) return ctx.json({ photo: null, configured: Boolean(ctx.get('user').profilePhotoUpdatedAt) });
+    if (!photo) return ctx.json({ photo: null, configured: Boolean(user?.profilePhotoUpdatedAt) });
     return ctx.json({ photo: { uri: `data:image/jpeg;base64,${Buffer.from(photo.bytes.buffer).toString('base64')}`, width: photo.width, height: photo.height, zoom: photo.zoom, offsetX: photo.offsetX, offsetY: photo.offsetY } });
   });
 }

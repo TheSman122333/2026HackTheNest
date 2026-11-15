@@ -1,6 +1,6 @@
 # Personalized quests and crew invitations
 
-After sign-in, players choose their pirate and can optionally take or select a face photo. The existing on-device photo fitting controls are available during this first setup. The avatar selection is saved to the account; face photos stay on the device. Players then answer eight short questions about activities, goals, daily time, pace, setting, company, preferred time of day, and activities to avoid. Players can change those answers under **Me → Quest preferences**.
+After sign-in, players choose their pirate and can optionally take or select a face photo. The existing on-device photo fitting controls are available during this first setup. The avatar and portrait are saved to the account in MongoDB. Portraits are owner-only, never sent to AI, and cached on each device for offline display. Removing the photo and saving deletes the MongoDB copy. Players then answer eight short questions about activities, goals, daily time, pace, setting, company, preferred time of day, and activities to avoid. Players can change those answers under **Me → Quest preferences**.
 
 The Quests screen replaces **Log an activity** with three daily quests. The other sections remain. The three tasks share the selected daily time budget; completion uses the existing activity rewards, daily caps, and crew contribution records. Completed quests cannot award rewards twice. Changing preferences does not grant additional daily slots or reset the skip allowance.
 
