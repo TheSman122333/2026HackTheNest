@@ -4,15 +4,12 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
-import {
-  SdkAvailabilityStatus,
-  aggregateRecord,
-  getGrantedPermissions,
-  getSdkStatus,
-  initialize,
-  openHealthConnectSettings,
-  requestPermission,
-} from 'react-native-health-connect';
+import type * as HealthConnect from 'react-native-health-connect';
+
+/** Loaded only on Android: the library's native module doesn't exist on iOS / Expo Go. */
+const HC: typeof HealthConnect | null =
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Platform.OS === 'android' ? (require('react-native-health-connect') as typeof HealthConnect) : null;
 
 export type StepsState = {
   supported: boolean;
@@ -25,19 +22,21 @@ const STEPS_READ = { accessType: 'read', recordType: 'Steps' } as const;
 
 let initPromise: Promise<boolean> | null = null;
 async function ensureInit(): Promise<boolean> {
-  if (Platform.OS !== 'android') return false;
-  if ((await getSdkStatus()) !== SdkAvailabilityStatus.SDK_AVAILABLE) return false;
-  initPromise ??= initialize();
+  if (!HC) return false;
+  if ((await HC.getSdkStatus()) !== HC.SdkAvailabilityStatus.SDK_AVAILABLE) return false;
+  initPromise ??= HC.initialize();
   return initPromise;
 }
 
 async function hasStepsPermission(): Promise<boolean> {
-  const granted = await getGrantedPermissions();
+  if (!HC) return false;
+  const granted = await HC.getGrantedPermissions();
   return granted.some((p) => p.recordType === 'Steps' && p.accessType === 'read');
 }
 
 export async function readStepsBetween(start: Date, end: Date): Promise<number> {
-  const res = await aggregateRecord({
+  if (!HC) return 0;
+  const res = await HC.aggregateRecord({
     recordType: 'Steps',
     timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
   });
@@ -60,11 +59,11 @@ export async function readTodaySteps(): Promise<number> {
 /** Shows the Health Connect permission sheet. Returns true if steps access was granted. */
 export async function requestStepsAccess(): Promise<boolean> {
   if (!(await ensureInit())) return false;
-  const granted = await requestPermission([STEPS_READ]);
+  const granted = await HC!.requestPermission([STEPS_READ]);
   return granted.some((p) => p.recordType === 'Steps' && p.accessType === 'read');
 }
 
-export { openHealthConnectSettings };
+export const openHealthConnectSettings = () => HC?.openHealthConnectSettings();
 
 /** Today's steps; refreshes on foreground and every `pollMs`. */
 export function useTodaySteps(pollMs = 60_000) {
