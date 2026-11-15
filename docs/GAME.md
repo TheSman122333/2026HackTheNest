@@ -167,10 +167,10 @@ Jan New Year · Feb Black History Month · Mar Women's History Month · Apr Spri
 
 ## 12. The crew's companions 🟡
 ### The Tidekeeper, the narrator (ElevenLabs) 🟡
-- The ship's spirit, living in the figurehead. He tells the story; he never decides outcomes.
+- The ship's spirit, living in the figurehead: a legendary old captain, grand and warm, never costume pirate-speak. He tells the story; he never decides outcomes. All lore and names are original (no names from other franchises; a server guard rewrites any that slip through).
 - **Briefing:** when you open the island, he tells you your Moves, HP, streak and the boss's HP ✅.
 - **Hold to talk:** ask a question ("how many moves?") or give an order ("strike") by voice or text ✅. Mic only while held; recordings are deleted after upload.
-- **World events (AI Game Master):** OpenAI + Exa search real sources and place one helpful item on a revealed empty tile, with source links ✅.
+- **World events (AI Game Master):** **3 random days a week per crew**, the first island visit that day fires one. OpenAI web search finds a real fact, the Tidekeeper narrates it with source links, and one helpful item appears on a revealed empty tile ✅.
 - **Morning recap** of everything you missed ⬜. Pre-recorded intro and stock lines ⬜.
 
 ### The Shipwright 🟡
@@ -195,7 +195,7 @@ Jan New Year · Feb Black History Month · Mar Women's History Month · Apr Spri
 - **Native:** `modules/scroll-sentinel` (Kotlin) and Health Connect for steps.
 - **Rules:** `packages/game`, pure TypeScript shared by the app and the server, with tests.
 - **Server:** Node + Hono + **MongoDB** (Atlas, or a local database that starts automatically). Our own JWT login (dev login now, SSOJet later).
-- **AI and voice:** Claude (journal → traits, recap text), ElevenLabs (the Tidekeeper).
+- **AI and voice:** Gemini writes the Tidekeeper's lines (OpenAI as backup), OpenAI web search for world events, ElevenLabs voice, speech-to-text and theme music.
 
 ## 15. Hard rules
 - **IP:** genre-inspired only (see `docs/DESIGN_BRIEF.md`).
