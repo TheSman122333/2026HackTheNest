@@ -18,6 +18,7 @@ import { z } from 'zod';
 import type { Collections, UserDoc } from './db';
 import { createIsland, registerIsland, resumeVoyage } from './island';
 import { ledger, spendMoves, todayMoves } from './moves';
+import { registerMusic } from './music';
 import { exchangeSsojetCode, SsojetAuthenticationError, SsojetRequestError, SsojetUnavailableError } from './ssojet';
 
 type Env = { Variables: { user: UserDoc } };
@@ -339,6 +340,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   });
 
   registerIsland(app, c, { env, fetchImpl });
+  registerMusic(app, c, { env, fetchImpl });
 
   app.onError((err, ctx) => {
     if (err instanceof HTTPException) return ctx.json({ error: err.message }, err.status);

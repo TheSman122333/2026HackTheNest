@@ -6,6 +6,7 @@ import { View } from 'react-native';
 
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
 import { avatarFor, Sprite } from '@/components/sprites';
+import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 
@@ -61,6 +62,8 @@ export default function Me() {
         <Stat label="BEST" value={st.best} color={C.cloud} />
         <Stat label="SHIELDS" value={`🛡️${st.shields}/${STREAK.maxShields}`} color={C.cloud} />
       </Row>
+
+      <ThemeSongCard />
 
       <Panel>
         <H>Skills</H>

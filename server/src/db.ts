@@ -22,6 +22,8 @@ export type UserDoc = {
   streak: StreakState;
   limits: ScreenLimits;
   ssojetSub?: string;
+  /** personal theme song (ElevenLabs Music) */
+  theme?: { status: 'pending' | 'ready' | 'failed'; prompt: string; version: number; updatedAt: Date };
   createdAt: Date;
 };
 
