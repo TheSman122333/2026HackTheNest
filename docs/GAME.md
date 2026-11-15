@@ -128,8 +128,8 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 |---|---|---|---|---|
 | Clawdius the Tide Crab | tropical | 120 | 6 | 2 |
 | Wispwick the Bog Lantern | spooky | 110 | 7 | 1 |
-| Tuskar the Frost Walrus | winter | 140 | 5 | 3 |
-| Emberhulk the Lava Golem | volcanic | 160 | 7 | 3 |
+| Rimecoil the Frost Serpent | winter | 140 | 5 | 3 |
+| Cindertail the Magma Scorpion | volcanic | 160 | 7 | 3 |
 
 - **Your stats come from your skills:**
   - **HP** = 25 + Grit/2
@@ -141,7 +141,7 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
   - **Cannon:** 14 damage.
   - **Tonic:** heal 15.
   - **Brace:** halves the counterattack.
-- **Enrage:** below 30% HP (Lava Golem: 25%) the boss deals +50% damage.
+- **Enrage:** below 30% HP (Magma Scorpion: 25%) the boss deals +50% damage.
 - **KO** = washed overboard until tomorrow. Next day everyone returns at full HP; the boss doesn't heal.
 - **Win:** the island is conquered for the crew. Damage dealt is credited per player (feeds Legend ⬜).
 

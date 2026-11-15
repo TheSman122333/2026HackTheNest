@@ -74,3 +74,6 @@ export const STREAK = {
   shieldEvery: 7,
   maxShields: 2,
 } as const;
+
+/** The ship's narrator. Rename here (and in content/ lines) — every UI/server string reads this. */
+export const NARRATOR = { name: 'Tidekeeper', withThe: 'the Tidekeeper' } as const;

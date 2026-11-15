@@ -2,8 +2,10 @@
 import { SKILLS, STREAK, type Skill } from '@last-voyage/game';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { avatarFor, Sprite } from '@/components/sprites';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 
@@ -45,20 +47,25 @@ export default function Me() {
 
   return (
     <Screen>
-      <Title>{u.name.toUpperCase()}</Title>
-      <P dim>{ROLE[top]} of the {me.crew?.name}</P>
+      <Row gap={12} style={{ flexWrap: "nowrap" }}>
+        <Sprite name={avatarFor(u.id)} size={96} />
+        <View style={{ flexShrink: 1 }}>
+          <Title>{u.name.toUpperCase()}</Title>
+          <P dim>{ROLE[top]} of the {me.crew?.name}</P>
+        </View>
+      </Row>
 
       <Row gap={10}>
         <Stat label="LEGEND" value={`⭐${u.legend}`} />
-        <Stat label="CALM DAYS" value={`🔥${st.calmDays}`} color={C.white} />
-        <Stat label="BEST" value={st.best} color={C.white} />
-        <Stat label="SHIELDS" value={`🛡️${st.shields}/${STREAK.maxShields}`} color={C.white} />
+        <Stat label="CALM DAYS" value={`🔥${st.calmDays}`} color={C.cloud} />
+        <Stat label="BEST" value={st.best} color={C.cloud} />
+        <Stat label="SHIELDS" value={`🛡️${st.shields}/${STREAK.maxShields}`} color={C.cloud} />
       </Row>
 
       <Panel>
         <H>Skills</H>
         {SKILLS.map((k) => (
-          <Bar key={k} value={u.skills[k]} max={100} color={C.sea} label={`${SKILL_LABEL[k]} ${u.skills[k]}`} />
+          <Bar key={k} value={u.skills[k]} max={100} color={C.sky} label={`${SKILL_LABEL[k]} ${u.skills[k]}`} />
         ))}
         <P dim>Skills grow from real activities and power you up in boss fights.</P>
       </Panel>
@@ -74,8 +81,8 @@ export default function Me() {
           {u.limits.swipes} swipes · {u.limits.minutes} minutes
         </P>
         <Row>
-          <Btn small label="Stricter" color={C.jungle} busy={saving} onPress={() => setLimits(Math.max(0, u.limits.swipes - 10), Math.max(0, u.limits.minutes - 5))} />
-          <Btn small label="Looser" color={C.white} busy={saving} onPress={() => setLimits(u.limits.swipes + 10, u.limits.minutes + 5)} />
+          <Btn small label="Stricter" color={C.green} busy={saving} onPress={() => setLimits(Math.max(0, u.limits.swipes - 10), Math.max(0, u.limits.minutes - 5))} />
+          <Btn small label="Looser" color={C.cloud} busy={saving} onPress={() => setLimits(u.limits.swipes + 10, u.limits.minutes + 5)} />
         </Row>
       </Panel>
 
@@ -87,7 +94,7 @@ export default function Me() {
 
       <Btn
         label="Log out"
-        color={C.white}
+        color={C.cloud}
         onPress={async () => {
           await logout();
           router.replace('/welcome');

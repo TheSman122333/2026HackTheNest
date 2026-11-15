@@ -1,4 +1,4 @@
-import type { FightAction, FightEvent, IslandEvent } from '@last-voyage/game';
+import { NARRATOR, type FightAction, type FightEvent, type IslandEvent } from '@last-voyage/game';
 
 export class VoiceProviderError extends Error {}
 
@@ -148,7 +148,7 @@ export function sfxCueKeys(events: readonly (IslandEvent | FightEvent)[]): strin
 }
 
 export function voiceCommandReply(intent: VoiceIntent, view: { boss: { name: string }; explorer: { hp: number } }): string {
-  if (intent.type === 'island.move') return `The Tidekeeper records your move to ${intent.to}.`;
+  if (intent.type === 'island.move') return `${NARRATOR.withThe.replace(/^t/, 'T')} records your move to ${intent.to}.`;
   if (intent.type === 'fight') {
     if (intent.action === 'strike') return `Strike complete. ${view.boss.name} answers with a counterattack.`;
     if (intent.action === 'cannon') return `Cannon fired. ${view.boss.name} answers with a counterattack.`;

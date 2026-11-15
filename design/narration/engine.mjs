@@ -139,6 +139,6 @@ export async function composeScript(request, { generateFlavor } = {}) {
 export const examples = {
   activity: { mode: 'event', event: { id: 'activity-1', type: 'activity_logged', at: '2026-11-14T16:00:00.000Z', facts: { actor: 'Maya', activity: 'walk', supplies: 2, moves: 1, legend: 1 } } },
   pickup: { mode: 'event', event: { id: 'pickup-1', type: 'item_found', at: '2026-11-14T16:01:00.000Z', facts: { actor: 'Maya', item: 'cannon' } } },
-  boss: { mode: 'event', event: { id: 'boss-1', type: 'boss_victory', at: '2026-11-14T16:02:00.000Z', facts: { actor: 'The Gullwing crew', boss: 'Emberhulk the Lava Golem', island: 'Ember Isle' } } },
+  boss: { mode: 'event', event: { id: 'boss-1', type: 'boss_victory', at: '2026-11-14T16:02:00.000Z', facts: { actor: 'The Gullwing crew', boss: 'Cindertail the Magma Scorpion', island: 'Ember Isle' } } },
 };
 examples.recap = { mode: 'recap', until: '2026-11-14T18:00:00.000Z', events: Object.values(examples).map((example) => example.event) };

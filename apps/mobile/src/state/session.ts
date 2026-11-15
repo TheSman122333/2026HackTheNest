@@ -1,6 +1,7 @@
 /** Session + "me" state. One store, refreshed after every action that changes the server. */
 import { create } from 'zustand';
 
+import { signInWithSsojet } from '@/features/auth/ssojet';
 import { api, devLogin, loadToken, setToken } from '@/lib/api';
 import type { Me } from '@/lib/types';
 
@@ -12,6 +13,7 @@ type Session = {
   boot: () => Promise<void>;
   refresh: () => Promise<Me | null>;
   login: (name: string) => Promise<void>;
+  ssoLogin: () => Promise<boolean>;
   logout: () => Promise<void>;
   setMe: (me: Partial<Me>) => void;
 };
@@ -49,6 +51,14 @@ export const useSession = create<Session>((set, get) => ({
     await devLogin(name);
     set({ token: await loadToken() });
     await get().refresh();
+  },
+
+  ssoLogin: async () => {
+    const ok = await signInWithSsojet();
+    if (!ok) return false;
+    set({ token: await loadToken() });
+    await get().refresh();
+    return true;
   },
 
   logout: async () => {

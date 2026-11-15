@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FFF6E3",
+        "backgroundColor": "#27187E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -33,7 +33,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFF6E3",
+          "backgroundColor": "#27187E",
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
         }
@@ -46,6 +46,16 @@
           "android": {
             "minSdkVersion": 26
           }
+        }
+      ],
+      "expo-web-browser",
+      "expo-image",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Hold the talk button to speak to your ship's narrator. The mic is only used while you hold it.",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false
         }
       ]
     ],

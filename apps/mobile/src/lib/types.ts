@@ -74,3 +74,27 @@ export type MoveResponse = IslandView & { events: IslandEvent[]; spent: number }
 export type FightResponse = IslandView & { events: FightEvent[] };
 export type ActivityResponse = { grant: ActivityGrant; today: Today };
 export type LogEntry = { id: string; text: string; item: string; delta: number; reason: string; at: string };
+
+export type VoiceTurn = {
+  requestId: string;
+  conversationId: string;
+  transcript: string | null;
+  reply: string;
+  intent: { type: 'briefing' | 'question' | 'island.move' | 'fight'; to?: string; action?: string };
+  result: { events: (IslandEvent | FightEvent)[]; movesRemaining: number; playerHp: number; bossHp: number } | null;
+  audio: { url: string; expiresAt: string } | null;
+  audioError: string | null;
+  sfxCueKeys: string[];
+};
+
+export type GmEvent = {
+  requestId: string;
+  status: 'applied' | 'already_applied' | 'no_event';
+  event: {
+    id: string;
+    narration: string;
+    sources: { title: string; url: string; publishedAt: string | null }[];
+    effect: { type: 'spawn_item'; at: string; item: string } | { type: 'none' };
+  };
+  island: { id: string; changedTile: { hex: string; terrain: string; item: string } | null };
+};

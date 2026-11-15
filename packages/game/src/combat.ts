@@ -21,8 +21,8 @@ export type BossDef = {
 export const BOSSES: Record<IslandTheme, BossDef> = {
   tropical: { key: 'tide_crab', name: 'Clawdius', title: 'the Tide Crab', maxHp: 120, atk: 6, armor: 2, enrageAt: 0.3 },
   spooky: { key: 'bog_lantern', name: 'Wispwick', title: 'the Bog Lantern', maxHp: 110, atk: 7, armor: 1, enrageAt: 0.3 },
-  winter: { key: 'frost_walrus', name: 'Tuskar', title: 'the Frost Walrus', maxHp: 140, atk: 5, armor: 3, enrageAt: 0.3 },
-  volcanic: { key: 'lava_golem', name: 'Emberhulk', title: 'the Lava Golem', maxHp: 160, atk: 7, armor: 3, enrageAt: 0.25 },
+  winter: { key: 'frost_walrus', name: 'Rimecoil', title: 'the Frost Serpent', maxHp: 140, atk: 5, armor: 3, enrageAt: 0.3 },
+  volcanic: { key: 'lava_golem', name: 'Cindertail', title: 'the Magma Scorpion', maxHp: 160, atk: 7, armor: 3, enrageAt: 0.25 },
 };
 
 export type Fighter = {

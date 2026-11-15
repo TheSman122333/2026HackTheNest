@@ -4,15 +4,9 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
 
-import { Bar, Btn, C, F, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { Bar, Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
+import { BOSS_SPRITE, Sprite } from '@/components/sprites';
 import { useIsland } from '@/state/island';
-
-const BOSS_GLYPH: Record<string, string> = {
-  tide_crab: '🦀',
-  bog_lantern: '🏮',
-  frost_walrus: '🦭',
-  lava_golem: '🌋',
-};
 
 export default function Fight() {
   const { view, busy, error, feed, fight } = useIsland();
@@ -37,50 +31,51 @@ export default function Fight() {
   return (
     <Screen>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Btn small label="← Island" onPress={() => router.back()} color={C.white} />
-        <Stat label="MOVES" value={view.movesRemaining} />
+        <Btn small label="← Island" onPress={() => router.back()} color={C.cloud} />
+        <Stat label="MOVES" value={view.movesRemaining} icon={<Sprite name="boots" size={22} />} />
       </Row>
 
-      <Panel color={enraged ? '#FFD3CF' : C.white} style={{ alignItems: 'center' }}>
-        <Text style={{ fontSize: 96 }}>{over ? '🏳️' : BOSS_GLYPH[boss.key] ?? '👹'}</Text>
+      <Panel color={enraged ? C.red : C.indigo} style={{ alignItems: 'center' }}>
+        {over ? <Sprite name="t_flag" size={140} /> : <Sprite name={BOSS_SPRITE[boss.key] ?? 'b_octopus'} size={200} />}
         <Title size={30}>{boss.name}</Title>
-        <P dim>{boss.title}{enraged ? ' · 🔥 ENRAGED' : ''}</P>
+        <P dim>{boss.title}</P>
+        {enraged ? <Tag label="🔥 ENRAGED · +50% damage" color={C.orange} /> : null}
         <View style={{ alignSelf: 'stretch' }}>
           <Bar value={boss.hp} max={boss.maxHp} color={C.red} label={`HP ${boss.hp}/${boss.maxHp} · armor ${boss.armor}`} />
         </View>
       </Panel>
 
       <Panel>
-        <Bar value={ex.hp} max={ex.maxHp} color={ko ? C.red : C.jungle} label={`You: HP ${ex.hp}/${ex.maxHp}${ex.inventory.cutlass ? ' · 🗡️ cutlass equipped' : ''}`} />
+        <Bar value={ex.hp} max={ex.maxHp} color={ko ? C.red : C.jungle} label={`You: HP ${ex.hp}/${ex.maxHp}${ex.inventory.cutlass ? ' · cutlass equipped (+3)' : ''}`} />
       </Panel>
 
       {over ? (
-        <Panel color={C.jungle}>
-          <Text style={{ fontFamily: F.title, fontSize: 40, color: C.ink, textAlign: 'center' }}>VICTORY!</Text>
+        <Panel color={C.green}>
+          <Text style={{ fontFamily: F.title, fontSize: 44, color: C.ink, textAlign: 'center' }}>VICTORY!</Text>
           <P center>The island belongs to your crew. Legend earned!</P>
           <Btn label="Back to the island" onPress={() => router.back()} />
         </Panel>
       ) : ko ? (
-        <Panel color={C.seaLight}>
-          <H>🌊 Washed overboard!</H>
+        <Panel color={C.sky}>
+          <Row><Sprite name="fx_wave" size={36} /><H>Washed overboard!</H></Row>
           <P>Rest up. You&apos;ll be back at full strength tomorrow, and the boss stays hurt.</P>
         </Panel>
       ) : (
         <View style={{ gap: 10 }}>
           <Row gap={10}>
             <View style={{ flex: 1 }}>
-              <Btn label="🗡️ Strike" onPress={() => doAct('strike')} disabled={busy || noMoves} />
+              <Btn label="Strike" icon={<Sprite name="cutlass" size={28} />} onPress={() => doAct('strike')} disabled={busy || noMoves} />
             </View>
             <View style={{ flex: 1 }}>
-              <Btn label={`💣 Cannon ×${cannons}`} color={C.red} onPress={() => doAct('cannon')} disabled={busy || noMoves || !cannons} />
+              <Btn label={`Cannon ×${cannons}`} icon={<Sprite name="cannon" size={28} />} color={C.red} onPress={() => doAct('cannon')} disabled={busy || noMoves || !cannons} />
             </View>
           </Row>
           <Row gap={10}>
             <View style={{ flex: 1 }}>
-              <Btn label={`🧪 Tonic ×${tonics}`} color={C.jungle} onPress={() => doAct('tonic')} disabled={busy || noMoves || !tonics} />
+              <Btn label={`Tonic ×${tonics}`} icon={<Sprite name="tonic" size={28} />} color={C.green} onPress={() => doAct('tonic')} disabled={busy || noMoves || !tonics} />
             </View>
             <View style={{ flex: 1 }}>
-              <Btn label="🛡️ Brace" color={C.seaLight} onPress={() => doAct('brace')} disabled={busy || noMoves} />
+              <Btn label="Brace" icon={<Sprite name="shield" size={28} />} color={C.sky} onPress={() => doAct('brace')} disabled={busy || noMoves} />
             </View>
           </Row>
           {noMoves ? <P center dim>Out of Moves. Go live a little and come back.</P> : <P center dim>Each action costs 1 Move</P>}

@@ -1,35 +1,37 @@
 /**
- * PLACEHOLDER hex board: circles + emoji on a pointy-top hex grid. Swap the tile View for
- * approved sprites (hex_<terrain>.png) once they exist; positions/tap logic stay the same.
+ * Hex board: pointy-top axial grid. Terrain is colour (no terrain art yet); items, boss and
+ * pirates use approved sprites. Positions/tap logic come from @last-voyage/game.
  */
 import { distance, parseKey, toPixel, type HexKey, type Terrain } from '@last-voyage/game';
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { C, F } from '@/components/kit';
+import { avatarFor, BOSS_SPRITE, ITEM_SPRITE, Sprite } from '@/components/sprites';
 import type { IslandView } from '@/lib/types';
 import { ITEM_GLYPH } from '@/state/island';
 
 export const TERRAIN_COLOR: Record<Terrain, string> = {
-  sea: '#4FC3F7',
-  beach: '#F6E1A6',
-  grass: '#9ED36A',
-  jungle: '#3E9B5A',
-  rock: '#A39C92',
-  ruins: '#C9B79C',
-  town: '#E8A15A',
-  swamp: '#6F7F4F',
-  volcano: '#B5452F',
-  snow: '#EEF4F7',
+  sea: '#33A6FF',
+  beach: '#FFE3A3',
+  grass: '#8EDC7A',
+  jungle: '#2FAE6E',
+  rock: '#9C9AC4',
+  ruins: '#D9C7A6',
+  town: '#FFB45C',
+  swamp: '#6E8F5A',
+  volcano: '#FF4542',
+  snow: '#FFFFFF',
 };
 
 type Props = {
   view: IslandView;
+  meId: string;
   onTap: (k: HexKey) => void;
   disabled?: boolean;
 };
 
-export const HexBoard = memo(function HexBoard({ view, onTap, disabled }: Props) {
+export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: Props) {
   const { width } = useWindowDimensions();
   const r = view.island.radius;
   const size = (width - 24) / (Math.sqrt(3) * (2 * r + 1));
@@ -37,67 +39,81 @@ export const HexBoard = memo(function HexBoard({ view, onTap, disabled }: Props)
   const boardW = w * (2 * r + 1);
   const boardH = size * 1.5 * (2 * r) + size * 2;
   const me = view.explorer.pos;
-  const mates = new Map(view.crewmates.map((m) => [m.pos, m.name]));
+  const mates = new Map(view.crewmates.map((m) => [m.pos, m]));
+  const bossSprite = BOSS_SPRITE[view.boss.key] ?? 'b_octopus';
 
   return (
-    <View style={{ width: boardW, height: boardH, alignSelf: 'center' }}>
-      {view.island.allHexes.map((k) => {
-        const h = parseKey(k);
-        const { x, y } = toPixel(h, size);
-        const tile = view.island.tiles[k];
-        const edge = distance(h, { q: 0, r: 0 }) === r;
-        const isBoss = k === view.island.bossAt;
-        const cost = view.reachable[k];
-        const terrain: Terrain | null = tile?.terrain ?? (edge ? 'sea' : null);
-        const bg = isBoss ? (view.boss.defeated ? C.jungle : C.red) : terrain ? TERRAIN_COLOR[terrain] : C.fog;
-        const tappable = cost !== undefined && !disabled;
-        const d = w * 0.92;
-        return (
-          <Pressable
-            key={k}
-            onPress={tappable ? () => onTap(k) : undefined}
-            style={[
-              s.hex,
-              {
-                width: d,
-                height: d,
-                borderRadius: d / 2,
-                left: boardW / 2 + x - d / 2,
-                top: boardH / 2 + y - d / 2,
-                backgroundColor: bg,
-                borderColor: tappable ? C.sun : terrain === 'sea' ? 'transparent' : C.ink,
-                borderWidth: tappable ? 3 : terrain === 'sea' ? 0 : 1.5,
-                opacity: terrain === 'sea' ? 0.55 : 1,
-              },
-            ]}
-          >
-            {isBoss ? (
-              <Text style={{ fontSize: d * 0.55 }}>{view.boss.defeated ? '🚩' : '👹'}</Text>
-            ) : k === me ? (
-              <View style={[s.token, { width: d * 0.7, height: d * 0.7, borderRadius: d }]}>
-                <Text style={[s.tokenText, { fontSize: d * 0.36 }]}>★</Text>
-              </View>
-            ) : mates.has(k) ? (
-              <View style={[s.token, { width: d * 0.62, height: d * 0.62, borderRadius: d, backgroundColor: C.seaLight }]}>
-                <Text style={[s.tokenText, { fontSize: d * 0.3 }]}>{mates.get(k)!.slice(0, 1).toUpperCase()}</Text>
-              </View>
-            ) : tile?.item ? (
-              <Text style={{ fontSize: d * 0.45 }}>{ITEM_GLYPH[tile.item] ?? '✨'}</Text>
-            ) : tappable ? (
-              <Text style={[s.cost, { fontSize: d * 0.34 }]}>{cost}</Text>
-            ) : !terrain ? (
-              <Text style={{ fontSize: d * 0.35, opacity: 0.5 }}>☁️</Text>
-            ) : null}
-          </Pressable>
-        );
-      })}
+    <View style={[s.board, { width: boardW + 12, height: boardH + 12 }]}>
+      <View style={{ width: boardW, height: boardH }}>
+        {view.island.allHexes.map((k) => {
+          const h = parseKey(k);
+          const { x, y } = toPixel(h, size);
+          const tile = view.island.tiles[k];
+          const edge = distance(h, { q: 0, r: 0 }) === r;
+          const isBoss = k === view.island.bossAt;
+          const cost = view.reachable[k];
+          const terrain: Terrain | null = tile?.terrain ?? (edge ? 'sea' : null);
+          const bg = isBoss ? (view.boss.defeated ? C.green : C.navy) : terrain ? TERRAIN_COLOR[terrain] : C.fog;
+          const tappable = cost !== undefined && !disabled;
+          const d = w * 0.94;
+          const item = tile?.item ? ITEM_SPRITE[tile.item] : undefined;
+          const mate = mates.get(k);
+          return (
+            <Pressable
+              key={k}
+              onPress={tappable ? () => onTap(k) : undefined}
+              style={[
+                s.hex,
+                {
+                  width: d,
+                  height: d,
+                  borderRadius: d * 0.3,
+                  left: boardW / 2 + x - d / 2,
+                  top: boardH / 2 + y - d / 2,
+                  backgroundColor: bg,
+                  borderColor: tappable ? C.orange : terrain === 'sea' ? 'transparent' : C.ink,
+                  borderWidth: tappable ? 3 : terrain === 'sea' ? 0 : 2,
+                  opacity: terrain === 'sea' ? 0.45 : 1,
+                },
+              ]}
+            >
+              {isBoss ? (
+                view.boss.defeated ? (
+                  <Sprite name="t_flag" size={d * 0.9} />
+                ) : (
+                  <Sprite name={bossSprite} size={d * 1.25} />
+                )
+              ) : k === me ? (
+                <View style={[s.token, { width: d * 0.95, height: d * 0.95, borderRadius: d }]}>
+                  <Sprite name={avatarFor(meId)} size={d * 0.95} />
+                </View>
+              ) : mate ? (
+                <View style={[s.token, { width: d * 0.85, height: d * 0.85, borderRadius: d, borderColor: C.sky }]}>
+                  <Sprite name={avatarFor(mate.userId)} size={d * 0.85} />
+                </View>
+              ) : tile?.item ? (
+                item ? (
+                  <Sprite name={item} size={d * 0.78} />
+                ) : (
+                  <Text style={{ fontSize: d * 0.45 }}>{ITEM_GLYPH[tile.item] ?? '✨'}</Text>
+                )
+              ) : tappable ? (
+                <Text style={[s.cost, { fontSize: d * 0.38 }]}>{cost}</Text>
+              ) : !terrain ? (
+                <Text style={[s.fog, { fontSize: d * 0.4 }]}>?</Text>
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 });
 
 const s = StyleSheet.create({
-  hex: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  token: { backgroundColor: C.sun, borderWidth: 2, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
-  tokenText: { fontFamily: F.ui, color: C.ink },
+  board: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center', backgroundColor: C.deep, borderRadius: 24, borderWidth: 3, borderColor: C.ink },
+  hex: { position: 'absolute', alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
+  token: { backgroundColor: C.cloud, borderWidth: 2, borderColor: C.orange, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   cost: { fontFamily: F.ui, color: C.ink },
+  fog: { fontFamily: F.ui, color: C.peri, opacity: 0.6 },
 });

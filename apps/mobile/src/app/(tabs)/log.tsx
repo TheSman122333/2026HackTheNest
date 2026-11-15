@@ -5,6 +5,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { C, P, Panel, Title } from '@/components/kit';
+import { ITEM_SPRITE, Sprite } from '@/components/sprites';
 import { api } from '@/lib/api';
 import type { LogEntry } from '@/lib/types';
 
@@ -49,12 +50,12 @@ export default function Log() {
 
   return (
     <SafeAreaView style={s.screen} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}>
+      <ScrollView contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={C.cloud} />}>
         <Title>SHIP&apos;S LOG</Title>
         {entries.length === 0 ? <P dim>Nothing yet. Log an activity or explore the island!</P> : null}
         {entries.map((e) => (
           <Panel key={e.id} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-            <P>{GLYPH[e.item] ?? '•'}</P>
+            {ITEM_SPRITE[e.item] ? <Sprite name={ITEM_SPRITE[e.item]!} size={30} /> : <P>{GLYPH[e.item] ?? '•'}</P>}
             <View style={{ flex: 1 }}>
               <P>{e.text}</P>
               <P dim>{ago(e.at)}</P>
@@ -67,6 +68,6 @@ export default function Log() {
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.paper },
+  screen: { flex: 1, backgroundColor: C.navy },
   content: { padding: 16, gap: 10, paddingBottom: 32 },
 });

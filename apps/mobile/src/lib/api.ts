@@ -47,3 +47,19 @@ export async function devLogin(name: string) {
   await setToken(r.token);
   return r.user;
 }
+
+export const API_BASE = BASE;
+
+/** Absolute URL + auth header for server-proxied media (e.g. narrator audio). */
+export async function authedSource(path: string) {
+  const t = await loadToken();
+  return { uri: `${BASE}${path}`, headers: t ? { authorization: `Bearer ${t}` } : undefined };
+}
+
+/** Random v4 UUID (server requires uuid requestIds). */
+export function uuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}

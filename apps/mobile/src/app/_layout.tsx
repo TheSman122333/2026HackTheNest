@@ -36,10 +36,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#FFF6E3' } }}>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#27187E' } }}>
+        <Stack.Screen name="auth/callback" />
         <Stack.Screen name="fight" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-        <Stack.Screen name="dev/scroll-lab" options={{ headerShown: true, title: 'Scroll Lab' }} />
+        <Stack.Screen name="dev/scroll-lab" options={{ headerShown: true, title: 'Scroll Lab', headerStyle: { backgroundColor: '#1B1160' }, headerTintColor: '#F1F2F6' }} />
       </Stack>
     </GestureHandlerRootView>
   );

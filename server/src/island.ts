@@ -26,6 +26,7 @@ import {
   type HexKey,
   type IslandEvent,
   type Item,
+  NARRATOR,
 } from '@last-voyage/game';
 import type { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -46,6 +47,8 @@ import {
   voiceCommandReply,
   type VoiceIntent,
 } from './voice';
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Found materials go to the crew store; gear stays in the explorer's bag. */
 const MATERIALS: readonly Item[] = ['supplies', 'timber', 'iron', 'spice', 'shard'];
@@ -329,7 +332,7 @@ export function registerIsland(
           ...doc,
           status: 'applied',
           changedTile: { hex, terrain: tile.terrain, item: doc.event.effect.item },
-          audit: { ...doc.audit, text: `The Tidekeeper placed ${doc.event.effect.item} on a revealed ${tile.terrain} tile.` },
+          audit: { ...doc.audit, text: `${cap(NARRATOR.withThe)} placed ${doc.event.effect.item} on a revealed ${tile.terrain} tile.` },
           updatedAt: new Date(),
         }
       : {
@@ -387,7 +390,8 @@ export function registerIsland(
     const isle = await currentIsland(c, crewId);
     if (isle.conqueredAt) throw new HTTPException(409, { message: 'island already conquered' });
     const day = new Date().toISOString().slice(0, 10);
-    const eventKey = `${crewId.toHexString()}:${isle._id.toHexString()}:${day}`;
+    // GM_DEMO_REPEAT=true lets judges trigger a fresh event on every press (one per day otherwise).
+    const eventKey = `${crewId.toHexString()}:${isle._id.toHexString()}:${day}${env.GM_DEMO_REPEAT === 'true' ? `:${parsed.data.requestId}` : ''}`;
     const existing = await c.gmEvents.findOne({ eventKey });
     if (existing) {
       const complete = await completePendingGmEvent(existing);
@@ -454,7 +458,7 @@ export function registerIsland(
         createdAt: now,
       },
       changedTile: null,
-      audit: { id: eventKey, reason: 'gm:event', text: 'The Tidekeeper world event is being applied.' },
+      audit: { id: eventKey, reason: 'gm:event', text: `${cap(NARRATOR.withThe)} world event is being applied.` },
       createdAt: now,
       updatedAt: now,
     };

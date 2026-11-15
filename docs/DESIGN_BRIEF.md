@@ -36,7 +36,7 @@ Inspired by the shonen-adventure-manga *genre* only.
 
 ## Sprite list (priority order)
 1. Hex tiles (pointy-top): beach, grass, jungle, rock, ruins, town, swamp, volcano, snow, sea, plus fog and a selected highlight.
-2. 4 bosses: Tide Crab, Bog Lantern, Frost Walrus, Lava Golem.
+2. 4 bosses: Tide Crab, Bog Lantern (anglerfish), Frost Serpent, Magma Scorpion.
 3. Items: cutlass, cannon, tonic, mystery chest, supplies, timber, iron, spice, shard, clue.
 4. Player token / chibi pirate (with a round face slot for the player's photo).
 5. Ship ×3 tiers, plus icons (Moves, Supplies, steps, streak flame, shield, Legend star, each activity).

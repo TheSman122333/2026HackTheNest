@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 
-import { Btn, C, F, H, P, Panel, Screen, Title } from '@/components/kit';
+import { Btn, C, F, H, P, Panel, Row, Screen, Title } from '@/components/kit';
+import { Sprite } from '@/components/sprites';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 
@@ -31,31 +32,40 @@ export default function CrewSetup() {
 
   return (
     <Screen>
+      <Row style={{ justifyContent: 'center' }}>
+        <Sprite name="a4" size={72} />
+        <Sprite name="a2" size={88} />
+        <Sprite name="a8" size={72} />
+      </Row>
       <Title>FIND A CREW</Title>
       <P>Your crew is your friends. You share one ship, one island and one boss.</P>
       <Panel>
         <H>Start a crew</H>
-        <TextInput value={crewName} onChangeText={setCrewName} placeholder="Crew name" placeholderTextColor={C.dim} style={s.input} maxLength={40} />
+        <TextInput value={crewName} onChangeText={setCrewName} placeholder="Crew name" placeholderTextColor={C.dimDark} style={s.input} maxLength={40} />
         <Btn label="Create crew" onPress={() => run('create')} busy={busy === 'create'} disabled={!crewName.trim()} />
       </Panel>
-      <Panel>
+      <Panel color={C.indigo}>
         <H>Join a friend</H>
         <TextInput
           value={code}
           onChangeText={(t) => setCode(t.toUpperCase())}
           placeholder="6-letter code"
-          placeholderTextColor={C.dim}
+          placeholderTextColor={C.dimDark}
           style={s.input}
           autoCapitalize="characters"
           maxLength={6}
         />
-        <Btn label="Join crew" color={C.seaLight} onPress={() => run('join')} busy={busy === 'join'} disabled={code.trim().length !== 6} />
+        <Btn label="Join crew" color={C.sky} onPress={() => run('join')} busy={busy === 'join'} disabled={code.trim().length !== 6} />
       </Panel>
-      {err ? <P dim>{err}</P> : null}
+      {err ? (
+        <Panel color={C.red}>
+          <P>{err}</P>
+        </Panel>
+      ) : null}
     </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  input: { borderWidth: 3, borderColor: C.ink, padding: 12, fontFamily: F.ui, fontSize: 18, backgroundColor: C.paper, color: C.ink },
+  input: { borderWidth: 3, borderColor: C.ink, borderRadius: 12, padding: 12, fontFamily: F.ui, fontSize: 18, backgroundColor: C.cloud, color: C.ink },
 });

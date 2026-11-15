@@ -6,24 +6,13 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { ACTIVITY_SPRITE, Sprite } from '@/components/sprites';
 import { useSentinelPermissions } from '@/features/scroll/useScrollSentinel';
 import { useTodaySteps } from '@/features/steps/steps';
 import { syncToday } from '@/features/sync/deviceSync';
 import { api } from '@/lib/api';
 import type { ActivityResponse } from '@/lib/types';
 import { useSession } from '@/state/session';
-
-const GLYPH: Record<ActivityKind, string> = {
-  walk: '🚶',
-  workout: '💪',
-  outdoors: '🌳',
-  read: '📚',
-  study: '✏️',
-  hobby: '🔨',
-  friends: '🫂',
-  chores: '🧹',
-  journal: '📓',
-};
 
 export default function Quests() {
   const me = useSession((s) => s.me);
@@ -65,12 +54,12 @@ export default function Quests() {
       <P>Do it in real life, then log it here. Every quest fills your sails.</P>
 
       <Row gap={10}>
-        <Stat label="MOVES LEFT" value={t.moves.remaining} />
-        <Stat label="SUPPLIES TODAY" value={`${suppliesToday}/${REWARDS.suppliesPerDay}`} color={C.white} />
+        <Stat label="MOVES LEFT" value={t.moves.remaining} icon={<Sprite name="boots" size={22} />} />
+        <Stat label="SUPPLIES TODAY" value={`${suppliesToday}/${REWARDS.suppliesPerDay}`} color={C.cloud} icon={<Sprite name="coin" size={22} />} />
       </Row>
 
       {toast ? (
-        <Panel color={C.sun}>
+        <Panel color={C.gold}>
           <H>{toast}</H>
         </Panel>
       ) : null}
@@ -81,8 +70,9 @@ export default function Quests() {
           {ACTIVITY_KINDS.map((k) => (
             <View key={k} style={{ width: '47%' }}>
               <Btn
-                label={`${GLYPH[k]} ${ACTIVITIES[k].label}${counts[k] ? ` ×${counts[k]}` : ''}`}
-                color={counts[k] ? C.white : C.sun}
+                icon={<Sprite name={ACTIVITY_SPRITE[k]!} size={26} />}
+                label={`${ACTIVITIES[k].label}${counts[k] ? ` ×${counts[k]}` : ''}`}
+                color={counts[k] ? C.cloud : C.orange}
                 onPress={() => log(k)}
                 busy={busy === k}
                 small
@@ -94,17 +84,17 @@ export default function Quests() {
       </Panel>
 
       <Panel>
-        <H>👣 Steps: {t.steps.toLocaleString()}</H>
+        <Row><Sprite name="fx_footsteps" size={28} /><H>Steps: {t.steps.toLocaleString()}</H></Row>
         <Bar value={t.moves.fromSteps} max={REWARDS.movesFromStepsPerDay} color={C.sea} label={`${t.moves.fromSteps}/${REWARDS.movesFromStepsPerDay} step Moves`} />
         <P dim>{next === null ? 'Step Moves maxed for today!' : `${next} more steps to the next Move`}</P>
         {steps.supported && !steps.granted ? <Btn small label="Allow step access" onPress={steps.request} /> : null}
-        <Btn small label="↻ Sync now" color={C.white} onPress={() => syncToday().catch(() => {})} />
+        <Btn small label="↻ Sync now" color={C.sky} onPress={() => syncToday().catch(() => {})} />
       </Panel>
 
       <Panel>
-        <H>🌊 Calm Seas (short-form budget)</H>
+        <Row><Sprite name="fx_wave" size={28} /><H>Calm Seas (short-form budget)</H></Row>
         {perms.supported && !perms.accessibility ? (
-          <Panel color="#FFD3CF">
+          <Panel color={C.red}>
             <P>⚠️ Swipe tracker is OFF, so swipes aren&apos;t counted and minutes are your total time in TikTok, Instagram and YouTube.</P>
             <Btn small label="Turn tracker on" onPress={() => router.push('/dev/scroll-lab')} />
           </Panel>
