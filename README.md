@@ -22,6 +22,9 @@ Built for **Hack The Nest 2026**.
 | **iPhone** | Open **https://play.lastvoyageplease.work** in Safari → **Share → Add to Home Screen**. |
 | **Desktop** | Open **https://play.lastvoyageplease.work** in any browser. |
 
+### Signing in
+Use **Board with SSOJet → enter your email** (Gmail works) → open the sign-in link from your inbox on the same device. The Google, GitHub, Apple and Facebook buttons on the SSOJet page are not enabled in our sandbox, so use email. No email handy? Use **Quick join**.
+
 ## What it is
 Your real friends are your **crew**, and you share one ship. Everything you do in real life (walking, reading, working out, time with friends, staying off short-form video) becomes **Moves**. The crew spends Moves exploring a 721-tile island, looting, and fighting a shared boss.
 
