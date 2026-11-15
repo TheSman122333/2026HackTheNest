@@ -5,6 +5,7 @@
  */
 import { Children, createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OceanBackdrop, useMotionEnabled } from '@/ui/motion';
 import { cleanText } from '@/ui/text';
@@ -69,50 +70,43 @@ export function H({ children, color }: { children: ReactNode; color?: string }) 
 }
 export function P({ children, dim, center, color }: { children: ReactNode; dim?: boolean; center?: boolean; color?: string }) {
   const tone = useTone();
-  return <Text style={[s.p, { color: color ?? (dim ? dimColor(tone) : textColor(tone)) }, center && { textAlign: 'center' }]}>{copy(children)}</Text>;
+  return <Text style={[s.p, { color: color ?? (dim ? dimColor(tone) : textColor(tone)) }, center && { textAlign: 'center' }, tone === 'dark' && s.softDrop]}>{copy(children)}</Text>;
 }
 
-/**
- * Parchment poster card (default) or a sea-glass board when given a blue colour.
- * Uneven corners + ink outline + a hard offset shadow read as hand-cut paper.
- */
-type Finish = 'tape' | 'nails' | 'fold' | 'scorch';
-const FINISHES: Finish[] = ['tape', 'nails', 'fold', 'scorch'];
-let nextFinish = 0;
-
-/** Each paper card gets its own hand-made finish and a tiny tilt, so stacks never look stamped out. */
-function PaperFinish({ finish }: { finish: Finish }) {
-  return <>
-    <View pointerEvents="none" style={[s.vignette, s.cut]} />
-    <View pointerEvents="none" style={[s.stain, finish === 'scorch' ? { right: 18, bottom: 14 } : { right: -18, top: -16 }]} />
-    {finish === 'tape' ? <>
-      <View pointerEvents="none" style={[s.tape, { left: -12, top: 6, transform: [{ rotate: '-38deg' }] }]} />
-      <View pointerEvents="none" style={[s.tape, { right: -12, top: 6, transform: [{ rotate: '38deg' }] }]} />
-    </> : null}
-    {finish === 'nails' ? [{ left: 8, top: 8 }, { right: 8, top: 8 }, { left: 8, bottom: 8 }, { right: 8, bottom: 8 }].map((pos, i) => <View key={i} pointerEvents="none" style={[s.nail, pos]} />) : null}
-    {finish === 'fold' ? <View pointerEvents="none" style={s.fold} /> : null}
-    {finish === 'scorch' ? <View pointerEvents="none" style={[s.scorch, s.cut]} /> : null}
-  </>;
-}
+/** Generated, original aged-paper sheets (assets/sprites/gen-parchment.mjs): torn edges + baked shadow. */
+const SHEETS = {
+  wide: require('../../assets/game/textures/parchment_wide.webp'),
+  square: require('../../assets/game/textures/parchment_square.webp'),
+  tall: require('../../assets/game/textures/parchment_tall.webp'),
+} as const;
+const PAPER_COLORS: string[] = [C.paper, C.cloud, C.white];
 
 /**
- * Parchment poster card (default) or a sea-glass board when given a blue colour.
- * Uneven corners + ink outline + a hard offset shadow read as hand-cut paper.
+ * Parchment card (default): a real aged-paper sheet behind the content, picked to match the
+ * card's shape so torn edges don't stretch. Any other colour: a plain board with a thin ink line.
  */
 export function Panel({ children, style, color = C.paper }: { children: ReactNode; style?: ViewStyle; color?: string }) {
   const tone = toneFor(color);
-  const paper = tone === 'light';
-  const [look] = useState(() => {
-    const finish = FINISHES[nextFinish++ % FINISHES.length]!;
-    return { finish, tilt: ['-0.5deg', '0.4deg', '-0.25deg', '0.55deg'][nextFinish % 4]! };
-  });
-  return <ToneContext.Provider value={tone}>
-    <View style={[s.panelWrap, { transform: [{ rotate: paper ? look.tilt : '0deg' }] }, style && { flex: style.flex, alignSelf: style.alignSelf, width: style.width, minWidth: style.minWidth, maxWidth: style.maxWidth }]}>
-      <View pointerEvents="none" style={[s.panelShadow, s.cut]} />
-      <View style={[s.panel, s.cut, { backgroundColor: color }, style, { flex: undefined, width: undefined, margin: 0, marginTop: 0, marginBottom: 0 }]}>
-        {paper ? <PaperFinish finish={look.finish} /> : <View pointerEvents="none" style={[s.panelGlass, s.cut]} />}
-        {children}
+  const paper = PAPER_COLORS.includes(color);
+  const [sheet, setSheet] = useState<keyof typeof SHEETS>('wide');
+  const outer = style && { flex: style.flex, alignSelf: style.alignSelf, width: style.width, minWidth: style.minWidth, maxWidth: style.maxWidth };
+  const inner = [style, { flex: undefined, width: undefined, margin: 0, marginTop: 0, marginBottom: 0 }];
+  if (!paper) {
+    return <ToneContext.Provider value={tone}>
+      <View style={[s.panelWrap, outer]}>
+        <View pointerEvents="none" style={[s.panelShadow, s.cut]} />
+        <View style={[s.panel, s.cut, { backgroundColor: color }, ...inner]}>{children}</View>
       </View>
+    </ToneContext.Provider>;
+  }
+  return <ToneContext.Provider value="light">
+    <View style={[s.panelWrap, outer]} onLayout={(e) => {
+      const { width, height } = e.nativeEvent.layout;
+      const ratio = height / Math.max(1, width);
+      setSheet(ratio > 1.35 ? 'tall' : ratio > 0.75 ? 'square' : 'wide');
+    }}>
+      <Image pointerEvents="none" source={SHEETS[sheet]} contentFit="fill" style={s.sheet} accessible={false} />
+      <View style={[s.paperBody, ...inner, { borderWidth: 0, backgroundColor: 'transparent' }]}>{children}</View>
     </View>
   </ToneContext.Provider>;
 }
@@ -194,6 +188,7 @@ const INK = C.ink;
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.indigo }, padded: { padding: 18 }, content: { gap: 20, paddingBottom: 56 },
   title: { fontFamily: F.title, letterSpacing: 0.2 },
+  softDrop: { textShadowColor: '#063B65', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   inkDrop: { textShadowColor: INK, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0.5 },
   h: { fontFamily: F.ui, fontSize: 21, lineHeight: 27 },
   p: { fontFamily: F.body, fontSize: 14, lineHeight: 21 },
@@ -201,17 +196,12 @@ const s = StyleSheet.create({
   cut: { borderTopLeftRadius: 14, borderTopRightRadius: 6, borderBottomRightRadius: 16, borderBottomLeftRadius: 8 },
   cutSmall: { borderTopLeftRadius: 9, borderTopRightRadius: 4, borderBottomRightRadius: 10, borderBottomLeftRadius: 5 },
   panelWrap: { position: 'relative' },
-  panelShadow: { position: 'absolute', left: 5, top: 6, right: -5, bottom: -6, backgroundColor: INK, opacity: 0.85 },
-  panel: { borderWidth: 3, borderColor: INK, padding: 18, gap: 12, overflow: 'hidden' },
-  // Rustic paper: a baked edge, a coffee stain, and one finish per card.
-  vignette: { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, borderWidth: 7, borderColor: '#B9853A2E' },
-  stain: { position: 'absolute', width: 90, height: 70, borderRadius: 45, backgroundColor: '#B07A3014', transform: [{ rotate: '-18deg' }] },
-  tape: { position: 'absolute', width: 64, height: 20, backgroundColor: '#FFF6DAC8', borderWidth: 1, borderColor: '#25221C26' },
-  nail: { position: 'absolute', width: 11, height: 11, borderRadius: 6, backgroundColor: '#E2A93B', borderWidth: 2, borderColor: INK },
-  fold: { position: 'absolute', right: -2, bottom: -2, width: 0, height: 0, borderLeftWidth: 30, borderTopWidth: 30, borderLeftColor: 'transparent', borderTopColor: '#D9B46C', borderRightWidth: 0, borderStyle: 'solid' },
-  scorch: { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, borderWidth: 3, borderColor: '#7A4A1A55', borderBottomWidth: 9, borderRightWidth: 6 },
-  brush: { height: 4, width: '70%', minWidth: 40, borderRadius: 3, marginTop: 1, transform: [{ rotate: '-1.2deg' }] },
-  panelGlass: { position: 'absolute', left: 0, right: 0, top: 0, height: 26, backgroundColor: '#FFFFFF14' },
+  panelShadow: { position: 'absolute', left: 3, top: 4, right: -3, bottom: -4, backgroundColor: INK, opacity: 0.35 },
+  panel: { borderWidth: 2, borderColor: INK, padding: 18, gap: 12, overflow: 'hidden' },
+  // The sheet image includes ~18px of torn margin and shadow around the paper; bleed it out.
+  sheet: { position: 'absolute', left: -12, top: -12, right: -16, bottom: -18 },
+  paperBody: { padding: 20, gap: 12 },
+  brush: { height: 3, width: 44, borderRadius: 2, marginTop: 2, opacity: 0.9 },
   btn: { borderWidth: 2.5, borderColor: INK, paddingVertical: 12, paddingHorizontal: 18, alignItems: 'center', minHeight: 50, justifyContent: 'center' },
   btnSmall: { paddingVertical: 9, paddingHorizontal: 14, minHeight: 44 },
   btnLip: { position: 'absolute', left: 0, right: 0, bottom: 0, borderWidth: 2.5, borderColor: INK },

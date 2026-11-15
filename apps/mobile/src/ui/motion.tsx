@@ -67,10 +67,10 @@ function useLoop(enabled: boolean, duration: number) {
 
 const CREST = 64; // one wave crest, in dp; rows are two screens wide so the loop is seamless
 const WAVE_ROWS = [
-  { top: '46%', color: '#2E9BD6', foam: '#E9F8FF', speed: 1, scale: 0.7, opacity: 0.55 },
-  { top: '58%', color: '#1C86C6', foam: '#F4FCFF', speed: -1, scale: 0.85, opacity: 0.6 },
-  { top: '71%', color: '#0E70AE', foam: '#FFFFFF', speed: 1, scale: 1, opacity: 0.65 },
-  { top: '85%', color: '#075C94', foam: '#FFFFFF', speed: -1, scale: 1.15, opacity: 0.7 },
+  { top: '46%', color: '#2E9BD6', foam: '#E9F8FF', speed: 1, scale: 0.7, opacity: 0.35 },
+  { top: '58%', color: '#1C86C6', foam: '#F4FCFF', speed: -1, scale: 0.85, opacity: 0.4 },
+  { top: '71%', color: '#0E70AE', foam: '#FFFFFF', speed: 1, scale: 1, opacity: 0.45 },
+  { top: '85%', color: '#075C94', foam: '#FFFFFF', speed: -1, scale: 1.15, opacity: 0.5 },
 ] as const;
 
 function WaveRow({ row, clock, width }: { row: (typeof WAVE_ROWS)[number]; clock: Animated.Value; width: number }) {
@@ -106,10 +106,8 @@ export function OceanBackdrop() {
       {/* Sun with a soft halo */}
       <View style={styles.sunHalo} />
       <View style={styles.sun} />
-      {/* Manga speed lines across the sky */}
-      {[0, 1, 2, 3].map((i) => <View key={i} style={[styles.speed, { top: 40 + i * 22, left: -20 + i * 14, width: 120 - i * 18 }]} />)}
       {/* Clouds drift across the whole sky once a minute */}
-      {[{ top: '19%', size: 0.75, offset: 0 }, { top: '27%', size: 0.55, offset: 0.45 }, { top: '13%', size: 0.45, offset: 0.75 }].map((cl, i) => (
+      {[{ top: '19%', size: 0.7, offset: 0 }, { top: '28%', size: 0.5, offset: 0.55 }].map((cl, i) => (
         <Animated.View key={i} style={[styles.cloud, { top: cl.top, transform: [
           { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [width * (1.1 - cl.offset * 2), width * (1.1 - cl.offset * 2) - width * 1.6] }) },
           { scale: cl.size },
@@ -135,9 +133,8 @@ const styles = StyleSheet.create({
   sea: { backgroundColor: '#087DBB', overflow: 'hidden' },
   sky: { position: 'absolute', left: 0, right: 0, top: 0, height: '38%', backgroundColor: '#2B9FD9' },
   skyBand: { position: 'absolute', left: 0, right: 0, height: '9%', backgroundColor: '#5DBDEA' },
-  sunHalo: { position: 'absolute', top: 92, right: 22, width: 128, height: 128, borderRadius: 64, backgroundColor: '#FFF3C4', opacity: 0.22 },
-  sun: { position: 'absolute', top: 112, right: 42, width: 88, height: 88, borderRadius: 44, backgroundColor: '#FBE6A2', borderWidth: 2.5, borderColor: '#25221C' },
-  speed: { position: 'absolute', height: 2, borderRadius: 1, backgroundColor: '#FFFFFF', opacity: 0.35, transform: [{ rotate: '-8deg' }] },
+  sunHalo: { position: 'absolute', top: 138, right: -4, width: 128, height: 128, borderRadius: 64, backgroundColor: '#FFF3C4', opacity: 0.22 },
+  sun: { position: 'absolute', top: 158, right: 16, width: 88, height: 88, borderRadius: 44, backgroundColor: '#FBE6A2', borderWidth: 2.5, borderColor: '#25221C' },
   cloud: { position: 'absolute', left: 0, width: 150, height: 60 },
   puff: { position: 'absolute', borderRadius: 40, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#25221C33', opacity: 0.92 },
   horizon: { position: 'absolute', left: 0, right: 0, top: '38%', height: 3, backgroundColor: '#E9F8FF', opacity: 0.6 },

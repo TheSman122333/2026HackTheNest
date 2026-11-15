@@ -246,6 +246,45 @@
       "sourceName": "Overhead Amber Caravel Sprite.png",
       "sha256": "dbfe755b3934cab8c2ddd342942ee245c95f8cb6b24d9674dbbbbdad8df0411d",
       "bytes": 683967
+    },
+    {
+      "id": "parchment_wide",
+      "file": "../../apps/mobile/assets/game/textures/parchment_wide.webp",
+      "category": "textures",
+      "size": [
+        896,
+        556
+      ],
+      "status": "pending",
+      "notes": "Original texture generated procedurally by assets/sprites/gen-parchment.mjs (no stock art): aged poster paper with torn edges and a baked shadow. Used by the UI-pivot branch only; awaiting project-lead approval.",
+      "sha256": "db7f9de1679c8c9565012c46a4c8dc4d67c9df2b9809815c4394c298d036c3f3",
+      "bytes": 18088
+    },
+    {
+      "id": "parchment_square",
+      "file": "../../apps/mobile/assets/game/textures/parchment_square.webp",
+      "category": "textures",
+      "size": [
+        676,
+        676
+      ],
+      "status": "pending",
+      "notes": "Original texture generated procedurally by assets/sprites/gen-parchment.mjs (no stock art): aged poster paper with torn edges and a baked shadow. Used by the UI-pivot branch only; awaiting project-lead approval.",
+      "sha256": "842c1937512c60b8d7c690954743246961b2a06c88a77ccea1c895ff173f2f10",
+      "bytes": 17152
+    },
+    {
+      "id": "parchment_tall",
+      "file": "../../apps/mobile/assets/game/textures/parchment_tall.webp",
+      "category": "textures",
+      "size": [
+        556,
+        936
+      ],
+      "status": "pending",
+      "notes": "Original texture generated procedurally by assets/sprites/gen-parchment.mjs (no stock art): aged poster paper with torn edges and a baked shadow. Used by the UI-pivot branch only; awaiting project-lead approval.",
+      "sha256": "6726d4cc8c26b7e5366af78c64aae540fe156d7f371f4ee4f9d4872deb4d5869",
+      "bytes": 18642
     }
   ]
 }
