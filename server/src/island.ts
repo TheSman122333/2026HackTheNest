@@ -445,7 +445,6 @@ export function registerIsland(
     }
 
     const hex = candidates[0]!;
-    const tile = isle.island.tiles[hex as HexKey]!;
     const now = new Date();
     const doc: GmEventDoc = {
       _id: eventKey,

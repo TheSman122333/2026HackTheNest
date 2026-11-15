@@ -1,4 +1,4 @@
-import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -79,9 +79,7 @@ function SubtitlePlayback({ clip, foreground, tabbed }: { clip: NarrationClip; f
   }, [foreground, player, mode]);
 
   useEffect(() => {
-    // expo-audio exposes muted as a writable native property, including on Safari.
-    // eslint-disable-next-line react-hooks/immutability
-    player.muted = muted;
+    silence(player, muted);
   }, [muted, player]);
 
   useEffect(() => {
@@ -107,6 +105,8 @@ function SubtitlePlayback({ clip, foreground, tabbed }: { clip: NarrationClip; f
     };
     const listener = player.addListener('playbackStatusUpdate', (status) => {
       if (!live) return;
+      // Loading a clip can reset the player's mute; re-assert Sound off on every update.
+      if (useNarrator.getState().muted && (!status.mute || player.volume > 0)) silence(player, true);
       if (status.playing || status.currentTime > 0) started = true;
       if (status.playing) setPaused(false);
       else if (ready.current && status.isLoaded && !status.isBuffering && !status.didJustFinish) setPaused(true);
@@ -127,6 +127,7 @@ function SubtitlePlayback({ clip, foreground, tabbed }: { clip: NarrationClip; f
         await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false, shouldPlayInBackground: false, interruptionMode: 'duckOthers' });
         if (!live) return;
         player.replace({ uri: audio });
+        silence(player, useNarrator.getState().muted);
         ready.current = true;
         if (active.current) player.play();
       } catch { fallback(); }
@@ -162,6 +163,13 @@ function SubtitlePlayback({ clip, foreground, tabbed }: { clip: NarrationClip; f
       <View pointerEvents="none"><Text accessibilityLiveRegion={Platform.OS === 'android' ? 'polite' : undefined} style={s.words}>{clip.text}</Text></View>
     </Animated.View>
   </View>;
+}
+
+/** Sound off = muted AND zero volume, so a source swap can't sneak the voice back in. */
+function silence(player: AudioPlayer, muted: boolean) {
+  // expo-audio exposes muted/volume as writable native properties, including on Safari.
+  player.muted = muted;
+  player.volume = muted ? 0 : 1;
 }
 
 const s = StyleSheet.create({

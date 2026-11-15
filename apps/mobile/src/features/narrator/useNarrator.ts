@@ -2,7 +2,7 @@
 import * as Haptics from 'expo-haptics';
 import { create } from 'zustand';
 
-import { api, ApiError, uuid } from '@/lib/api';
+import { api, ApiError, storage, uuid } from '@/lib/api';
 import type { GmEvent, VoiceTurn } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
@@ -14,7 +14,8 @@ export type NarrationScene = 'arrival' | 'ship' | 'island' | 'quests' | 'log' | 
 export type NarratorLine = { id: string; who: 'narrator' | 'you' | 'world'; text: string; sources?: GmEvent['event']['sources'] };
 export type NarrationClip = { id: string; text: string; audioPath: string | null; scene: NarrationScene };
 type Job = { id: string; scene: NarrationScene; detail?: string };
-const isVisit = (scene: NarrationScene) => ['ship', 'island', 'quests', 'log', 'me'].includes(scene);
+const MUTE_KEY = 'lv_narrator_muted';
+const isVisit =(scene: NarrationScene) => ['ship', 'island', 'quests', 'log', 'me'].includes(scene);
 
 type NarratorState = {
   lines: NarratorLine[];
@@ -123,7 +124,11 @@ export const useNarrator = create<NarratorState>((set, get) => {
     lines: [], busy: null, error: null, conversationId: null, briefed: false, audioPath: null, audioNonce: 0,
     current: null, queue: [], muted: false,
     reset: () => { generation++; memoryLines.clear(); hydration = null; hydrationScope = null; set({ scope: null, hydrated: false, visited: [], lines: [], busy: null, error: null, conversationId: null, briefed: false, audioPath: null, audioNonce: 0, current: null, queue: [] }); },
-    toggleMute: () => set({ muted: !get().muted }),
+    toggleMute: () => {
+      const muted = !get().muted;
+      set({ muted });
+      void storage.set(MUTE_KEY, muted ? '1' : '0').catch(() => {});
+    },
     narrate: (scene, detail) => {
       const me = useSession.getState().me;
       if (!me?.crew) return;
@@ -175,3 +180,6 @@ export const useNarrator = create<NarratorState>((set, get) => {
     },
   };
 });
+
+// Sound off sticks across lines, tabs and app restarts until the player turns it back on.
+void storage.get(MUTE_KEY).then((v) => { if (v === '1') useNarrator.setState({ muted: true }); }).catch(() => {});

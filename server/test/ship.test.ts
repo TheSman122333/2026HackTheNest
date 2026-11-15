@@ -3,7 +3,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../src/app';
-import { collections, ensureIndexes, type Collections, type UserDoc } from '../src/db';
+import { collections, ensureIndexes, type Collections } from '../src/db';
 import { currentIsland } from '../src/island';
 import { nextMonthIsland, shipDeck } from '../src/ship';
 
