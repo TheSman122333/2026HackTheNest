@@ -19,6 +19,7 @@ import { awardActivity, reconcileActivityReceipts } from './activities';
 import { createIsland, registerIsland, resumeVoyage } from './island';
 import { ledger, spendMoves, todayMoves } from './moves';
 import { registerLegend } from './legend';
+import { registerTitles } from './titles';
 import { registerMusic } from './music';
 import { registerOpening } from './opening';
 import { registerQuests } from './quests';
@@ -76,6 +77,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     skills: u.skills,
     supplies: u.supplies,
     legend: u.legend,
+    title: u.title ?? null,
     limits: u.limits,
   });
 
@@ -398,7 +400,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     const totalMoves = days.reduce((total, day) => total + day.moves.total, 0);
     return ctx.json({
       crew: crew && publicCrew(crew),
-      members: members.map((m, i) => ({ id: m._id.toHexString(), name: m.name, avatarId: m.avatarId ?? null, legend: m.legend, skills: m.skills, calmDays: days[i]!.streak.calmDays })),
+      members: members.map((m, i) => ({ id: m._id.toHexString(), name: m.name, avatarId: m.avatarId ?? null, title: m.title ?? null, legend: m.legend, skills: m.skills, calmDays: days[i]!.streak.calmDays })),
       sailing: {
         totalMoves,
         averageMoves: members.length ? totalMoves / members.length * shipWindMultiplier(crew) : 0,
@@ -415,6 +417,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   registerOpening(app, c, { env, fetchImpl });
   registerShip(app, c);
   registerLegend(app, c, env);
+  registerTitles(app, c);
   registerQuests(app, c, { env, fetchImpl, now });
   registerSoundtrack(app, c, { env, fetchImpl });
 

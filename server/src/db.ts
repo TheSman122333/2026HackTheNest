@@ -23,6 +23,8 @@ export type UserDoc = {
   avatarId?: AvatarId;
   /** Last platform the app reported. Android tracks steps + scrolling; iPhone/web get extra quests instead. */
   platform?: 'android' | 'ios' | 'web';
+  /** Chosen title (an unlocked rung or a sanitized custom title). Unset = skill role. */
+  title?: string;
   preferences?: VoyagePreferences;
   activityRevision?: number;
   /** Atomic award receipts; activity/crew/ledger records are recoverable projections. */

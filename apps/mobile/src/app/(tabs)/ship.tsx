@@ -112,7 +112,7 @@ export default function Ship() {
               <View style={[s.avatar, mm.id === me.user.id && { borderColor: C.orange }]}>
                 <PlayerAvatar userId={mm.id} avatarId={mm.avatarId} size={44} />
               </View>
-              <View style={{ flex: 1 }}><P>{mm.name}</P></View>
+              <View style={{ flex: 1 }}><P>{mm.name}</P>{mm.title ? <P dim>{mm.title}</P> : null}</View>
             </Row>
             <View style={{ alignItems: 'flex-end' }}>
               <P dim>{mm.legend} honor</P>

@@ -56,6 +56,8 @@ export type User = {
   skills: Record<Skill, number>;
   supplies: number;
   legend: number;
+  /** Chosen title; null = skill role. */
+  title?: string | null;
   limits: ScreenLimits;
 };
 
@@ -80,7 +82,7 @@ export type Me = { user: User; crew: Crew | null; today: Today };
 
 export type CrewRoster = {
   crew: Crew | null;
-  members: { id: string; name: string; avatarId?: AvatarId | null; legend: number; skills: Record<Skill, number>; calmDays: number }[];
+  members: { id: string; name: string; avatarId?: AvatarId | null; title?: string | null; legend: number; skills: Record<Skill, number>; calmDays: number }[];
   sailing?: { totalMoves: number; averageMoves: number; activities: number; steps: number; activeMembers: number; members: number } | null;
 };
 
