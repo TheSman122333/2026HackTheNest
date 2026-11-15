@@ -102,3 +102,5 @@ export type GmEvent = {
   };
   island: { id: string; changedTile: { hex: string; terrain: string; item: string } | null };
 };
+/** Scheduled check on an island visit: not one of the crew's 3 event days this week. */
+export type GmCheck = GmEvent | { requestId: string; status: 'not_today' };

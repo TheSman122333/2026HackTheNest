@@ -25,6 +25,27 @@ type Catalog = z.infer<typeof catalogSchema>;
 type ExaResult = { id: string; title: string; url: string; publishedDate?: string; text?: string };
 export type GmProposal = { narration: string; sources: GmEventSource[]; item: Item };
 
+export const WORLD_EVENTS_PER_WEEK = 3;
+
+/**
+ * Each crew gets world events on 3 random days of every week (Mon–Sun, UTC), picked by a
+ * seeded shuffle of crew + week so every crewmate sees the same days and they can't be rerolled.
+ */
+export function isWorldEventDay(crewId: string, day: string, perWeek = WORLD_EVENTS_PER_WEEK): boolean {
+  const days = Math.floor(Date.parse(`${day}T00:00:00Z`) / 86_400_000);
+  const week = Math.floor((days + 3) / 7); // day 0 (1970-01-01) was a Thursday
+  const weekday = (days + 3) % 7; // 0 = Monday
+  let seed = 2166136261;
+  for (const ch of `${crewId}:${week}`) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619) >>> 0;
+  const order = [0, 1, 2, 3, 4, 5, 6];
+  for (let i = order.length - 1; i > 0; i--) {
+    seed = Math.imul(seed ^ (seed >>> 15), 2246822507) >>> 0;
+    const j = seed % (i + 1);
+    [order[i], order[j]] = [order[j]!, order[i]!];
+  }
+  return order.slice(0, perWeek).includes(weekday);
+}
+
 /** Bundled at build time (works in the Vercel function too). */
 let catalog: Catalog | undefined;
 

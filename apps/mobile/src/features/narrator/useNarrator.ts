@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { create } from 'zustand';
 
 import { api, ApiError, storage, uuid } from '@/lib/api';
-import type { GmEvent, VoiceTurn } from '@/lib/types';
+import type { GmCheck, GmEvent, VoiceTurn } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
 import { cleanText } from '@/ui/text';
@@ -40,7 +40,11 @@ type NarratorState = {
   briefing: () => Promise<void>;
   say: (input: { text: string } | { audio: { mimeType: string; base64: string } }) => Promise<void>;
   worldEvent: () => Promise<void>;
+  /** Quiet check on each island visit; fires on the crew's 3 world-event days a week. */
+  scheduledWorldEvent: () => Promise<void>;
 };
+
+let checkedEventDay: string | null = null;
 
 function localStory(scene: NarrationScene, detail?: string) {
   const me = useSession.getState().me;
@@ -177,6 +181,24 @@ export const useNarrator = create<NarratorState>((set, get) => {
         if (r.island.changedTile) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); await useIsland.getState().load(); }
       } catch (e) { if (version === generation) set({ error: e instanceof Error ? e.message : String(e) }); }
       finally { if (version === generation) set({ busy: null }); }
+    },
+    scheduledWorldEvent: async () => {
+      const crewId = useSession.getState().me?.crew?.id;
+      const key = `${crewId}:${new Date().toISOString().slice(0, 10)}`;
+      if (!crewId || checkedEventDay === key) return;
+      checkedEventDay = key;
+      const version = generation;
+      try {
+        const r = await api<GmCheck>('POST', '/island/gm-event', { requestId: uuid(), trigger: 'scheduled' });
+        if (version !== generation || r.status === 'not_today' || r.status === 'no_event') return;
+        // A crewmate may have triggered today's event first; everyone still hears it once.
+        set({ lines: [{ id: r.event.id, who: 'world' as const, text: cleanText(r.event.narration), sources: r.event.sources }, ...get().lines.filter((l) => l.id !== r.event.id)].slice(0, 20) });
+        get().narrate('island', r.event.narration);
+        if (r.status === 'applied') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        await useIsland.getState().load();
+      } catch {
+        checkedEventDay = null; // offline: try again on the next visit
+      }
     },
   };
 });

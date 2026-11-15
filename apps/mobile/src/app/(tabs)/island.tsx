@@ -25,6 +25,7 @@ export default function IslandScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
+      void useNarrator.getState().scheduledWorldEvent();
     }, [load]),
   );
 
