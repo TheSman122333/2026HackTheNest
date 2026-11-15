@@ -115,7 +115,7 @@
         <h1>The Last Voyage</h1>
         <p class="tag">A co-op pirate adventure fuelled by real life. Your friends are your crew, and your ship only sails when you put the phone down and go live.</p>
         <div class="cta">
-          <a class="btn red" href="https://lastvoyageplease.work/welcome">⚓ Play now</a>
+          <a class="btn red" href="https://play.lastvoyageplease.work/welcome" data-play>⚓ Play now</a>
           <a class="btn gold" href="#get">Get the app</a>
         </div>
       </div>
@@ -148,7 +148,7 @@
               <li>Tap <b>Share → Add to Home Screen</b>.</li>
               <li>Launch it from your home screen like an app.</li>
             </ol>
-            <a class="btn red" href="https://lastvoyageplease.work/welcome">Play on iPhone</a>
+            <a class="btn red" href="https://play.lastvoyageplease.work/welcome" data-play>Play on iPhone</a>
           </div>
           <div class="card">
             <h3>💻 Web</h3>
@@ -157,7 +157,7 @@
               <li>Open the game.</li>
               <li>Sign in with email, or use Quick join.</li>
             </ol>
-            <a class="btn red" href="https://lastvoyageplease.work/welcome">Play in your browser</a>
+            <a class="btn red" href="https://play.lastvoyageplease.work/welcome" data-play>Play in your browser</a>
           </div>
         </div>
       </div>
@@ -204,8 +204,29 @@
     </section>
   </main>
 
+  <script>
+    // Play buttons: try play.lastvoyageplease.work first; if this network can't reach it
+    // (DNS not updated yet, blocked, slow), fall back to the same game on this domain.
+    (function () {
+      var PLAY = 'https://play.lastvoyageplease.work/welcome';
+      var FALLBACK = 'https://lastvoyageplease.work/welcome';
+      document.querySelectorAll('[data-play]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+          e.preventDefault();
+          var done = false;
+          var go = function (url) { if (!done) { done = true; window.location.href = url; } };
+          var img = new Image();
+          img.onload = function () { go(PLAY); };
+          img.onerror = function () { go(FALLBACK); };
+          setTimeout(function () { go(FALLBACK); }, 2500);
+          img.src = 'https://play.lastvoyageplease.work/favicon.ico?ping=' + Date.now();
+        });
+      });
+    })();
+  </script>
+
   <footer class="wrap">
-    <p><a href="https://lastvoyageplease.work/welcome">Play</a> · <a href="https://github.com/TheSman122333/2026HackTheNest">GitHub</a> · Hack The Nest 2026</p>
+    <p><a href="https://play.lastvoyageplease.work/welcome" data-play>Play</a> · <a href="https://github.com/TheSman122333/2026HackTheNest">GitHub</a> · Hack The Nest 2026</p>
     <p>Go live. The sea will wait. ⚓</p>
   </footer>
 </body>
