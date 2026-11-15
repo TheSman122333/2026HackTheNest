@@ -11,10 +11,14 @@
     "test": "npm run test -w @last-voyage/game && npm run test -w @last-voyage/server",
     "typecheck": "npm run typecheck -w @last-voyage/game && npm run typecheck -w @last-voyage/server && npm run typecheck -w mobile",
     "lint": "npm run lint -w mobile",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "vercel-build": "node scripts/vercel-build.mjs"
   },
   "overrides": {
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

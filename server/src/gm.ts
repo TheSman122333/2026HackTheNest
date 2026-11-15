@@ -1,7 +1,7 @@
-import { readFile } from 'node:fs/promises';
 import { ITEMS, type IslandTheme, type Item } from '@last-voyage/game';
 import { z } from 'zod';
 
+import catalogJson from '../../content/island-events.json';
 import type { GmEventSource } from './db';
 
 const catalogSchema = z.object({
@@ -25,16 +25,12 @@ type Catalog = z.infer<typeof catalogSchema>;
 type ExaResult = { id: string; title: string; url: string; publishedDate?: string; text?: string };
 export type GmProposal = { narration: string; sources: GmEventSource[]; item: Item };
 
-let catalogPromise: Promise<Catalog> | undefined;
+/** Bundled at build time (works in the Vercel function too). */
+let catalog: Catalog | undefined;
 
 export async function eventCatalog(): Promise<Catalog> {
-  catalogPromise ??= readFile(new URL('../../content/island-events.json', import.meta.url), 'utf8')
-    .then((text) => catalogSchema.parse(JSON.parse(text)))
-    .catch((error: unknown) => {
-      catalogPromise = undefined;
-      throw error;
-    });
-  return catalogPromise;
+  catalog ??= catalogSchema.parse(catalogJson);
+  return catalog;
 }
 
 export async function fallbackLine(

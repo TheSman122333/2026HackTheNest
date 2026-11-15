@@ -20,3 +20,5 @@ server/.data/
 output/
 tmp/
 apps/mobile/modules/*/android/build/
+.vercel/
+apps/mobile/dist/
