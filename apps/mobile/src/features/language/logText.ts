@@ -86,9 +86,14 @@ export function formatLogText(entry: LedgerText, tx: LogTranslator, language = '
 export function relativeLogTime(iso: string, language: string, now = Date.now()): string {
   const elapsed = Math.max(0, (now - new Date(iso).getTime()) / 1000);
   if (!Number.isFinite(elapsed)) return '';
-  const formatter = new Intl.RelativeTimeFormat(language, { numeric: 'auto', style: 'short' });
-  if (elapsed < 60) return formatter.format(-Math.floor(elapsed), 'second');
-  if (elapsed < 3600) return formatter.format(-Math.floor(elapsed / 60), 'minute');
-  if (elapsed < 86400) return formatter.format(-Math.floor(elapsed / 3600), 'hour');
-  return formatter.format(-Math.floor(elapsed / 86400), 'day');
+  const [value, unit] = elapsed < 60 ? [Math.floor(elapsed), 'second' as const]
+    : elapsed < 3600 ? [Math.floor(elapsed / 60), 'minute' as const]
+    : elapsed < 86400 ? [Math.floor(elapsed / 3600), 'hour' as const]
+    : [Math.floor(elapsed / 86400), 'day' as const];
+  // Hermes (the Android app's JS engine) has no Intl.RelativeTimeFormat: calling `new` on it
+  // crashed the Log screen. Use it where it exists (web, Node), else a compact fallback.
+  if (typeof Intl !== 'undefined' && typeof Intl.RelativeTimeFormat === 'function') {
+    try { return new Intl.RelativeTimeFormat(language, { numeric: 'auto', style: 'short' }).format(-value, unit); } catch { /* fall through */ }
+  }
+  return `${value.toLocaleString(language)}${{ second: 's', minute: 'm', hour: 'h', day: 'd' }[unit]}`;
 }
