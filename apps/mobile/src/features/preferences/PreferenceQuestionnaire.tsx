@@ -167,7 +167,7 @@ export function PreferenceQuestionnaire({ user }: { user: User }) {
           ? <Btn label={editing ? 'Save preferences' : 'Find my quests'} disabled={!completeDraft(draft)} busy={busy} onPress={save} />
           : <Btn label="Continue" disabled={!ready || busy} onPress={() => move(1)} />}</View>
       </Row>
-      <P dim center>Only these activity preferences are shared with Gemini for quest suggestions. Your face photo stays on your device.</P>
+      <P dim center>Only these activity preferences are shared with Gemini for quest suggestions. Your face photo is never sent to AI.</P>
     </ScrollView>
   </Screen>;
 }

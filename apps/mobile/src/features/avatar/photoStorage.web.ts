@@ -88,3 +88,8 @@ export async function releasePhoto(_userId: string, _photo: FacePhoto | null, _k
 
 // Web drafts are in-memory data URLs, so dropping the editor reference releases them.
 export async function releaseTemporaryPhoto(_photo: Pick<FacePhoto, 'uri'> | null) {}
+
+export async function encodePhoto(photo: FacePhoto) {
+  if (!photo.uri.startsWith('data:image/jpeg;base64,')) throw new Error('Choose a JPEG portrait using the photo picker.');
+  return photo.uri.split(',')[1];
+}

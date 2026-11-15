@@ -10,8 +10,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.hackthenest.lastvoyage",
       "infoPlist": {
-        "NSCameraUsageDescription": "Take an optional face photo to fit inside your pirate avatar. Your photo stays on this device.",
-        "NSPhotoLibraryUsageDescription": "Choose an optional face photo for your pirate avatar. Your photo stays on this device."
+        "NSCameraUsageDescription": "Take an optional face photo for your pirate avatar. Saving syncs it to your account. Photos are never sent to AI.",
+        "NSPhotoLibraryUsageDescription": "Choose an optional face photo for your pirate avatar. Saving syncs it to your account. Photos are never sent to AI."
       }
     },
     "android": {
