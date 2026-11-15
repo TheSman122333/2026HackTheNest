@@ -1,6 +1,6 @@
 /**
  * Leave your crew to sail with another. Typing the crew's name unlocks the button, so nobody
- * leaves by accident. Nothing is lost: Legend, skills and your pirate come with you.
+ * leaves by accident. Nothing is lost: Honor, skills and your pirate come with you.
  */
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -41,7 +41,7 @@ export function LeaveCrew() {
   return (
     <Panel>
       <H>Leave {crew.name}?</H>
-      <P>You keep your Legend, skills and pirate. The crew keeps its stores and island, and you can come back any time with the invite code.</P>
+      <P>You keep your Honor, skills and pirate. The crew keeps its stores and island, and you can come back any time with the invite code.</P>
       <P dim>Type the crew name to confirm.</P>
       <TextInput
         value={typed}

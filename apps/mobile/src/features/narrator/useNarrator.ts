@@ -58,7 +58,7 @@ function localStory(scene: NarrationScene, detail?: string) {
     case 'island': return v?.island.conquered ? 'Your crew completed this island. The next destination opens tonight.' : v?.explorer.hp === 0 ? 'Rest today. You return tomorrow with full health, and your crew keeps its progress.' : `You have ${moves} Moves. Follow the highlighted tiles to explore the island.`;
     case 'quests': return 'These quests fit your preferences. Complete them in real life, then claim your rewards here.';
     case 'log': return 'Your crew’s activities, discoveries, and rewards are recorded here.';
-    case 'me': return `You have ${me?.user.legend ?? 0} Legend. Your profile tracks the progress you have earned.`;
+    case 'me': return `You have ${me?.user.legend ?? 0} Honor. Your profile tracks the progress you have earned.`;
     case 'night': return 'A new day is ready. Check the map for your next destination.';
     case 'fight': return 'Each action costs one Move. Your crew shares the progress against this guardian.';
     default: return 'Your progress is saved.';

@@ -1,4 +1,4 @@
-/** Your pirate: skills, Legend, streaks, scroll limits, tracking setup. */
+/** Your pirate: skills, Honor, streaks, scroll limits, tracking setup. */
 import { SKILLS, STREAK, type Skill } from '@last-voyage/game';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -12,7 +12,7 @@ import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { SoundSettings } from '@/features/audio/SoundSettings';
 import { LeaveCrew } from '@/features/crew/LeaveCrew';
 import { EditName } from '@/features/profile/EditName';
-import { LEGEND_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
+import { HONOR_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
@@ -68,11 +68,11 @@ export default function Me() {
 
       <Panel color={C.deep}>
         <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-          <Row gap={8} style={{ flexWrap: 'nowrap' }}><Sprite name="t_star" size={26} /><H>{u.legend} Legend</H></Row>
+          <Row gap={8} style={{ flexWrap: 'nowrap' }}><Sprite name="t_star" size={26} /><H>{u.legend} Honor</H></Row>
           <LegendHelp />
         </Row>
-        <P dim>{LEGEND_SUMMARY} Earn it from real-life activities and boss fights. The top pirate across every crew claims the Lodestar at year end.</P>
-        <Btn small label="Legend leaderboard" color={C.gold} onPress={() => router.push('/legend')} />
+        <P dim>{HONOR_SUMMARY} Earn it from real-life activities and boss fights. Your crew&apos;s Honor together is your ship&apos;s, and the top ship claims the one Lodestar.</P>
+        <Btn small label="Honor leaderboard" color={C.gold} onPress={() => router.push('/legend')} />
       </Panel>
 
       <Row gap={10}>

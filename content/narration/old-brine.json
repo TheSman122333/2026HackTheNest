@@ -8,9 +8,9 @@
       "Aye, I am the wooden fellow at the bow. The Tidekeeper. Go live a little, then come tell me what we are sailing on."
     ],
     "activity_logged": [
-      "{actor} logged {activity}. Into the log: {supplies} Supplies, {moves} Island Moves, and {legend} Legend. Real life keeps us sailing.",
-      "Aye, {actor}: {activity}, logged. That adds {supplies} Supplies, {moves} Island Moves, and {legend} Legend. A useful page in our tale.",
-      "Put it in ink: {actor} logged {activity}, earning {supplies} Supplies, {moves} Island Moves, and {legend} Legend. Well lived, well logged."
+      "{actor} logged {activity}. Into the log: {supplies} Supplies, {moves} Island Moves, and {legend} Honor. Real life keeps us sailing.",
+      "Aye, {actor}: {activity}, logged. That adds {supplies} Supplies, {moves} Island Moves, and {legend} Honor. A useful page in our tale.",
+      "Put it in ink: {actor} logged {activity}, earning {supplies} Supplies, {moves} Island Moves, and {legend} Honor. Well lived, well logged."
     ],
     "move": [
       "{actor} steps onto {terrain}. {movesRemaining} Island Moves remain. Every good map starts under somebody's boots.",

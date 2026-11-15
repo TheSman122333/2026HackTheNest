@@ -1,9 +1,9 @@
-/** The Lodestar ceremony: the star rises and the year's top Legend pirate is crowned. */
+/** The Lodestar ceremony: the star rises and the one ship with the most Honor is crowned. */
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
-import { Btn, C, F, P, Screen, Title } from '@/components/kit';
+import { Btn, C, F, P, Row, Screen, Title } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { Sprite } from '@/components/sprites';
 import { api } from '@/lib/api';
@@ -32,6 +32,7 @@ export default function Lodestar() {
 
   const season = board?.lodestar;
   const winner = season?.winner;
+  const crew = winner?.members.slice(0, 6) ?? [];
   return (
     <Screen scroll={false}>
       <View style={s.wrap}>
@@ -40,23 +41,23 @@ export default function Lodestar() {
         {board ? (
           <>
             <Animated.View style={{ opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [160, 0] }) }, { scale: rise.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }] }}>
-              <Sprite name="t_star" size={120} />
+              <Sprite name="t_star" size={110} />
             </Animated.View>
-            <Text style={s.eyebrow}>THE YEAR&apos;S VOYAGE IS COMPLETE · {season?.year ?? new Date().getFullYear()}</Text>
-            <Title size={40}>The Lodestar</Title>
+            <Text style={s.eyebrow}>THE ONE LODESTAR · {season?.year ?? new Date().getFullYear()}</Text>
+            <Title size={38}>The Lodestar</Title>
             {winner ? (
               <>
-                <View style={{ alignItems: 'center' }}>
-                  <Animated.Text style={[s.crown, { opacity: crown, transform: [{ translateY: crown.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }) }] }]}>👑</Animated.Text>
-                  <PlayerAvatar userId={winner.id} avatarId={winner.avatarId} size={120} />
-                </View>
-                <Title size={30}>{winner.isYou ? 'You claimed it!' : winner.name}</Title>
+                <Animated.Text style={[s.crown, { opacity: crown, transform: [{ translateY: crown.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }) }] }]}>👑</Animated.Text>
+                <Title size={30}>{winner.isYours ? 'Your ship claimed it!' : `The ${winner.crewName}`}</Title>
+                <Row gap={6} style={{ justifyContent: 'center' }}>
+                  {crew.map((m) => <PlayerAvatar key={m.id} userId={m.id} avatarId={m.avatarId} size={52} />)}
+                </Row>
                 <P center>
-                  {winner.isYou ? 'With' : `${winner.crewName ? `Of ${winner.crewName}, with` : 'With'}`} {winner.legend} Legend, the greatest pirate among {season!.players} sailors. {winner.isYou ? 'Your' : 'Their'} crew earns the legendary ship, and next year&apos;s sea will carry an island in {winner.isYou ? 'your' : 'their'} name.
+                  With {winner.honor} Honor, the greatest ship of {season!.ships} in the Tidewake. There is only one Lodestar, and {winner.isYours ? 'your crew' : 'their crew'} holds it: the legendary ship form, and an island named in {winner.isYours ? 'your' : 'their'} honor.
                 </P>
               </>
             ) : (
-              <P center>No pirate earned Legend this year. The star waits for whoever lives boldest next year.</P>
+              <P center>No ship has earned Honor yet. The star waits for the boldest crew.</P>
             )}
             <P dim center>Go live. The sea will wait.</P>
             <Btn label="Back to the voyage" color={C.gold} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
@@ -68,7 +69,7 @@ export default function Lodestar() {
 }
 
 const s = StyleSheet.create({
-  wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 8 },
+  wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 8 },
   eyebrow: { fontFamily: F.bodyBold, color: C.gold, fontSize: 10, letterSpacing: 1.8, textAlign: 'center' },
-  crown: { fontSize: 48, marginBottom: -14, zIndex: 2 },
+  crown: { fontSize: 44, marginBottom: -6 },
 });

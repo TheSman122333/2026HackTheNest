@@ -56,7 +56,7 @@ describe('api', () => {
     expect((await call('PUT', '/me/name', a.token, { name: 'x'.repeat(33) })).status).toBe(400);
   });
 
-  it('legend ranks you in your crew and across crews, and End the Year crowns the top pirate', async () => {
+  it('Honor ranks you in your crew, across pirates and by ship; the one Lodestar goes to the top ship, once', async () => {
     const a = (await call('POST', '/auth/dev', undefined, { name: 'Lea', tz: 'UTC' })).json;
     const b = (await call('POST', '/auth/dev', undefined, { name: 'Max', tz: 'UTC' })).json;
     const crew = (await call('POST', '/crews', a.token, { name: 'Starfall' })).json.crew;
@@ -66,17 +66,22 @@ describe('api', () => {
     const board = (await call('GET', '/legend', a.token)).json;
     expect(board.crew.map((r: { name: string }) => r.name)).toEqual(['Max', 'Lea']);
     expect(board.me).toMatchObject({ crewRank: 2, crewSize: 2 });
-    expect(board.me.globalRank).toBeGreaterThan(1);
-    expect(board.global[0].legend).toBeGreaterThanOrEqual(board.global.at(-1).legend);
+    const mine = board.ships.find((sh: { isYours: boolean }) => sh.isYours);
+    expect(mine.honor).toBe(board.crew.reduce((n: number, r: { legend: number }) => n + r.legend, 0));
+    expect(board.ships[0].honor).toBeGreaterThanOrEqual(board.ships.at(-1).honor);
 
-    const ended = (await call('POST', '/legend/end-year', a.token)).json.season;
-    expect(ended.winner.legend).toBe(board.global[0].legend);
+    const first = (await call('POST', '/legend/end-year', a.token)).json;
+    expect(first.alreadyClaimed).toBe(false);
+    expect(first.season.winner.honor).toBe(board.ships[0].honor);
+    const again = (await call('POST', '/legend/end-year', b.token)).json;
+    expect(again.alreadyClaimed).toBe(true);
+    expect(again.season.id).toBe(first.season.id);
     const after = (await call('GET', '/legend', a.token)).json;
-    expect(after.lodestar.id).toBe(ended.id);
-    expect(after.global[0].lodestar).toBe(true);
+    expect(after.lodestar.id).toBe(first.season.id);
+    expect(after.ships.filter((sh: { lodestar: boolean }) => sh.lodestar)).toHaveLength(1);
   });
 
-  it('leaving a crew needs its name, keeps Legend, and allows joining another', async () => {
+  it('leaving a crew needs its name, keeps Honor, and allows joining another', async () => {
     const a = (await call('POST', '/auth/dev', undefined, { name: 'Cy', tz: 'UTC' })).json;
     const b = (await call('POST', '/auth/dev', undefined, { name: 'Di', tz: 'UTC' })).json;
     const first = (await call('POST', '/crews', a.token, { name: 'Salt  Wind' })).json.crew;

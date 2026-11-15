@@ -115,7 +115,7 @@ export default function Ship() {
               <View style={{ flex: 1 }}><P>{mm.name}</P></View>
             </Row>
             <View style={{ alignItems: 'flex-end' }}>
-              <P dim>{mm.legend} legend</P>
+              <P dim>{mm.legend} honor</P>
               <P dim>{mm.calmDays} calm days</P>
             </View>
           </Row>
