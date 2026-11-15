@@ -43,6 +43,8 @@ export const REWARDS = {
   /** Honor-system caps (per local day) */
   suppliesPerDay: 10,
   movesFromActivitiesPerDay: 6,
+  /** iPhone/web can't track steps or scrolling, so they get 2 extra daily quests and room for their Moves. */
+  movesFromActivitiesPerDayUntracked: 10,
   legendFromActivitiesPerDay: 2,
   /** The Nth+ log of the same kind in a day only gives 1 Supply and no Moves */
   diminishAfterSameKind: 2,

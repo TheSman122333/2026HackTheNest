@@ -22,8 +22,9 @@ beforeAll(async () => {
   await ensureIndexes(c);
 }, 120_000);
 afterAll(async () => { await client?.close(); await mongod?.stop(); });
-const call = async (app: ReturnType<typeof createApp>, method: string, path: string, token?: string, body?: unknown) => {
-  const response = await app.request(path, { method, headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+// These tests use the Android rules (3 quests, quest-Move cap 6) unless a platform is given.
+const call = async (app: ReturnType<typeof createApp>, method: string, path: string, token?: string, body?: unknown, platform = 'android') => {
+  const response = await app.request(path, { method, headers: { 'content-type': 'application/json', 'x-lv-platform': platform, ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
   return { status: response.status, json: await response.json() as any };
 };
 const login = async (app: ReturnType<typeof createApp>, name: string, tz = 'UTC') => (await call(app, 'POST', '/auth/dev', undefined, { name, tz })).json;
@@ -35,6 +36,17 @@ const setup = () => {
 const action = (app: ReturnType<typeof createApp>, token: string, questId: string, type: 'skip' | 'complete', requestId = randomUUID()) => call(app, 'POST', `/quests/${questId}/${type}`, token, { requestId });
 
 describe('voyage preferences and personalized quests', () => {
+  it('gives iPhone/web players 2 extra quests and a higher quest-Move cap', async () => {
+    const { app } = setup();
+    const a = await login(app, 'Web sailor');
+    await call(app, 'PUT', '/me/preferences', a.token, { ...prefs, dailyMinutes: 30 }, 'web');
+    expect((await call(app, 'GET', '/quests', a.token, undefined, 'web')).json.quests).toHaveLength(5);
+    for (let i = 0; i < 8; i++) await call(app, 'POST', '/activities', a.token, { kind: (['read', 'hobby', 'friends', 'chores'] as const)[i % 4] }, 'web');
+    const me = (await call(app, 'GET', '/me', a.token, undefined, 'web')).json;
+    expect(me.today.moves.fromActivities).toBeGreaterThan(6);
+    expect(me.today.moves.fromActivities).toBeLessThanOrEqual(10);
+  });
+
   it('requires auth, validates the profile, isolates accounts, and never accepts photos', async () => {
     const { app } = setup();
     const a = await login(app, 'Questionnaire');

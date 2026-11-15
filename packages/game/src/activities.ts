@@ -26,7 +26,7 @@ const sum = (logs: readonly ActivityLog[], f: (l: ActivityLog) => number) =>
  * What logging `kind` right now is worth, given everything already logged TODAY.
  * Honor system + hard caps: faking volume can only ever match an honest active day.
  */
-export function grantForActivity(today: readonly ActivityLog[], kind: ActivityKind): ActivityGrant {
+export function grantForActivity(today: readonly ActivityLog[], kind: ActivityKind, movesCap: number = REWARDS.movesFromActivitiesPerDay): ActivityGrant {
   const def = ACTIVITIES[kind];
   const sameKind = today.filter((l) => l.kind === kind).length;
   const diminished = sameKind >= REWARDS.diminishAfterSameKind;
@@ -35,7 +35,7 @@ export function grantForActivity(today: readonly ActivityLog[], kind: ActivityKi
   const wantMoves = diminished ? 0 : def.moves;
 
   const supplies = clampToCap(wantSupplies, sum(today, (l) => l.supplies), REWARDS.suppliesPerDay);
-  const moves = clampToCap(wantMoves, sum(today, (l) => l.moves), REWARDS.movesFromActivitiesPerDay);
+  const moves = clampToCap(wantMoves, sum(today, (l) => l.moves), movesCap);
   const legend = clampToCap(1, sum(today, (l) => l.legend), REWARDS.legendFromActivitiesPerDay);
 
   const xp: Partial<Record<Skill, number>> = {};

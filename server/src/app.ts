@@ -198,6 +198,11 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
       const { payload } = await jwtVerify(token, key);
       const user = await c.users.findOne({ _id: new ObjectId(payload.sub) });
       if (!user) throw new Error('no user');
+      const platform = ctx.req.header('x-lv-platform');
+      if ((platform === 'android' || platform === 'ios' || platform === 'web') && user.platform !== platform) {
+        await c.users.updateOne({ _id: user._id }, { $set: { platform } });
+        user.platform = platform;
+      }
       ctx.set('user', user);
     } catch {
       throw new HTTPException(401, { message: 'unauthorized' });

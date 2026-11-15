@@ -18,6 +18,8 @@ export type ShipwrightInput = {
   tracking?: boolean;
 };
 
+export const activityCapFor = (tracking: boolean) => tracking ? REWARDS.movesFromActivitiesPerDay : REWARDS.movesFromActivitiesPerDayUntracked;
+
 export type ShipwrightReport = { speed: ShipSpeed; knots: number; headline: string; tips: string[] };
 
 const HEADLINE: Record<ShipSpeed, string> = {
@@ -44,7 +46,7 @@ export function shipwrightReport(i: ShipwrightInput): ShipwrightReport {
   const nextStep = stepsToNextMove(i.steps);
   if (tracking && nextStep !== null) tips.push(`${nextStep.toLocaleString('en-US')} more steps and I'll find you another Move.`);
 
-  const questRoom = REWARDS.movesFromActivitiesPerDay - i.moves.fromActivities;
+  const questRoom = activityCapFor(tracking) - i.moves.fromActivities;
   if (questRoom > 0) tips.push(`Log a quest in real life: up to ${questRoom} more Moves from quests today.`);
 
   if (!tracking) {

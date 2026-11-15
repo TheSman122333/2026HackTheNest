@@ -21,6 +21,8 @@ export type UserDoc = {
   name: string;
   /** An approved outfit only. Face photos stay on the player's device. */
   avatarId?: AvatarId;
+  /** Last platform the app reported. Android tracks steps + scrolling; iPhone/web get extra quests instead. */
+  platform?: 'android' | 'ios' | 'web';
   preferences?: VoyagePreferences;
   activityRevision?: number;
   /** Atomic award receipts; activity/crew/ledger records are recoverable projections. */

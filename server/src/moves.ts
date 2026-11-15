@@ -1,5 +1,6 @@
 /** Server-side Moves: folds finished days into the streak and computes today's Moves. */
 import {
+  activityCapFor,
   advanceStreak,
   dailyMoves,
   dayKeyInTz,
@@ -33,6 +34,9 @@ export async function foldStreak(c: Collections, user: UserDoc, today: DayKey) {
   return { streak, events };
 }
 
+/** Android tracks steps and scrolling; other platforms get a higher quest-Move cap instead. */
+export const activityCapForUser = (user: Pick<UserDoc, 'platform'>) => activityCapFor(user.platform === 'android');
+
 export async function todayMoves(c: Collections, user: UserDoc, now = new Date()) {
   const today = dayKeyInTz(now, user.tz);
   const { streak, events } = await foldStreak(c, user, today);
@@ -41,7 +45,7 @@ export async function todayMoves(c: Collections, user: UserDoc, now = new Date()
     c.activities.find({ userId: user._id, day: today }).toArray(),
   ]);
   const activityMoves = acts.reduce((n, a) => n + a.moves, 0);
-  const moves = dailyMoves({ steps: doc?.steps ?? 0, activityMoves, streak });
+  const moves = dailyMoves({ steps: doc?.steps ?? 0, activityMoves, streak, activityCap: activityCapForUser(user) });
   const spent = doc?.movesSpent ?? 0;
   return {
     day: today,

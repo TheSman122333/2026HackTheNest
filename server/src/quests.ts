@@ -33,7 +33,8 @@ export type QuestWeekDoc = {
 type QuestOptions = { env: NodeJS.ProcessEnv; fetchImpl: typeof fetch; now?: () => Date };
 const REQUEST = z.object({ requestId: z.string().uuid() }).strict();
 const LIMIT = 5;
-const COUNT = 3;
+/** Android: 3 quests (steps + scroll tracking earn the rest). iPhone/web: 5. */
+const questCount = (user: UserDoc) => (user.platform === 'android' ? 3 : 5);
 const QUEST_TIMEOUT_MS = 12_000;
 const generations = new Map<string, Promise<PersonalizedQuest[]>>();
 function singleflight(key: string, generate: () => Promise<PersonalizedQuest[]>) {
@@ -180,7 +181,7 @@ async function dailyBoard(c: Collections, user: UserDoc, now: Date, opts: QuestO
     await singleflight(`${id}:${calendar.day}`, async () => {
       const fresh = await c.questWeeks.findOne({ _id: id });
       if (fresh?.days[calendar.day]) return fresh.days[calendar.day]!;
-      const tasks = await generateQuests(p, COUNT, new Date(`${calendar.day}T00:00Z`).getUTCDate(), [], opts);
+      const tasks = await generateQuests(p, questCount(user), new Date(`${calendar.day}T00:00Z`).getUTCDate(), [], opts);
       await c.questWeeks.updateOne({ _id: id, [`days.${calendar.day}`]: { $exists: false } }, { $set: { [`days.${calendar.day}`]: tasks, [`budgets.${calendar.day}`]: p.dailyMinutes }, $inc: { revision: 1 } });
       return tasks;
     });

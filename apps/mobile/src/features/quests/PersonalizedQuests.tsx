@@ -120,7 +120,7 @@ export function PersonalizedQuests({ userId }: { userId: string }) {
         </>}
       </Panel>;
     })}
-    {complete ? <P>All three quests are complete. Fresh adventures arrive tomorrow.</P> : null}
+    {complete ? <P>All of today&apos;s quests are complete. Fresh adventures arrive tomorrow.</P> : null}
     {board ? <>
       <P dim>Five skips each week, shared across your daily quests. Resets {resetLabel} in your time zone.</P>
       <P dim>{board.quests.some((quest) => quest.source === 'fallback') ? 'Personalized suggestions are available while the AI quest writer is offline.' : 'Written with Gemini from your quest preferences.'}</P>

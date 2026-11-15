@@ -15,10 +15,12 @@ export function dailyMoves(input: {
   steps: number;
   activityMoves: number;
   streak: StreakState;
+  /** Quest-Move cap: higher on devices that can't track steps (see REWARDS). */
+  activityCap?: number;
 }): MovesBreakdown {
   const base = REWARDS.baseMovesPerDay;
   const fromSteps = stepsToMoves(input.steps);
-  const fromActivities = Math.max(0, Math.min(input.activityMoves, REWARDS.movesFromActivitiesPerDay));
+  const fromActivities = Math.max(0, Math.min(input.activityMoves, input.activityCap ?? REWARDS.movesFromActivitiesPerDay));
   const multiplier = streakMultiplier(input.streak);
   return {
     base,

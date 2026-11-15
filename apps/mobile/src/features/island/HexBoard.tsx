@@ -60,9 +60,10 @@ function ChartRipple({ x, y, enabled }: { x: number; y: number; enabled: boolean
 }
 
 export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: Props) {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const motion = useMotionEnabled();
   const chart = useRef<ElementRef<typeof ScrollView>>(null);
+  const chartV = useRef<ElementRef<typeof ScrollView>>(null);
   const previousIsland = useRef(view.island.id);
   const r = view.island.radius;
   // Keep a full 48 dp touch target, even on smaller phones. The chart pans horizontally.
@@ -73,6 +74,8 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
   const boardW = w * (2 * r + 1);
   const boardH = size * (1.5 * 2 * r + 2);
   const viewportW = Math.min(width - 48, boardW + 16);
+  // Big islands: a capped window you drag in both directions, centred on your pirate.
+  const viewportH = Math.min(boardH + 16, Math.max(320, Math.round(height * 0.5)));
   const me = view.explorer.pos;
   const { x: meX, y: meY } = toPixel(parseKey(me), size);
   const playerX = boardW / 2 + meX - 21;
@@ -82,6 +85,7 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
   const mates = new Map(view.crewmates.filter((m) => m.userId !== meId).map((m) => [m.pos, m]));
   const bossSprite = BOSS_SPRITE[view.boss.key] ?? 'b_octopus';
   const cameraX = Math.max(0, Math.min(boardW + 16 - viewportW, boardW / 2 + meX + 8 - viewportW / 2));
+  const cameraY = Math.max(0, Math.min(boardH + 16 - viewportH, boardH / 2 + meY + 8 - viewportH / 2));
 
   useEffect(() => {
     const destination = { x: playerX, y: playerY };
@@ -98,14 +102,15 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
 
   useEffect(() => {
     chart.current?.scrollTo({ x: cameraX, animated: motion });
-  }, [cameraX, motion]);
+    chartV.current?.scrollTo({ y: cameraY, animated: motion });
+  }, [cameraX, cameraY, motion]);
 
   return (
     <View style={[s.board, { width: viewportW }]}>
       <View style={s.chartHeader}>
         <View style={{ gap: 3 }}>
           <Text style={s.eyebrow}>ISLAND CHART</Text>
-          <Text style={s.hint}>Drag to explore · brass marks your route</Text>
+          <Text style={s.hint}>Drag any way to explore · brass marks your route</Text>
         </View>
         <Sprite name="compass" size={30} />
       </View>
@@ -116,9 +121,17 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
         showsHorizontalScrollIndicator
         indicatorStyle="white"
         contentOffset={{ x: cameraX, y: 0 }}
-        contentContainerStyle={{ padding: 8 }}
-        style={{ height: boardH + 16, flexGrow: 0 }}
+        style={{ height: viewportH, flexGrow: 0 }}
       >
+        <ScrollView
+          ref={chartV}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator
+          indicatorStyle="white"
+          contentOffset={{ x: 0, y: cameraY }}
+          contentContainerStyle={{ padding: 8 }}
+          style={{ height: viewportH, flexGrow: 0 }}
+        >
         <View style={{ width: boardW, height: boardH }}>
           {view.island.allHexes.map((k) => {
             const h = parseKey(k);
@@ -195,6 +208,7 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
             </Float>
           </Animated.View>
         </View>
+        </ScrollView>
       </ScrollView>
       <View style={s.chartFooter}>
         <View style={s.keyDot} />

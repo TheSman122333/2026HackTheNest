@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { randomUUID } from 'node:crypto';
 
 import type { ActivityReceipt, Collections, UserDoc } from './db';
-import { todayMoves } from './moves';
+import { activityCapForUser, todayMoves } from './moves';
 
 const duplicate = (error: unknown) => typeof error === 'object' && error !== null && 'code' in error && error.code === 11000;
 
@@ -49,7 +49,7 @@ export async function awardActivity(c: Collections, user: UserDoc, kind: Activit
       const ids = new Set(todays.flatMap((item) => item.eventId ? [item.eventId] : []));
       const logs: ActivityLog[] = todays.map((item) => ({ ...item, at: item.at.getTime() }));
       for (const item of fresh.activityReceipts ?? []) if (item.day === day && !ids.has(item.id)) logs.push({ ...item.grant, at: item.at.getTime() });
-      const grant = grantForActivity(logs, kind);
+      const grant = grantForActivity(logs, kind, activityCapForUser(fresh));
       receipt = { id: eventId, day, kind, grant, crewId: fresh.crewId, at: now };
       const inc: Record<string, number> = { supplies: grant.supplies, legend: grant.legend, activityRevision: 1 };
       for (const [skill, value] of Object.entries(grant.xp)) inc[`skills.${skill}`] = value;
