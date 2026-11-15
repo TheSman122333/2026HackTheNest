@@ -23,6 +23,8 @@ export type UserDoc = {
   avatarId?: AvatarId;
   profilePhoto?: { bytes: Binary; width: number; height: number; zoom: number; offsetX: number; offsetY: number; updatedAt: Date };
   profilePhotoUpdatedAt?: Date;
+  /** Show the face photo to other players (default true). Off = others see the drawn pirate. */
+  photoPublic?: boolean;
   /** Last platform the app reported. Android tracks steps + scrolling; iPhone/web get extra quests instead. */
   platform?: 'android' | 'ios' | 'web';
   /** Chosen title (an unlocked rung or a sanitized custom title). Unset = skill role. */

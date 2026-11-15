@@ -12,6 +12,7 @@ import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { SoundSettings } from '@/features/audio/SoundSettings';
 import { LeaveCrew } from '@/features/crew/LeaveCrew';
 import { EditName } from '@/features/profile/EditName';
+import { PhotoVisibility } from '@/features/profile/PhotoVisibility';
 import { TitlePicker } from '@/features/profile/TitlePicker';
 import { HONOR_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
 import { api } from '@/lib/api';
@@ -68,6 +69,7 @@ export default function Me() {
       </Row>
 
       <Btn label="Customize your pirate" color={C.indigo} onPress={() => router.push('/avatar')} />
+      <PhotoVisibility />
       <Btn label="Quest preferences" color={C.sky} onPress={() => router.push('/preferences')} />
 
       <Panel color={C.deep}>

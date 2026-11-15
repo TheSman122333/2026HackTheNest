@@ -1,7 +1,7 @@
 import type { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { HTTPException } from 'hono/http-exception';
-import { Binary } from 'mongodb';
+import { Binary, ObjectId } from 'mongodb';
 import { z } from 'zod';
 
 import { AVATAR_IDS, type Collections, type UserDoc } from './db';
@@ -53,6 +53,26 @@ export function registerAvatar(app: Hono<{ Variables: { user: UserDoc } }>, c: C
     });
     return ctx.json({ avatarId: input.avatarId });
   });
+  /** Whether other players see your face photo (your own devices always do). */
+  app.put('/me/photo-visibility', async (ctx) => {
+    const input = z.object({ public: z.boolean() }).strict().safeParse(await ctx.req.json().catch(() => ({})));
+    if (!input.success) throw new HTTPException(400, { message: 'Send { public: true | false }.' });
+    await c.users.updateOne({ _id: ctx.get('user')._id }, { $set: { photoPublic: input.data.public } });
+    return ctx.json({ photoPublic: input.data.public });
+  });
+
+  /** Another player's face photo, only if they've chosen to show it. Never sent to AI. */
+  app.get('/users/:id/avatar/photo', async (ctx) => {
+    const id = ctx.req.param('id');
+    ctx.header('Cache-Control', 'private, max-age=300');
+    if (!ObjectId.isValid(id)) return ctx.json({ photo: null });
+    const me = ctx.get('user');
+    const owner = await c.users.findOne({ _id: new ObjectId(id) }, { projection: { profilePhoto: 1, photoPublic: 1 } });
+    const photo = owner?.profilePhoto;
+    if (!photo || (owner.photoPublic === false && !owner._id.equals(me._id))) return ctx.json({ photo: null });
+    return ctx.json({ photo: { uri: `data:image/jpeg;base64,${Buffer.from(photo.bytes.buffer).toString('base64')}`, width: photo.width, height: photo.height, zoom: photo.zoom, offsetX: photo.offsetX, offsetY: photo.offsetY } });
+  });
+
   app.get('/me/avatar/photo', async (ctx) => {
     const user = await c.users.findOne({ _id: ctx.get('user')._id }, { projection: { profilePhoto: 1, profilePhotoUpdatedAt: 1 } });
     const photo = user?.profilePhoto;

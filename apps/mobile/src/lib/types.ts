@@ -58,6 +58,8 @@ export type User = {
   legend: number;
   /** Chosen title; null = skill role. */
   title?: string | null;
+  /** Other players see your face photo. */
+  photoPublic?: boolean;
   limits: ScreenLimits;
 };
 

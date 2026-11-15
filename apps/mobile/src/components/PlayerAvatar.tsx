@@ -1,5 +1,7 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
+
+import { api } from '@/lib/api';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AVATARS, isAvatarId } from '@/features/avatar/catalog';
@@ -8,6 +10,18 @@ import { useSession } from '@/state/session';
 import { useT } from '@/features/language/i18n';
 
 import { avatarFor, Sprite } from './sprites';
+
+/** Other players' shared photos (only if they chose to show them), cached for 5 minutes. */
+const remote = new Map<string, { at: number; photo: FacePhoto | null; pending?: Promise<FacePhoto | null> }>();
+function remotePhoto(userId: string): Promise<FacePhoto | null> {
+  const hit = remote.get(userId);
+  if (hit && Date.now() - hit.at < 300_000) return hit.pending ?? Promise.resolve(hit.photo);
+  const pending = api<{ photo: FacePhoto | null }>('GET', `/users/${userId}/avatar/photo`)
+    .then((r) => r.photo).catch(() => null)
+    .then((photo) => { remote.set(userId, { at: Date.now(), photo }); return photo; });
+  remote.set(userId, { at: Date.now(), photo: hit?.photo ?? null, pending });
+  return pending;
+}
 
 /** Original outfit in front, a device-local portrait (or drawn face) behind its clear aperture. */
 export function PlayerAvatar({ userId, avatarId, size = 48, photo, style, label }: {
@@ -20,11 +34,18 @@ export function PlayerAvatar({ userId, avatarId, size = 48, photo, style, label 
   const [failedUri, setFailedUri] = useState<string | null>(null);
   const self = Boolean(userId && userId === me?.id);
   useEffect(() => { if (self && userId && photo === undefined) void hydrate(userId); }, [self, userId, photo, hydrate]);
+  const [shared, setShared] = useState<FacePhoto | null>(null);
+  useEffect(() => {
+    if (self || !userId || photo !== undefined) return;
+    let live = true;
+    void remotePhoto(userId).then((p) => { if (live) setShared(p); });
+    return () => { live = false; };
+  }, [self, userId, photo]);
   const preferred = self && photo === undefined ? me?.avatarId ?? avatarId : avatarId;
   const fallback = avatarFor(userId ?? '');
   const chosen = isAvatarId(preferred) ? preferred : isAvatarId(fallback) ? fallback : 'a1';
   const option = AVATARS.find((avatar) => avatar.id === chosen)!;
-  const portrait = photo !== undefined ? photo : self && photoOwner === userId ? savedPhoto : null;
+  const portrait = photo !== undefined ? photo : self ? (photoOwner === userId ? savedPhoto : null) : shared;
   // A face image can never become a remote image request through this renderer.
   const available = portrait && /^(file:|content:|data:image\/|blob:)/.test(portrait.uri) && failedUri !== portrait.uri ? portrait : null;
   const slot = { left: option.face.x * size, top: option.face.y * size, width: option.face.width * size, height: option.face.height * size };

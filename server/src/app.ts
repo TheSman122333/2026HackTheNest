@@ -80,6 +80,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     supplies: u.supplies,
     legend: u.legend,
     title: u.title ?? null,
+    photoPublic: u.photoPublic !== false,
     limits: u.limits,
   });
 
@@ -179,6 +180,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
 
   app.use('/me/*', auth);
   app.use('/me', auth);
+  app.use('/users/*', auth);
   app.use('/crews/*', auth);
   app.use('/crews', auth);
   app.use('/activities', auth);
