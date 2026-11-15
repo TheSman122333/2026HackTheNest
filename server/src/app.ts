@@ -17,7 +17,7 @@ import { z } from 'zod';
 import { AVATAR_IDS, type Collections, type UserDoc } from './db';
 import { awardActivity, reconcileActivityReceipts } from './activities';
 import { createIsland, registerIsland, resumeVoyage } from './island';
-import { spendMoves, todayMoves } from './moves';
+import { ledger, spendMoves, todayMoves } from './moves';
 import { registerMusic } from './music';
 import { registerOpening } from './opening';
 import { registerQuests } from './quests';
@@ -267,6 +267,28 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     if (!crew) throw new HTTPException(404, { message: 'no crew with that code' });
     await c.users.updateOne({ _id: user._id }, { $set: { crewId: crew._id } });
     return ctx.json({ crew: publicCrew(crew) });
+  });
+
+  /**
+   * Leave your crew to join another. Typing the crew's name confirms it (case and spacing
+   * don't matter). Nothing is lost: you keep Legend, skills and your pirate; the crew keeps
+   * its stores, island and log, and you can rejoin later with the invite code.
+   */
+  app.post('/crew/leave', async (ctx) => {
+    const user = ctx.get('user');
+    if (!user.crewId) throw new HTTPException(409, { message: 'not in a crew' });
+    const { confirmName } = await body(ctx, z.object({ confirmName: z.string().max(80) }));
+    const crew = await c.crews.findOne({ _id: user.crewId });
+    const norm = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+    if (crew && norm(confirmName) !== norm(crew.name)) {
+      throw new HTTPException(400, { message: `type the crew name "${crew.name}" to leave` });
+    }
+    await c.users.updateOne({ _id: user._id, crewId: user.crewId }, { $set: { crewId: null } });
+    if (crew) {
+      await c.crews.updateOne({ _id: crew._id }, { $pull: { memberIds: user._id } });
+      await ledger(c, { crewId: crew._id, userId: user._id, item: 'crew', delta: -1, reason: 'crew:leave', text: `${user.name} left the crew to sail with another. Fair winds!` });
+    }
+    return ctx.json({ left: true });
   });
 
   // ---------- real-life fuel ----------

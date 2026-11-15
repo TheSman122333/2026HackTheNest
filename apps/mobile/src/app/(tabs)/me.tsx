@@ -10,6 +10,7 @@ import { Sprite } from '@/components/sprites';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { SoundSettings } from '@/features/audio/SoundSettings';
+import { LeaveCrew } from '@/features/crew/LeaveCrew';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
@@ -106,6 +107,8 @@ export default function Me() {
         <Btn small label="Open Scroll Lab" onPress={() => router.push('/dev/scroll-lab')} />
       </Panel>
       </>) : null}
+
+      <LeaveCrew />
 
       <Btn
         label="Log out"

@@ -33,6 +33,27 @@ const call = async (method: string, path: string, token?: string, body?: unknown
 };
 
 describe('api', () => {
+  it('leaving a crew needs its name, keeps Legend, and allows joining another', async () => {
+    const a = (await call('POST', '/auth/dev', undefined, { name: 'Cy', tz: 'UTC' })).json;
+    const b = (await call('POST', '/auth/dev', undefined, { name: 'Di', tz: 'UTC' })).json;
+    const first = (await call('POST', '/crews', a.token, { name: 'Salt  Wind' })).json.crew;
+    const second = (await call('POST', '/crews', b.token, { name: 'Ember Gulls' })).json.crew;
+    await call('POST', '/activities', a.token, { kind: 'walk' });
+    const legend = (await call('GET', '/me', a.token)).json.user.legend;
+
+    expect((await call('POST', '/crew/leave', a.token, { confirmName: 'Ember Gulls' })).status).toBe(400);
+    expect((await call('GET', '/me', a.token)).json.crew).not.toBeNull();
+    expect((await call('POST', '/crew/leave', a.token, { confirmName: '  salt wind ' })).json).toEqual({ left: true });
+
+    const me = (await call('GET', '/me', a.token)).json;
+    expect(me.crew).toBeNull();
+    expect(me.user.legend).toBe(legend);
+    expect((await call('POST', '/crew/leave', a.token, { confirmName: 'Salt Wind' })).status).toBe(409);
+    const joined = await call('POST', '/crews/join', a.token, { code: second.inviteCode });
+    expect(joined.json.crew.memberIds).toHaveLength(2);
+    expect(first.memberIds).toHaveLength(1);
+  });
+
   it('rejects unauthenticated', async () => {
     expect((await call('GET', '/me')).status).toBe(401);
   });
