@@ -14,3 +14,13 @@ Format: `- [ ] <request> — why`
 
 Store server values only in the server's ignored local environment or deployment secret store. Never add provider keys to `EXPO_PUBLIC_*`, app config, source control, or the mobile bundle. `EXPO_PUBLIC_API_URL` is an existing mobile setting, not a provider secret.
 
+## Personalized quests and crew invitations
+
+- [ ] Server environment: configure `GEMINI_API_KEY` in the ignored `server/.env` or deployment secret store. Optionally set `GEMINI_QUEST_MODEL` to a supported Gemini text model. The quest writer calls Gemini on the server; no key belongs in the mobile build. Without a working key, players receive clearly labeled suggestions based on their questionnaire answers.
+- [ ] Public app configuration: set `EXPO_PUBLIC_APP_URL` to the deployed HTTPS app origin for native QR invitations, for example `https://your-voyage-app.example`. Web invitations use the current app origin. Without a public origin, native invitations use the installed app's `lastvoyage://join` deep link.
+- [ ] SSOJet deployment configuration: keep the existing server tenant/client secret settings and mobile public issuer/client ID configured. Register the exact web `/auth/callback` URL and the native server `/auth/ssojet/callback` bridge URL with SSOJet. Crew codes are preserved separately from OAuth state while friends sign in and answer the preference questions.
+
+No additional npm dependencies are required for the questionnaire, Gemini quest generation, or local QR rendering.
+
+- [ ] Server audio: configure `ELEVENLABS_API_KEY` with Sound Effects and Music access for the cached game soundtrack. Optional `ELEVENLABS_NARRATOR_VOICE_ID` selects a natural narrator voice; the default is neutral and no longer uses the old pirate-performance `ELEVENLABS_VOICE_ID` setting. Keys stay on the server.
+

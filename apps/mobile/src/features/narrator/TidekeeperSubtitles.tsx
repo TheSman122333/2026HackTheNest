@@ -12,7 +12,7 @@ import { useDeviceMotionEnabled } from '@/ui/motion';
 
 import { useNarrator, type NarrationClip, type NarrationScene } from './useNarrator';
 
-const SCENES: Record<string, NarrationScene> = { ship: 'ship', island: 'island', quests: 'quests', log: 'log', me: 'me', fight: 'fight' };
+const SCENES: Record<string, NarrationScene> = { ship: 'ship', island: 'island', quests: 'quests' };
 
 /** One host above the navigator: changing tabs never cuts off a spoken sentence. */
 export function TidekeeperSubtitles() {

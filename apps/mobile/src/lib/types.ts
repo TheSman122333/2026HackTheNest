@@ -17,10 +17,40 @@ import type {
 
 export type AvatarId = 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6' | 'a7' | 'a8' | 'a9' | 'a10' | 'a11' | 'a12';
 
+export type VoyageGoal = 'move_more' | 'learn' | 'create' | 'connect' | 'reset' | 'get_organized';
+export type VoyagePreferences = {
+  interests: ActivityKind[];
+  goals: VoyageGoal[];
+  dailyMinutes: 5 | 15 | 30 | 60;
+  pace: 'gentle' | 'balanced' | 'challenging';
+  setting: 'indoors' | 'outdoors' | 'either';
+  company: 'solo' | 'friends' | 'either';
+  timeOfDay: 'morning' | 'afternoon' | 'evening' | 'flexible';
+  avoid: ActivityKind[];
+  completedAt: string;
+};
+export type PersonalizedQuest = {
+  id: string;
+  kind: ActivityKind;
+  title: string;
+  description: string;
+  minutes: number;
+  status: 'available' | 'completed';
+  source: 'gemini' | 'fallback';
+};
+export type QuestBoard = {
+  day: string;
+  quests: PersonalizedQuest[];
+  skips: { remaining: number; limit: 5; resetsAt: string };
+  source: 'gemini' | 'fallback';
+};
+export type QuestCompletion = ActivityResponse & { board: QuestBoard; user?: User };
+
 export type User = {
   id: string;
   name: string;
   avatarId?: AvatarId | null;
+  preferences?: VoyagePreferences | null;
   tz: string;
   crewId: string | null;
   skills: Record<Skill, number>;

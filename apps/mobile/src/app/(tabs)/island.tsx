@@ -94,13 +94,7 @@ export default function IslandScreen() {
         </Panel>
       )}
 
-      <HexBoard view={view} meId={meId} onTap={async (to) => {
-        const result = await move(to);
-        if (!result) return;
-        const found = result.events.filter((event) => event.type === 'found').map((event) => event.item);
-        const hurt = result.events.find((event) => event.type === 'hazard');
-        useNarrator.getState().narrate('move', `A new path charted, sailor. ${result.spent} Moves carried you across the island.${found.length ? ` You discovered ${found.join(', ')}.` : ''}${hurt ? ` The terrain dealt ${hurt.damage} damage.` : ''} ${result.movesRemaining} Moves remain.`);
-      }} disabled={busy || ko} />
+      <HexBoard view={view} meId={meId} onTap={(to) => { void move(to); }} disabled={busy || ko} />
 
       {bag.length ? (
         <Panel>

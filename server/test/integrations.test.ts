@@ -341,7 +341,7 @@ describe('backend integrations', () => {
       c,
       jwtSecret: 'voice-audio-test-secret',
       allowDevLogin: true,
-      env: { ELEVENLABS_API_KEY: 'test-key', ELEVENLABS_VOICE_ID: 'test-voice' },
+      env: { ELEVENLABS_API_KEY: 'test-key', ELEVENLABS_NARRATOR_VOICE_ID: 'test-voice' },
       fetchImpl: async (input) => {
         expect(String(input)).toBe('https://api.elevenlabs.io/v1/text-to-speech/test-voice');
         return new Response(new Uint8Array([1, 2, 3]).buffer, { headers: { 'content-type': 'audio/mpeg' } });

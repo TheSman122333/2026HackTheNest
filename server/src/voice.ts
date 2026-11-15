@@ -40,37 +40,37 @@ export function responseForScene(
   switch (scene) {
     case 'arrival':
       return completed
-        ? `Welcome aboard, ${name}. Your crew has claimed ${island}; ${moves} remain for today's adventures, and a new shore awaits at nightfall.`
-        : `Welcome aboard, ${name}. Your crew is exploring a ${view.island.theme} shore; you have ${moves}, and ${view.boss.name} waits with ${view.boss.hp} health.`;
+        ? `Welcome back, ${name}. Your crew completed ${island}. You have ${moves} left today.`
+        : `Welcome back, ${name}. You have ${moves}. ${view.boss.name} has ${view.boss.hp} health remaining.`;
     case 'ship':
-      return `Hear those sails, ${name}? Your day has earned ${today.moves.total} Moves; walks and real-life quests put the wind behind our voyage.`;
+      return `You've earned ${today.moves.total} Moves today. Real-life quests help your ship progress.`;
     case 'island':
-      if (view.explorer.hp <= 0) return `The sea carried you back to shore, ${name}. Rest until tomorrow; your crew's progress and the guardian's wounds remain.`;
-      if (completed) return `${island.charAt(0).toUpperCase() + island.slice(1)} belongs to your crew! Gather your bearings, sailor; the next horizon opens at nightfall.`;
+      if (view.explorer.hp <= 0) return `${name}, you're out of health. You'll recover tomorrow, and your crew's progress is saved.`;
+      if (completed) return `${name}, ${island} is complete. Your next destination opens at nightfall.`;
       return view.canFight
-        ? `${view.boss.name} is within reach! You have ${moves} and ${view.explorer.hp} health; choose your next move, sailor.`
-        : `Boots ashore, ${name}. You have ${moves} and ${view.explorer.hp} health; follow the marked hexes toward ${view.boss.name}.`;
+        ? `${name}, you can challenge ${view.boss.name}. You have ${moves} and ${view.explorer.hp} health.`
+        : `${name}, you have ${moves} and ${view.explorer.hp} health. Explore toward ${view.boss.name}.`;
     case 'quests':
-      return `Here's where real life fills our sails. You've logged ${today.activities.length} ${today.activities.length === 1 ? 'activity' : 'activities'} and ${today.steps} steps today; every ${REWARDS.stepsPerMove.toLocaleString('en-US')} steps earns a Move, up to ${REWARDS.movesFromStepsPerDay} a day.`;
+      return `You logged ${today.activities.length} ${today.activities.length === 1 ? 'activity' : 'activities'} and ${today.steps} steps today. Every ${REWARDS.stepsPerMove.toLocaleString('en-US')} steps earns a Move.`;
     case 'log':
-      return `Every voyage leaves a story. Your ship's log keeps the crew's finds, hard-won supplies, and victories together.`;
+      return `Your crew's activities, discoveries, and rewards are recorded here.`;
     case 'me':
-      return `A fine pirate in the making, ${name}. Your Calm Seas streak stands at ${today.streak.calmDays} days, with ${today.streak.shields} shields tucked safely away.`;
+      return `${name}, your Calm Seas streak is ${today.streak.calmDays} days. You have ${today.streak.shields} shields.`;
     case 'activity':
       return latest
-        ? `${ACTIVITIES[latest.kind].label} logged, sailor! That effort earned ${latest.moves} ${latest.moves === 1 ? 'Move' : 'Moves'} and ${latest.supplies} Supplies; you now have ${moves} for the adventure.`
-        : `Small efforts make grand voyages, ${name}. Choose a real-life activity you've finished, and let it fill our sails.`;
+        ? `${ACTIVITIES[latest.kind].label}: ${latest.moves} ${latest.moves === 1 ? 'Move' : 'Moves'} and ${latest.supplies} Supplies earned. ${moves} remain.`
+        : `Complete a real-life quest, then claim its rewards here.`;
     case 'move':
       return view.explorer.hp <= 0
-        ? `The shore will keep you safe for tonight. Rest, sailor; tomorrow brings full health and another chance.`
-        : `Another mark on the chart, ${name}. You have ${moves} and ${view.explorer.hp} health${view.canFight ? `; ${view.boss.name} is now within reach` : '; new ground waits beyond the mist'}.`;
+        ? `You're out of health. You'll recover tomorrow.`
+        : `${moves} and ${view.explorer.hp} health remain${view.canFight ? `. ${view.boss.name} is within reach` : ''}.`;
     case 'fight':
-      if (completed) return `${view.boss.name} is defeated! The crew has claimed ${island}; that is a story worth carrying to the next shore.`;
+      if (completed) return `${view.boss.name} is defeated. Your crew completed ${island}.`;
       return view.explorer.hp <= 0
-        ? `${view.boss.name} sent you overboard, but the battle isn't lost. Rest until tomorrow; the guardian stays at ${view.boss.hp} health.`
-        : `Steel and sea spray! ${view.boss.name} has ${view.boss.hp} health left, and you stand at ${view.explorer.hp}; ${moves} remain.`;
+        ? `You'll recover tomorrow. ${view.boss.name} remains at ${view.boss.hp} health.`
+        : `${view.boss.name} has ${view.boss.hp} health. You have ${view.explorer.hp} health and ${moves}.`;
     case 'night':
-      return `The night tide has turned our chart to ${island}, a ${view.island.theme} shore. Check the sand for fresh finds; you have ${moves} ready.`;
+      return `Your crew reached ${island}, a ${view.island.theme} island. You have ${moves} ready.`;
   }
 }
 
@@ -120,21 +120,24 @@ export async function transcribeAudio(
   return body.text.trim().slice(0, 400);
 }
 
+export const NARRATOR_VOICE_VERSION = 'neutral-short-v1';
+export const narratorVoiceId = (env: NodeJS.ProcessEnv) => env.ELEVENLABS_NARRATOR_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
+
 export async function synthesizeSpeech(
   text: string,
   env: NodeJS.ProcessEnv,
   fetchImpl: typeof fetch,
 ): Promise<Uint8Array | null> {
   const apiKey = env.ELEVENLABS_API_KEY;
-  const voiceId = env.ELEVENLABS_VOICE_ID;
-  if (!apiKey || !voiceId) return null;
+  const voiceId = narratorVoiceId(env);
+  if (!apiKey) return null;
   const response = await fetchImpl(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`, {
     method: 'POST',
     headers: { 'xi-api-key': apiKey, 'content-type': 'application/json', accept: 'audio/mpeg' },
     body: JSON.stringify({
       text: text.slice(0, 1200),
       model_id: 'eleven_multilingual_v2',
-      voice_settings: { stability: 0.55, similarity_boost: 0.75 },
+      voice_settings: { stability: 0.75, similarity_boost: 0.75, style: 0, speed: 1, use_speaker_boost: false },
     }),
     signal: AbortSignal.timeout(12_000),
   });

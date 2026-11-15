@@ -11,7 +11,7 @@ import { useOpening } from '@/state/opening';
 import { useSession } from '@/state/session';
 import { useDeviceMotionEnabled } from '@/ui/motion';
 
-// The supplied narration, with the missing opening W restored.
+// The game's original opening story, matching the server's fixed passage.
 export const OPENING_WORDS = 'Long ago, a star fell into the Tidewake, and every captain who ever lived has chased it. The greatest of them sailed every sea, and before the waves took him, he left one last word: the Lodestar belongs to whoever lives the boldest life. So raise your sails. Your voyage begins today.';
 
 /** Auth callbacks finish behind their own screen; the opening never steals their URL. */
@@ -21,14 +21,14 @@ export function OpeningVoyage() {
   const me = useSession((s) => s.me);
   const { visible, mode, identity, start, deferCallback } = useOpening();
   const authId = token && me ? me.user.id : null;
-  const hasCrew = Boolean(me?.crew);
   useEffect(() => {
     if (pathname.startsWith('/auth/callback')) { deferCallback(); return; }
     const key = authId ? `user:${authId}` : 'guest';
     if (identity === key) return;
     start(authId ? 'reveal' : 'storm', key);
-    if (authId) router.replace(hasCrew ? '/ship' : '/crew-setup');
-  }, [pathname, authId, hasCrew, identity, start, deferCallback]);
+    // The gate resumes preferences and pending invites before boarding the ship.
+    if (authId && pathname !== '/join') router.replace('/');
+  }, [pathname, authId, identity, start, deferCallback]);
   if (!visible) return null;
   if (!mode) return <View style={s.initialCover} />;
   return <OpeningScene key={`${identity}-${mode}`} mode={mode} />;

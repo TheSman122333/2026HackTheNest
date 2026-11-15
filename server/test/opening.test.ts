@@ -28,7 +28,7 @@ describe('opening cutscene narration', () => {
 
   it('synthesizes only the fixed passage and reuses its audio across requests and server instances', async () => {
     let calls = 0;
-    const env = { ELEVENLABS_API_KEY: 'test-key', ELEVENLABS_VOICE_ID: 'test-opening-voice' };
+    const env = { ELEVENLABS_API_KEY: 'test-key', ELEVENLABS_NARRATOR_VOICE_ID: 'test-opening-voice' };
     const fetchImpl: typeof fetch = async (url, init) => {
       calls++;
       expect(String(url)).toBe('https://api.elevenlabs.io/v1/text-to-speech/test-opening-voice');

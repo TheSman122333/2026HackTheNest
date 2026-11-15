@@ -676,7 +676,7 @@ export function registerIsland(
         }
       } catch (error) {
         if (!(error instanceof HTTPException)) throw error;
-        reply = brain ? `Blast, that didn't work: ${error.message}.` : error.message;
+        reply = error.message;
       }
     }
 

@@ -4,16 +4,16 @@ import { Binary, ObjectId } from 'mongodb';
 import { createHash } from 'node:crypto';
 
 import type { Collections, UserDoc } from './db';
-import { synthesizeSpeech } from './voice';
+import { narratorVoiceId, NARRATOR_VOICE_VERSION, synthesizeSpeech } from './voice';
 
-/** The passage explicitly supplied by the project lead for the opening cutscene. */
+/** The game's fixed original opening story. */
 export const OPENING_NARRATION = 'Long ago, a star fell into the Tidewake, and every captain who ever lived has chased it. The greatest of them sailed every sea, and before the waves took him, he left one last word: the Lodestar belongs to whoever lives the boldest life. So raise your sails. Your voyage begins today.';
 
 /** A public, fixed passage: callers cannot submit arbitrary text or choose a voice. */
 export function registerOpening(app: Hono<{ Variables: { user: UserDoc } }>, c: Collections, options: { env: NodeJS.ProcessEnv; fetchImpl: typeof fetch }) {
   const { env, fetchImpl } = options;
-  const configured = Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_VOICE_ID);
-  const version = createHash('sha256').update(`${env.ELEVENLABS_VOICE_ID ?? ''}:${OPENING_NARRATION}`).digest('hex').slice(0, 24);
+  const configured = Boolean(env.ELEVENLABS_API_KEY);
+  const version = createHash('sha256').update(`${NARRATOR_VOICE_VERSION}:${narratorVoiceId(env)}:${OPENING_NARRATION}`).digest('hex').slice(0, 24);
   const mediaId = `opening:${version}`;
   let generating: Promise<Uint8Array> | null = null;
   const audio = async (): Promise<Uint8Array> => {

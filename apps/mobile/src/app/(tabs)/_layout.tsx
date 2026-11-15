@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F } from '@/components/kit';
 import { Sprite, type SpriteName } from '@/components/sprites';
 import { useDeviceSync } from '@/features/sync/deviceSync';
+import { usePendingInvite } from '@/features/invites/pending';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
 
@@ -21,8 +22,12 @@ const icon = (name: SpriteName) =>
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { token, me } = useSession();
+  const invite = usePendingInvite((state) => state.code);
   useDeviceSync();
   if (!token || !me) return <Redirect href="/welcome" />;
+  if (!me.user.avatarId) return <Redirect href={{ pathname: '/avatar', params: { onboarding: '1' } }} />;
+  if (!me.user.preferences) return <Redirect href="/preferences" />;
+  if (invite) return <Redirect href="/join" />;
   if (!me.crew) return <Redirect href="/crew-setup" />;
 
   return (
