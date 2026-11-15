@@ -146,7 +146,7 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 - **KO** = washed overboard until tomorrow. Next day everyone returns at full HP; the boss doesn't heal.
 - **Win:** the island is conquered for the crew. Damage dealt is credited per player (feeds Legend ⬜).
 
-## 10. Legend and the Lodestar ⬜ (Legend from activities ✅)
+## 10. Legend and the Lodestar 🟡 (activities, boss fights, leaderboard and End the Year ✅)
 - **Legend** is your personal score for the year and **can never be taken away**.
 - **Sources:**
   - activities (max 2/day) ✅

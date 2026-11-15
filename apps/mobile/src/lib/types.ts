@@ -134,3 +134,15 @@ export type GmEvent = {
 };
 /** Scheduled check on an island visit: not one of the crew's 3 event days this week. */
 export type GmCheck = GmEvent | { requestId: string; status: 'not_today' };
+
+export type LegendRow = { id: string; name: string; avatarId: AvatarId | null; legend: number; rank: number; crewName: string | null; isYou: boolean; lodestar: boolean };
+export type LodestarSeason = {
+  id: string; year: number; players: number; at: string;
+  winner: { id: string; name: string; avatarId: AvatarId | null; legend: number; crewName: string | null; isYou: boolean } | null;
+};
+export type LegendBoard = {
+  me: { legend: number; globalRank: number; players: number; crewRank: number | null; crewSize: number };
+  crew: LegendRow[];
+  global: LegendRow[];
+  lodestar: LodestarSeason | null;
+};

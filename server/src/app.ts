@@ -18,6 +18,7 @@ import { AVATAR_IDS, type Collections, type UserDoc } from './db';
 import { awardActivity, reconcileActivityReceipts } from './activities';
 import { createIsland, registerIsland, resumeVoyage } from './island';
 import { ledger, spendMoves, todayMoves } from './moves';
+import { registerLegend } from './legend';
 import { registerMusic } from './music';
 import { registerOpening } from './opening';
 import { registerQuests } from './quests';
@@ -183,6 +184,8 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   app.use('/log', auth);
   app.use('/crew', auth);
   app.use('/crew/*', auth);
+  app.use('/legend', auth);
+  app.use('/legend/*', auth);
   app.use('/island', auth);
   app.use('/island/*', auth);
   app.use('/voice/*', auth);
@@ -380,6 +383,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   registerMusic(app, c, { env, fetchImpl });
   registerOpening(app, c, { env, fetchImpl });
   registerShip(app, c);
+  registerLegend(app, c);
   registerQuests(app, c, { env, fetchImpl, now });
   registerSoundtrack(app, c, { env, fetchImpl });
 

@@ -33,6 +33,26 @@ const call = async (method: string, path: string, token?: string, body?: unknown
 };
 
 describe('api', () => {
+  it('legend ranks you in your crew and across crews, and End the Year crowns the top pirate', async () => {
+    const a = (await call('POST', '/auth/dev', undefined, { name: 'Lea', tz: 'UTC' })).json;
+    const b = (await call('POST', '/auth/dev', undefined, { name: 'Max', tz: 'UTC' })).json;
+    const crew = (await call('POST', '/crews', a.token, { name: 'Starfall' })).json.crew;
+    await call('POST', '/crews/join', b.token, { code: crew.inviteCode });
+    for (let i = 0; i < 5; i++) await call('POST', '/activities', b.token, { kind: 'read' });
+
+    const board = (await call('GET', '/legend', a.token)).json;
+    expect(board.crew.map((r: { name: string }) => r.name)).toEqual(['Max', 'Lea']);
+    expect(board.me).toMatchObject({ crewRank: 2, crewSize: 2 });
+    expect(board.me.globalRank).toBeGreaterThan(1);
+    expect(board.global[0].legend).toBeGreaterThanOrEqual(board.global.at(-1).legend);
+
+    const ended = (await call('POST', '/legend/end-year', a.token)).json.season;
+    expect(ended.winner.legend).toBe(board.global[0].legend);
+    const after = (await call('GET', '/legend', a.token)).json;
+    expect(after.lodestar.id).toBe(ended.id);
+    expect(after.global[0].lodestar).toBe(true);
+  });
+
   it('leaving a crew needs its name, keeps Legend, and allows joining another', async () => {
     const a = (await call('POST', '/auth/dev', undefined, { name: 'Cy', tz: 'UTC' })).json;
     const b = (await call('POST', '/auth/dev', undefined, { name: 'Di', tz: 'UTC' })).json;

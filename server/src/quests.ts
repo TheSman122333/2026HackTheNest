@@ -174,9 +174,17 @@ async function dailyBoard(c: Collections, user: UserDoc, now: Date, opts: QuestO
   const p = preferencesOf(user);
   let { doc, calendar } = await loadWeek(c, user, now);
   if (!doc.days[calendar.day]) {
-    const tasks = await singleflight(`${doc._id}:${calendar.day}`, () => generateQuests(p, COUNT, new Date(`${calendar.day}T00:00Z`).getUTCDate(), [], opts));
-    await c.questWeeks.updateOne({ _id: doc._id, [`days.${calendar.day}`]: { $exists: false } }, { $set: { [`days.${calendar.day}`]: tasks, [`budgets.${calendar.day}`]: p.dailyMinutes }, $inc: { revision: 1 } });
-    doc = (await c.questWeeks.findOne({ _id: doc._id }))!;
+    const id = doc._id;
+    // Re-check inside the shared step: a request that arrives just after another finished
+    // generating must reuse the saved board, not call the provider again.
+    await singleflight(`${id}:${calendar.day}`, async () => {
+      const fresh = await c.questWeeks.findOne({ _id: id });
+      if (fresh?.days[calendar.day]) return fresh.days[calendar.day]!;
+      const tasks = await generateQuests(p, COUNT, new Date(`${calendar.day}T00:00Z`).getUTCDate(), [], opts);
+      await c.questWeeks.updateOne({ _id: id, [`days.${calendar.day}`]: { $exists: false } }, { $set: { [`days.${calendar.day}`]: tasks, [`budgets.${calendar.day}`]: p.dailyMinutes }, $inc: { revision: 1 } });
+      return tasks;
+    });
+    doc = (await c.questWeeks.findOne({ _id: id }))!;
   }
   return { doc, calendar };
 }
