@@ -35,6 +35,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import type { Collections, GmEventDoc, IslandDoc, UserDoc } from './db';
+import { askTidekeeper, brainState, pickDestination, summarizeEvents } from './brain';
 import { fallbackLine, generateGmProposal, type StreakContext } from './gm';
 import { ledger, spendMoves, todayMoves } from './moves';
 import {
@@ -555,10 +556,39 @@ export function registerIsland(
       transcript = input.text;
     }
 
-    const intent: VoiceIntent = input.mode === 'briefing' ? { type: 'briefing' } : resolveVoiceIntent(transcript ?? '') ?? { type: 'question' };
+    let intent: VoiceIntent = input.mode === 'briefing' ? { type: 'briefing' } : resolveVoiceIntent(transcript ?? '') ?? { type: 'question' };
     const userForTurn: UserDoc = (await c.users.findOne({ _id: user._id })) ?? user;
     const current = await view(userForTurn);
     const today = await todayMoves(c, userForTurn);
+
+    // The brain (OpenAI) understands free speech and picks an allowlisted action; without a key
+    // we fall back to the keyword matcher above.
+    const convo = await c.voiceConversations.findOne({ _id: conversationId });
+    const brain = await askTidekeeper({
+      env,
+      fetchImpl,
+      mode: input.mode,
+      text: transcript,
+      state: brainState(userForTurn.name, current, {
+        calmDays: today.streak.calmDays,
+        shields: today.streak.shields,
+        steps: today.steps,
+        crewmates: current.crewmates.length,
+      }),
+      history: convo?.history ?? [],
+    });
+    // Questions never spend Moves, whatever the model picked.
+    const askedQuestion = resolveVoiceIntent(transcript ?? '')?.type === 'question';
+    if (brain && input.mode === 'command') {
+      if (askedQuestion) brain.action = 'none';
+      const a = brain.action;
+      if (a === 'strike' || a === 'cannon' || a === 'tonic' || a === 'brace') intent = { type: 'fight', action: a };
+      else if (a === 'toward_boss' || a === 'explore') {
+        const to = pickDestination(current, a);
+        intent = to ? { type: 'island.move', to } : { type: 'question' };
+      } else intent = { type: 'question' };
+    }
+    console.log(`[voice] ${user.name}: "${transcript ?? '(briefing)'}" -> ${brain ? `brain:${brain.action}` : 'keywords'} -> ${intent.type}`);
     try {
       const now = new Date();
       await c.voiceTurns.insertOne({
@@ -585,7 +615,7 @@ export function registerIsland(
     let cues: string[] = [];
 
     if (intent.type === 'briefing') {
-      reply = `Welcome back, ${user.name}. Your crew is exploring a ${current.island.theme} island. You have ${current.movesRemaining} Moves, ${current.explorer.hp} health, and a ${today.streak.calmDays}-day Calm Seas streak. ${current.boss.name} has ${current.boss.hp} health remaining.`;
+      reply = brain?.reply ?? `Welcome back, ${user.name}. Your crew is exploring a ${current.island.theme} island. You have ${current.movesRemaining} Moves, ${current.explorer.hp} health, and a ${today.streak.calmDays}-day Calm Seas streak. ${current.boss.name} has ${current.boss.hp} health remaining.`;
       cues = today.streakEvents.flatMap((event) => {
         if (event.type === 'calm_day') return ['streak.calm_day'];
         if (event.type === 'shield_earned') return ['streak.shield_earned'];
@@ -595,14 +625,16 @@ export function registerIsland(
         return [];
       });
     } else if (intent.type === 'question') {
-      reply = transcript && resolveVoiceIntent(transcript)?.type === 'question'
-        ? responseForQuestion(transcript, current, today.streak.calmDays)
-        : await fallbackLine('unclear');
+      reply =
+        brain?.reply ??
+        (transcript && resolveVoiceIntent(transcript)?.type === 'question'
+          ? responseForQuestion(transcript, current, today.streak.calmDays)
+          : await fallbackLine('unclear'));
     } else {
       try {
         if (intent.type === 'island.move') {
           const moved = await performMove(userForTurn, intent.to);
-          reply = voiceCommandReply(intent, moved.view);
+          reply = brain ? `${brain.reply} ${summarizeEvents(moved.events, current.boss.name)}`.trim() : voiceCommandReply(intent, moved.view);
           result = {
             events: moved.events,
             movesRemaining: moved.view.movesRemaining,
@@ -612,7 +644,7 @@ export function registerIsland(
           cues = sfxCueKeys(moved.events);
         } else {
           const fought = await performFight(userForTurn, intent.action);
-          reply = voiceCommandReply(intent, fought.view);
+          reply = brain ? `${brain.reply} ${summarizeEvents(fought.events, current.boss.name)}`.trim() : voiceCommandReply(intent, fought.view);
           result = {
             events: fought.events,
             movesRemaining: fought.view.movesRemaining,
@@ -623,8 +655,14 @@ export function registerIsland(
         }
       } catch (error) {
         if (!(error instanceof HTTPException)) throw error;
-        reply = error.message;
+        reply = brain ? `Blast, that didn't work: ${error.message}.` : error.message;
       }
+    }
+
+    // Remember the last few exchanges so follow-ups ("do it again") make sense.
+    if (input.mode === 'command' && transcript) {
+      const turns = [...(convo?.history ?? []), { role: 'user' as const, content: transcript }, { role: 'assistant' as const, content: reply }].slice(-8);
+      await c.voiceConversations.updateOne({ _id: conversationId }, { $set: { history: turns } });
     }
 
     let audio: { url: string; expiresAt: string } | null = null;

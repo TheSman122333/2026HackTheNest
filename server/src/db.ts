@@ -128,6 +128,8 @@ export type GmEventDoc = {
 };
 
 export type VoiceConversationDoc = {
+  /** last few exchanges with the narrator (text only) */
+  history?: { role: 'user' | 'assistant'; content: string }[];
   _id: string;
   userId: ObjectId;
   createdAt: Date;
