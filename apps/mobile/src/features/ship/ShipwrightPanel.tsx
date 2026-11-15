@@ -3,6 +3,7 @@ import { SHIPWRIGHT, shipwrightReport, type ShipSpeed } from '@last-voyage/game'
 import { StyleSheet, Text, View } from 'react-native';
 
 import { C, F, P, Panel, Row } from '@/components/kit';
+import { TRACKING } from '@/lib/platform';
 import { useSession } from '@/state/session';
 import { cleanText } from '@/ui/text';
 
@@ -15,11 +16,14 @@ const SPEED_COLOR: Record<ShipSpeed, string> = {
   flying: C.red,
 };
 
-export function ShipwrightPanel() {
+export function ShipwrightPanel({ crewAverageMoves }: { crewAverageMoves?: number } = {}) {
   const me = useSession((s) => s.me);
   if (!me) return null;
   const t = me.today;
-  const r = shipwrightReport({ moves: t.moves, steps: t.steps, screen: t.screen, limits: me.user.limits, streak: t.streak });
+  const input = { moves: t.moves, steps: t.steps, screen: t.screen, limits: me.user.limits, streak: t.streak, tracking: TRACKING };
+  const personal = shipwrightReport(input);
+  // Match the hero's crew pace without turning personal tips into crew statistics.
+  const r = crewAverageMoves === undefined ? personal : shipwrightReport({ ...input, moves: { ...t.moves, total: crewAverageMoves } });
   const level = SPEEDS.indexOf(r.speed);
 
   return (
@@ -27,10 +31,10 @@ export function ShipwrightPanel() {
       <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
         <View style={{ flexShrink: 1 }}>
           <Text style={s.name}>The {SHIPWRIGHT.name}</Text>
-          <P dim>At the helm, keeping her up to speed</P>
+          <P dim>{crewAverageMoves === undefined ? 'Your wind today · a little farther every day' : 'Crew pace · your next contributions'}</P>
         </View>
         <View style={[s.knots, { backgroundColor: SPEED_COLOR[r.speed] }]}>
-          <Text style={s.knotsN}>{r.knots}</Text>
+          <Text style={s.knotsN}>{r.knots.toFixed(1)}</Text>
           <Text style={s.knotsL}>KNOTS</Text>
         </View>
       </Row>
@@ -46,7 +50,7 @@ export function ShipwrightPanel() {
       <View style={s.quote}>
         <Text style={s.quoteText}>“{cleanText(r.headline)}”</Text>
       </View>
-      {r.tips.map((tip) => (
+      {personal.tips.map((tip) => (
         <P key={tip}>{tip}</P>
       ))}
     </Panel>

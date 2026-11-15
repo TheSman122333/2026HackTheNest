@@ -32,11 +32,14 @@ export async function exchangeSsojetCode(
   const clientId = env.SSOJET_CLIENT_ID;
   const clientSecret = env.SSOJET_CLIENT_SECRET;
   const audience = env.SSOJET_AUDIENCE;
-  const redirectUri = env.SSOJET_REDIRECT_URI;
-  if (!issuer || !clientId || !clientSecret || !audience || !redirectUri) {
+  // Comma-separated allowlist: e.g. the Android bridge (http://localhost:8787/auth/ssojet/callback)
+  // and the website callback (https://<site>/auth/callback). The client says which one it used.
+  const allowed = (env.SSOJET_REDIRECT_URI ?? '').split(',').map((u) => u.trim()).filter(Boolean);
+  if (!issuer || !clientId || !clientSecret || !audience || !allowed.length) {
     throw new SsojetUnavailableError('SSOJet sign-in is not configured');
   }
-  if (input.redirectUri !== redirectUri) throw new SsojetRequestError('redirect URI mismatch');
+  if (!allowed.includes(input.redirectUri)) throw new SsojetRequestError('redirect URI mismatch');
+  const redirectUri = input.redirectUri;
 
   const issuerUrl = httpsUrl(issuer);
   if (issuerUrl.search || issuerUrl.hash) throw new SsojetUnavailableError('invalid SSOJet issuer configuration');

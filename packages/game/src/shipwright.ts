@@ -14,6 +14,8 @@ export type ShipwrightInput = {
   screen: ScreenDay;
   limits: ScreenLimits;
   streak: StreakState;
+  /** false on iPhone/web: no steps or scroll tracking, so no tips about them */
+  tracking?: boolean;
 };
 
 export type ShipwrightReport = { speed: ShipSpeed; knots: number; headline: string; tips: string[] };
@@ -38,13 +40,16 @@ export function shipwrightReport(i: ShipwrightInput): ShipwrightReport {
   const speed = speedFor(i.moves.total);
   const tips: string[] = [];
 
+  const tracking = i.tracking ?? true;
   const nextStep = stepsToNextMove(i.steps);
-  if (nextStep !== null) tips.push(`${nextStep.toLocaleString('en-US')} more steps and I'll find you another Move.`);
+  if (tracking && nextStep !== null) tips.push(`${nextStep.toLocaleString('en-US')} more steps and I'll find you another Move.`);
 
   const questRoom = REWARDS.movesFromActivitiesPerDay - i.moves.fromActivities;
   if (questRoom > 0) tips.push(`Log a quest in real life: up to ${questRoom} more Moves from quests today.`);
 
-  if (!i.screen.tracked) {
+  if (!tracking) {
+    // nothing: tracking is not available on this device
+  } else if (!i.screen.tracked) {
     tips.push("Turn on the scroll tracker so I can count your Calm Seas days. They're the biggest speed boost.");
   } else if (i.screen.swipes > i.limits.swipes || i.screen.minutes > i.limits.minutes) {
     tips.push("Rough water today: you're past your scroll limit. No harm done, we'll catch the calm tomorrow.");

@@ -30,7 +30,7 @@ import {
 } from '@last-voyage/game';
 import type { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { ObjectId } from 'mongodb';
+import { Binary, ObjectId } from 'mongodb';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
@@ -147,7 +147,6 @@ export function registerIsland(
 ) {
   const env = options.env ?? process.env;
   const fetchImpl = options.fetchImpl ?? fetch;
-  const voiceAudio = new Map<string, { userId: string; bytes: Uint8Array; expiresAt: number }>();
   const view = async (user: UserDoc) => {
     const crewId = requireCrew(user);
     const isle = await currentIsland(c, crewId);
@@ -538,8 +537,8 @@ export function registerIsland(
       const previousAudio = existingTurn.response.audio as { url?: unknown } | null | undefined;
       const audioId = typeof previousAudio?.url === 'string' ? /\/voice\/audio\/([^/]+)$/.exec(previousAudio.url)?.[1] : null;
       if (audioId) {
-        const cached = voiceAudio.get(audioId);
-        if (!cached || cached.expiresAt <= Date.now() || cached.userId !== user._id.toHexString()) {
+        const cached = await c.media.findOne({ _id: `voice:${audioId}` });
+        if (!cached || (cached.expiresAt?.getTime() ?? 0) <= Date.now() || !cached.userId.equals(user._id)) {
           return ctx.json({ ...existingTurn.response, audio: null, audioError: 'speech_expired' });
         }
       }
@@ -685,11 +684,10 @@ export function registerIsland(
       const bytes = await synthesizeSpeech(reply, env, fetchImpl);
       if (bytes?.length && bytes.byteLength <= 1024 * 1024) {
         const id = randomUUID();
-        const expiresAt = Date.now() + 60_000;
-        for (const [key, cached] of voiceAudio) if (cached.expiresAt <= Date.now()) voiceAudio.delete(key);
-        if (voiceAudio.size >= 50) voiceAudio.delete(voiceAudio.keys().next().value!);
-        voiceAudio.set(id, { userId: user._id.toHexString(), bytes, expiresAt });
-        audio = { url: `/voice/audio/${id}`, expiresAt: new Date(expiresAt).toISOString() };
+        const expiresAt = new Date(Date.now() + 10 * 60_000);
+        // Stored in Mongo (TTL index) so any server instance can serve it.
+        await c.media.insertOne({ _id: `voice:${id}`, userId: user._id, contentType: 'audio/mpeg', bytes: new Binary(bytes), createdAt: new Date(), expiresAt });
+        audio = { url: `/voice/audio/${id}`, expiresAt: expiresAt.toISOString() };
       } else {
         audioError = !env.ELEVENLABS_API_KEY ? 'speech_not_configured' : bytes?.length ? 'speech_too_large' : 'speech_unavailable';
       }
@@ -718,16 +716,14 @@ export function registerIsland(
   app.get('/voice/audio/:id', async (ctx) => {
     const user = ctx.get('user');
     const id = ctx.req.param('id');
-    const cached = voiceAudio.get(id);
-    if (!cached || cached.expiresAt <= Date.now()) {
-      voiceAudio.delete(id);
-      throw new HTTPException(404, { message: 'audio expired' });
-    }
-    if (cached.userId !== user._id.toHexString()) throw new HTTPException(403, { message: 'audio belongs to another player' });
-    const audioBuffer = new ArrayBuffer(cached.bytes.byteLength);
-    new Uint8Array(audioBuffer).set(cached.bytes);
+    const cached = await c.media.findOne({ _id: `voice:${id}` });
+    if (!cached || (cached.expiresAt?.getTime() ?? 0) <= Date.now()) throw new HTTPException(404, { message: 'audio expired' });
+    if (!cached.userId.equals(user._id)) throw new HTTPException(403, { message: 'audio belongs to another player' });
+    const bytes = cached.bytes.buffer;
+    const audioBuffer = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(audioBuffer).set(bytes);
     return new Response(audioBuffer, {
-      headers: { 'content-type': 'audio/mpeg', 'cache-control': 'private, no-store', 'content-length': String(cached.bytes.length) },
+      headers: { 'content-type': 'audio/mpeg', 'cache-control': 'private, no-store', 'content-length': String(bytes.byteLength) },
     });
   });
 

@@ -14,7 +14,7 @@ const TOKEN_KEY = 'lv_token';
 let token: string | null = null;
 
 /** SecureStore on phones; the browser (iPhone Safari build) uses localStorage. */
-const storage = {
+export const storage = {
   get: async (k: string) => (Platform.OS === 'web' ? globalThis.localStorage?.getItem(k) ?? null : SecureStore.getItemAsync(k)),
   set: async (k: string, v: string) => (Platform.OS === 'web' ? globalThis.localStorage?.setItem(k, v) : SecureStore.setItemAsync(k, v)),
   del: async (k: string) => (Platform.OS === 'web' ? globalThis.localStorage?.removeItem(k) : SecureStore.deleteItemAsync(k)),

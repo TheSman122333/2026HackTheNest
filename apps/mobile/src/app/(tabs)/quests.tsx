@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { TRACKING } from '@/lib/platform';
 import { ACTIVITY_SPRITE, Sprite } from '@/components/sprites';
 import { useNarrator } from '@/features/narrator/useNarrator';
 import { useSentinelPermissions } from '@/features/scroll/useScrollSentinel';
@@ -86,6 +87,7 @@ export default function Quests() {
         <P dim>Everyday efforts count. Repeating an activity 3+ times gives reduced rewards.</P>
       </Panel>
 
+      {TRACKING ? (<>
       <Panel>
         <Row><Sprite name="fx_footsteps" size={28} /><H>Steps: {t.steps.toLocaleString()}</H></Row>
         <Bar value={t.moves.fromSteps} max={REWARDS.movesFromStepsPerDay} color={C.sea} label={`${t.moves.fromSteps}/${REWARDS.movesFromStepsPerDay} step Moves`} />
@@ -113,6 +115,7 @@ export default function Quests() {
         </P>
         {!t.screen.tracked ? <Btn small label="Set up tracking" onPress={() => router.push('/dev/scroll-lab')} /> : null}
       </Panel>
+      </>) : null}
     </Screen>
   );
 }

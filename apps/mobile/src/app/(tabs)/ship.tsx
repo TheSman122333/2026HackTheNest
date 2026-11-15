@@ -8,6 +8,7 @@ import { avatarFor, ITEM_SPRITE, Sprite } from '@/components/sprites';
 import { ShipwrightPanel } from '@/features/ship/ShipwrightPanel';
 import { useNarrator } from '@/features/narrator/useNarrator';
 import { api } from '@/lib/api';
+import { TRACKING } from '@/lib/platform';
 import type { CrewRoster } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
@@ -64,18 +65,20 @@ export default function Ship() {
 
       <Row gap={10}>
         <Stat label="MOVES LEFT" value={m.remaining} icon={<Sprite name="boots" size={22} />} />
+        {TRACKING ? (<>
         <Stat label="STEPS" value={t.steps.toLocaleString()} color={C.cloud} icon={<Sprite name="fx_footsteps" size={20} />} />
         <Stat label="CALM DAYS" value={t.streak.calmDays} color={C.cloud} icon={<Sprite name="t_campfire" size={22} />} />
         <Stat label="SHIELDS" value={t.streak.shields} color={C.cloud} icon={<Sprite name="shield" size={22} />} />
+        </>) : null}
       </Row>
 
-      <ShipwrightPanel />
+      <ShipwrightPanel crewAverageMoves={crewSailing?.averageMoves} />
 
       <Panel>
         <H>Today&apos;s Moves</H>
-        <P dim>{m.base} free + {m.fromSteps} steps + {m.fromActivities} quests</P>
+        <P dim>{m.base} free{TRACKING ? ` + ${m.fromSteps} steps` : ''} + {m.fromActivities} quests</P>
         <Row>
-          <Tag label={`×${m.multiplier} STREAK`} color={C.gold} />
+          {TRACKING ? <Tag label={`×${m.multiplier} STREAK`} color={C.gold} /> : null}
           <P>{m.total} earned · {m.spent} spent</P>
         </Row>
         <Row>

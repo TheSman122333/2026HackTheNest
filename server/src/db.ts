@@ -9,7 +9,7 @@ import type {
   Skill,
   StreakState,
 } from '@last-voyage/game';
-import { MongoClient, type Collection, type Db, type ObjectId } from 'mongodb';
+import { MongoClient, type Binary, type Collection, type Db, type ObjectId } from 'mongodb';
 
 export type UserDoc = {
   _id: ObjectId;
@@ -146,6 +146,17 @@ export type VoiceTurnDoc = {
   expiresAt: Date;
 };
 
+/** Generated audio (theme songs, short-lived narrator replies). */
+export type MediaDoc = {
+  _id: string;
+  userId: ObjectId;
+  contentType: string;
+  bytes: Binary;
+  createdAt: Date;
+  /** TTL: removed automatically after this time (narrator replies) */
+  expiresAt?: Date;
+};
+
 export type Collections = {
   users: Collection<UserDoc>;
   crews: Collection<CrewDoc>;
@@ -157,6 +168,7 @@ export type Collections = {
   gmEvents: Collection<GmEventDoc>;
   voiceConversations: Collection<VoiceConversationDoc>;
   voiceTurns: Collection<VoiceTurnDoc>;
+  media: Collection<MediaDoc>;
 };
 
 export function collections(db: Db): Collections {
@@ -171,6 +183,7 @@ export function collections(db: Db): Collections {
     gmEvents: db.collection<GmEventDoc>('gm_events'),
     voiceConversations: db.collection<VoiceConversationDoc>('voice_conversations'),
     voiceTurns: db.collection<VoiceTurnDoc>('voice_turns'),
+    media: db.collection<MediaDoc>('media'),
   };
 }
 
@@ -189,6 +202,7 @@ export async function ensureIndexes(c: Collections) {
     c.voiceConversations.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     c.voiceTurns.createIndex({ userId: 1, requestId: 1 }, { unique: true }),
     c.voiceTurns.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    c.media.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, sparse: true }),
   ]);
 }
 
