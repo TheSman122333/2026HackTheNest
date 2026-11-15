@@ -4,7 +4,7 @@ import { Binary, ObjectId } from 'mongodb';
 import { createHash } from 'node:crypto';
 
 import type { Collections, UserDoc } from './db';
-import { synthesizeSpeech } from './voice';
+import { narratorVoiceId, NARRATOR_VOICE_VERSION, synthesizeSpeech } from './voice';
 
 /** The passage explicitly supplied by the project lead for the opening cutscene. */
 export const OPENING_NARRATION = 'Wealth, fame, power. Gold Roger, the King of the Pirates, attained everything this world has to offer. And so, many men head for the Grand Line to find the great treasure he left behind... the One Piece.';
@@ -12,8 +12,8 @@ export const OPENING_NARRATION = 'Wealth, fame, power. Gold Roger, the King of t
 /** A public, fixed passage: callers cannot submit arbitrary text or choose a voice. */
 export function registerOpening(app: Hono<{ Variables: { user: UserDoc } }>, c: Collections, options: { env: NodeJS.ProcessEnv; fetchImpl: typeof fetch }) {
   const { env, fetchImpl } = options;
-  const configured = Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_VOICE_ID);
-  const version = createHash('sha256').update(`${env.ELEVENLABS_VOICE_ID ?? ''}:${OPENING_NARRATION}`).digest('hex').slice(0, 24);
+  const configured = Boolean(env.ELEVENLABS_API_KEY);
+  const version = createHash('sha256').update(`${NARRATOR_VOICE_VERSION}:${narratorVoiceId(env)}:${OPENING_NARRATION}`).digest('hex').slice(0, 24);
   const mediaId = `opening:${version}`;
   let generating: Promise<Uint8Array> | null = null;
   const audio = async (): Promise<Uint8Array> => {

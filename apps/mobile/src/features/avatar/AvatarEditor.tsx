@@ -25,7 +25,7 @@ function fit(photo: FacePhoto): FacePhoto {
 const samePhoto = (a: FacePhoto | null, b: FacePhoto | null) => JSON.stringify(a) === JSON.stringify(b);
 
 /** Only avatarId is sent to the game API. Camera bytes and face fitting remain local. */
-export function AvatarEditor({ user }: { user: User }) {
+export function AvatarEditor({ user, onboarding = false }: { user: User; onboarding?: boolean }) {
   const fallback = avatarFor(user.id) as AvatarId;
   const [selected, setSelected] = useState<AvatarId>(() => AVATARS.find((avatar) => avatar.id === user.avatarId)?.id ?? fallback);
   const [photo, setPhoto] = useState<FacePhoto | null>(null);
@@ -114,7 +114,9 @@ export function AvatarEditor({ user }: { user: User }) {
       await releasePhoto(user.id, previous, prepared?.uri);
       savedPhoto.current = prepared;
       replaceDraft(prepared);
-      if (mounted.current) router.back();
+      if (mounted.current) {
+        if (onboarding) router.replace('/'); else router.back();
+      }
     } catch (e) {
       let restored = true;
       if (wroteLocal) {
@@ -136,10 +138,10 @@ export function AvatarEditor({ user }: { user: User }) {
 
   return <Screen>
     <Row style={{ justifyContent: 'space-between' }}>
-      <Btn small label="Cancel" color={C.deep} onPress={() => router.back()} disabled={saving} />
+      {!onboarding ? <Btn small label="Cancel" color={C.deep} onPress={() => router.back()} disabled={saving} /> : null}
       <P dim>Your pirate, your way</P>
     </Row>
-    <View style={{ gap: 6 }}><Title>Choose your pirate</Title><P dim>Pick a look, then fit your own face inside it.</P></View>
+    <View style={{ gap: 6 }}><Title>Choose your pirate</Title><P dim>{onboarding ? 'First, make this pirate yours. Choose a look and optionally take or add a face photo.' : 'Pick a look, then fit your own face inside it.'}</P></View>
 
     <Panel color={C.deep} style={{ alignItems: 'center', paddingVertical: 24 }}>
       {loading ? <ActivityIndicator color={C.gold} size="large" /> : <PlayerAvatar userId={user.id} avatarId={selected} photo={photo} size={PREVIEW_SIZE} label="Your pirate preview" />}
@@ -185,7 +187,7 @@ export function AvatarEditor({ user }: { user: User }) {
         <Row><Btn small label="Center face" color={C.sky} disabled={off} onPress={() => changeFit({ offsetX: 0, offsetY: 0 })} /><Btn small label="Remove photo" color={C.cloud} disabled={off} onPress={() => { if (!locked.current) replaceDraft(null); }} /></Row>
       </> : null}
     </Panel>
-    <Btn label="Save pirate" onPress={save} busy={saving} disabled={loading || picking} />
+    <Btn label={onboarding ? 'Continue with this pirate' : 'Save pirate'} onPress={save} busy={saving} disabled={loading || picking} />
     <P dim center>Avatar choice follows your account. The face photo is private to this device.</P>
   </Screen>;
 }

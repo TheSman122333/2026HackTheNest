@@ -5,8 +5,6 @@ import {
   SKILLS,
   clampLimits,
   dayKeyInTz,
-  grantForActivity,
-  type ActivityLog,
 } from '@last-voyage/game';
 import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
@@ -17,10 +15,13 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 
 import { AVATAR_IDS, type Collections, type UserDoc } from './db';
+import { awardActivity, reconcileActivityReceipts } from './activities';
 import { createIsland, registerIsland, resumeVoyage } from './island';
-import { ledger, spendMoves, todayMoves } from './moves';
+import { spendMoves, todayMoves } from './moves';
 import { registerMusic } from './music';
 import { registerOpening } from './opening';
+import { registerQuests } from './quests';
+import { registerSoundtrack } from './soundtrack';
 import { registerShip, shipWindMultiplier } from './ship';
 import { exchangeSsojetCode, SsojetAuthenticationError, SsojetRequestError, SsojetUnavailableError } from './ssojet';
 
@@ -32,9 +33,10 @@ export type AppDeps = {
   allowDevLogin: boolean;
   env?: NodeJS.ProcessEnv;
   fetchImpl?: typeof fetch;
+  now?: () => Date;
 };
 
-export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetchImpl = fetch }: AppDeps) {
+export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetchImpl = fetch, now }: AppDeps) {
   const key = new TextEncoder().encode(jwtSecret);
   const app = new Hono<Env>();
   app.use('*', cors());
@@ -67,6 +69,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     id: u._id.toHexString(),
     name: u.name,
     avatarId: u.avatarId ?? null,
+    preferences: u.preferences ?? null,
     tz: u.tz,
     crewId: u.crewId?.toHexString() ?? null,
     skills: u.skills,
@@ -171,6 +174,8 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   app.use('/crews/*', auth);
   app.use('/crews', auth);
   app.use('/activities', auth);
+  app.use('/quests', auth);
+  app.use('/quests/*', auth);
   app.use('/moves/*', auth);
   app.use('/log', auth);
   app.use('/crew', auth);
@@ -178,6 +183,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   app.use('/island', auth);
   app.use('/island/*', auth);
   app.use('/voice/*', auth);
+  app.use('/audio/*', auth);
 
   async function auth(ctx: Context<Env>, next: () => Promise<void>) {
     const h = ctx.req.header('authorization') ?? '';
@@ -196,6 +202,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   // ---------- me ----------
   app.get('/me', async (ctx) => {
     const user = ctx.get('user');
+    await reconcileActivityReceipts(c, user);
     const [crew, today] = await Promise.all([
       user.crewId ? c.crews.findOne({ _id: user.crewId }) : null,
       todayMoves(c, user),
@@ -263,28 +270,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   app.post('/activities', async (ctx) => {
     const user = ctx.get('user');
     const { kind } = await body(ctx, z.object({ kind: z.enum(ACTIVITY_KINDS) }));
-    const now = new Date();
-    const day = dayKeyInTz(now, user.tz);
-    const todays: ActivityLog[] = (await c.activities.find({ userId: user._id, day }).toArray()).map((a) => ({
-      kind: a.kind,
-      at: a.at.getTime(),
-      supplies: a.supplies,
-      moves: a.moves,
-      legend: a.legend,
-    }));
-    const g = grantForActivity(todays, kind);
-    await c.activities.insertOne({ userId: user._id, crewId: user.crewId, day, kind, supplies: g.supplies, moves: g.moves, legend: g.legend, xp: g.xp, at: now });
-
-    const inc: Record<string, number> = { supplies: g.supplies, legend: g.legend };
-    for (const [s, v] of Object.entries(g.xp)) inc[`skills.${s}`] = v;
-    await c.users.updateOne({ _id: user._id }, { $inc: inc });
-    if (user.crewId && g.supplies > 0) {
-      await c.crews.updateOne({ _id: user.crewId }, { $inc: { 'stores.supplies': g.supplies } });
-    }
-    if (g.supplies > 0) await ledger(c, { crewId: user.crewId, userId: user._id, item: 'supplies', delta: g.supplies, reason: `activity:${kind}` });
-
-    const fresh = (await c.users.findOne({ _id: user._id }))!;
-    return ctx.json({ grant: g, today: await todayMoves(c, fresh, now) });
+    return ctx.json(await awardActivity(c, user, kind, now?.() ?? new Date()));
   });
 
   /** The app pushes today's device numbers (steps + scroll aggregates). Only totals, never raw data. */
@@ -369,6 +355,8 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   registerMusic(app, c, { env, fetchImpl });
   registerOpening(app, c, { env, fetchImpl });
   registerShip(app, c);
+  registerQuests(app, c, { env, fetchImpl, now });
+  registerSoundtrack(app, c, { env, fetchImpl });
 
   app.onError((err, ctx) => {
     if (err instanceof HTTPException) return ctx.json({ error: err.message }, err.status);

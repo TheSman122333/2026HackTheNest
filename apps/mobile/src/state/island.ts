@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { api } from '@/lib/api';
 import type { FightResponse, IslandView, MoveResponse } from '@/lib/types';
 import { useSession } from '@/state/session';
+import { playGameSound } from '@/state/gameAudio';
 
 type IslandState = {
   view: IslandView | null;
@@ -21,17 +22,21 @@ const push = (feed: string[], lines: string[]) => [...lines.reverse(), ...feed].
 
 export const useIsland = create<IslandState>((set, get) => {
   const run = async <T extends IslandView>(fn: () => Promise<T>, toLines: (r: T) => string[]): Promise<T | null> => {
+    const owner = useSession.getState().me?.user.id;
+    const token = useSession.getState().token;
+    const current = () => owner === useSession.getState().me?.user.id && token === useSession.getState().token;
     set({ busy: true, error: null });
     try {
       const r = await fn();
+      if (!current()) return null;
       set({ view: r, feed: push(get().feed, toLines(r)) });
       useSession.getState().refresh();
       return r;
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : String(e) });
+      if (current()) set({ error: e instanceof Error ? e.message : String(e) });
       return null;
     } finally {
-      set({ busy: false });
+      if (current()) set({ busy: false });
     }
   };
 
@@ -43,8 +48,16 @@ export const useIsland = create<IslandState>((set, get) => {
     load: async () => {
       await run(() => api<IslandView>('GET', '/island'), () => []);
     },
-    move: (to) => run(() => api<MoveResponse>('POST', '/island/move', { to }), (r) => r.events.map(islandLine).filter(Boolean) as string[]),
-    fight: (action) => run(() => api<FightResponse>('POST', '/island/fight', { action }), (r) => r.events.map((e) => fightLine(e, r)).filter(Boolean) as string[]),
+    move: async (to) => {
+      const result = await run(() => api<MoveResponse>('POST', '/island/move', { to }), (r) => r.events.map(islandLine).filter(Boolean) as string[]);
+      if (result?.events.some((event) => event.type === 'moved')) playGameSound('move');
+      return result;
+    },
+    fight: async (action) => {
+      const result = await run(() => api<FightResponse>('POST', '/island/fight', { action }), (r) => r.events.map((e) => fightLine(e, r)).filter(Boolean) as string[]);
+      if (result) playGameSound(action === 'tonic' ? 'heal' : action);
+      return result;
+    },
     advanceNight: async () => {
       await run(
         () => api<IslandView & { sailed: boolean }>('POST', '/crew/advance-night'),

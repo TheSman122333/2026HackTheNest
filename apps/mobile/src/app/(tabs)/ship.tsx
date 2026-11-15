@@ -7,7 +7,6 @@ import { Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/compone
 import { ITEM_SPRITE, Sprite } from '@/components/sprites';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { ShipwrightPanel } from '@/features/ship/ShipwrightPanel';
-import { useNarrator } from '@/features/narrator/useNarrator';
 import { api } from '@/lib/api';
 import { TRACKING } from '@/lib/platform';
 import type { CrewRoster } from '@/lib/types';
@@ -51,7 +50,6 @@ export default function Ship() {
   const night = async () => {
     setBusy(true);
     await advanceNight();
-    if (!useIsland.getState().error) useNarrator.getState().narrate('night');
     await refresh();
     setBusy(false);
   };
@@ -125,6 +123,7 @@ export default function Ship() {
         <View style={s.invite}>
           <P>Invite friends with code</P>
           <Text style={s.code}>{me.crew.inviteCode}</Text>
+          <Btn label="Invite with QR code" color={C.sky} onPress={() => router.push('/invite')} />
         </View>
       </Panel>
 

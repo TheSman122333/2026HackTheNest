@@ -1,5 +1,6 @@
 import type {
   ActivityKind,
+  ActivityGrant,
   DayKey,
   Explorer,
   Fight,
@@ -10,6 +11,7 @@ import type {
   StreakState,
 } from '@last-voyage/game';
 import { MongoClient, type Binary, type Collection, type Db, type ObjectId } from 'mongodb';
+import type { QuestWeekDoc, VoyagePreferences } from './quests';
 
 export const AVATAR_IDS = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11', 'a12'] as const;
 export type AvatarId = (typeof AVATAR_IDS)[number];
@@ -19,6 +21,10 @@ export type UserDoc = {
   name: string;
   /** An approved outfit only. Face photos stay on the player's device. */
   avatarId?: AvatarId;
+  preferences?: VoyagePreferences;
+  activityRevision?: number;
+  /** Atomic award receipts; activity/crew/ledger records are recoverable projections. */
+  activityReceipts?: ActivityReceipt[];
   tz: string;
   crewId: ObjectId | null;
   skills: Record<Skill, number>;
@@ -39,6 +45,7 @@ export type CrewDoc = {
   memberIds: ObjectId[];
   /** supplies + materials (timber, iron, spice, shard) */
   stores: Record<string, number>;
+  activityRewardIds?: string[];
   upgrades?: { helm?: number; sails?: number };
   /** Purchases live with the atomic resource debit; the Log is a recoverable projection. */
   upgradeLog?: { id: string; key: 'helm' | 'sails'; level: number; cost: number; userId: string; at: Date }[];
@@ -56,7 +63,12 @@ export type ActivityDoc = {
   legend: number;
   xp: Partial<Record<Skill, number>>;
   at: Date;
+  eventId?: string;
+  grant?: ActivityGrant;
+  projected?: boolean;
 };
+
+export type ActivityReceipt = { id: string; day: DayKey; kind: ActivityKind; grant: ActivityGrant; crewId: ObjectId | null; at: Date };
 
 export type DayLogDoc = {
   _id?: ObjectId;
@@ -177,6 +189,7 @@ export type Collections = {
   voiceConversations: Collection<VoiceConversationDoc>;
   voiceTurns: Collection<VoiceTurnDoc>;
   media: Collection<MediaDoc>;
+  questWeeks: Collection<QuestWeekDoc>;
 };
 
 export function collections(db: Db): Collections {
@@ -192,6 +205,7 @@ export function collections(db: Db): Collections {
     voiceConversations: db.collection<VoiceConversationDoc>('voice_conversations'),
     voiceTurns: db.collection<VoiceTurnDoc>('voice_turns'),
     media: db.collection<MediaDoc>('media'),
+    questWeeks: db.collection<QuestWeekDoc>('quest_weeks'),
   };
 }
 
@@ -200,6 +214,8 @@ export async function ensureIndexes(c: Collections) {
     c.crews.createIndex({ inviteCode: 1 }, { unique: true }),
     c.users.createIndex({ ssojetSub: 1 }, { unique: true, sparse: true }),
     c.activities.createIndex({ userId: 1, day: 1 }),
+    c.activities.createIndex({ eventId: 1 }, { unique: true, sparse: true }),
+    c.questWeeks.createIndex({ userId: 1 }),
     c.dayLogs.createIndex({ userId: 1, day: 1 }, { unique: true }),
     c.ledger.createIndex({ crewId: 1, at: -1 }),
     c.ledger.createIndex({ userId: 1, at: -1 }),

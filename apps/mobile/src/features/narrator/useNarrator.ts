@@ -15,6 +15,7 @@ export type NarratorLine = { id: string; who: 'narrator' | 'you' | 'world'; text
 export type NarrationClip = { id: string; text: string; audioPath: string | null; scene: NarrationScene };
 type Job = { id: string; scene: NarrationScene; detail?: string };
 const isVisit = (scene: NarrationScene) => ['ship', 'island', 'quests', 'log', 'me'].includes(scene);
+const automaticScenes = new Set<NarrationScene>(['ship', 'island', 'quests']);
 
 type NarratorState = {
   lines: NarratorLine[];
@@ -47,15 +48,15 @@ function localStory(scene: NarrationScene, detail?: string) {
   const moves = me?.today.moves.remaining ?? v?.movesRemaining ?? 0;
   if (detail) return cleanText(detail);
   switch (scene) {
-    case 'arrival': return `Welcome aboard, ${me?.user.name ?? 'sailor'}. ${me?.crew?.name ?? 'Your crew'} has another horizon to chase, and you have ${moves} Moves to begin the tale.`;
-    case 'ship': return `Hear those sails, sailor? Your crew turns walks, quests, and calm days into wind. Tap the ship to meet your crew and chart what comes next.`;
-    case 'island': return v?.island.conquered ? 'Your crew has claimed this shore. Rest your boots; a fresh horizon waits at nightfall.' : v?.explorer.hp === 0 ? 'The sea brought you back to shore. Rest today, sailor; tomorrow you return at full strength.' : `Land ahead. You have ${moves} Moves to chart the brass-marked paths${v ? `, while ${v.boss.name} guards the heart of the island` : ''}.`;
-    case 'quests': return `A fine voyage begins ashore. You have logged ${me?.today.activities.length ?? 0} activities and walked ${(me?.today.steps ?? 0).toLocaleString()} steps today. Finish something in real life, then claim it here.`;
-    case 'log': return `Open the ship's log, sailor. Every discovery and shared supply writes another line in your crew's story.`;
-    case 'me': return `There you stand, ${me?.user.name ?? 'sailor'}, with ${me?.user.legend ?? 0} Legend to your name. Every real-life effort shapes the pirate you become.`;
-    case 'night': return 'Night rolls over the deck. Check the chart for what the new tide brought your crew.';
-    case 'fight': return 'Stand fast, sailor. Each action costs a Move, and the guardian answers in kind.';
-    default: return 'Another little chapter in a voyage earned by living.';
+    case 'arrival': return `Welcome, ${me?.user.name ?? 'friend'}. You have ${moves} Moves to start exploring.`;
+    case 'ship': return 'Your real-life activities move the ship forward. Tap it to see your crew, upgrades, and route.';
+    case 'island': return v?.island.conquered ? 'Your crew completed this island. The next destination opens tonight.' : v?.explorer.hp === 0 ? 'Rest today. You return tomorrow with full health, and your crew keeps its progress.' : `You have ${moves} Moves. Follow the highlighted tiles to explore the island.`;
+    case 'quests': return 'These quests fit your preferences. Complete them in real life, then claim your rewards here.';
+    case 'log': return 'Your crew’s activities, discoveries, and rewards are recorded here.';
+    case 'me': return `You have ${me?.user.legend ?? 0} Legend. Your profile tracks the progress you have earned.`;
+    case 'night': return 'A new day is ready. Check the map for your next destination.';
+    case 'fight': return 'Each action costs one Move. Your crew shares the progress against this guardian.';
+    default: return 'Your progress is saved.';
   }
 }
 
@@ -125,6 +126,8 @@ export const useNarrator = create<NarratorState>((set, get) => {
     reset: () => { generation++; memoryLines.clear(); hydration = null; hydrationScope = null; set({ scope: null, hydrated: false, visited: [], lines: [], busy: null, error: null, conversationId: null, briefed: false, audioPath: null, audioNonce: 0, current: null, queue: [] }); },
     toggleMute: () => set({ muted: !get().muted }),
     narrate: (scene, detail) => {
+      // Three first-visit tips only. Repeated actions already have visual and sound feedback.
+      if (!automaticScenes.has(scene)) return;
       const me = useSession.getState().me;
       if (!me?.crew) return;
       const scope = `lv_narrator_v3_${me.user.id}_${me.crew.id}`;

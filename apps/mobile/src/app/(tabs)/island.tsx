@@ -6,7 +6,6 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Bar, Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
 import { BOSS_SPRITE, ITEM_SPRITE, Sprite } from '@/components/sprites';
 import { HexBoard } from '@/features/island/HexBoard';
-import { useNarrator } from '@/features/narrator/useNarrator';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
@@ -93,13 +92,7 @@ export default function IslandScreen() {
         </Panel>
       )}
 
-      <HexBoard view={view} meId={meId} onTap={async (to) => {
-        const result = await move(to);
-        if (!result) return;
-        const found = result.events.filter((event) => event.type === 'found').map((event) => event.item);
-        const hurt = result.events.find((event) => event.type === 'hazard');
-        useNarrator.getState().narrate('move', `A new path charted, sailor. ${result.spent} Moves carried you across the island.${found.length ? ` You discovered ${found.join(', ')}.` : ''}${hurt ? ` The terrain dealt ${hurt.damage} damage.` : ''} ${result.movesRemaining} Moves remain.`);
-      }} disabled={busy || ko} />
+      <HexBoard view={view} meId={meId} onTap={(to) => { void move(to); }} disabled={busy || ko} />
 
       {bag.length ? (
         <Panel>

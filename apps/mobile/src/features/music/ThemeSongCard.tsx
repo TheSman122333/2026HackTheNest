@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import { fetchAudio } from '@/lib/audio';
 import { Float } from '@/ui/motion';
 import { cleanText } from '@/ui/text';
+import { useGameAudio } from '@/state/gameAudio';
 
 type Theme = { status: 'none' | 'pending' | 'ready' | 'failed'; prompt: string | null; version: number; audio: string | null };
 
@@ -18,6 +19,10 @@ export function ThemeSongCard() {
   const [busy, setBusy] = useState(false);
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
+  useEffect(() => {
+    useGameAudio.setState({ previewPlaying: status.playing });
+    return () => { useGameAudio.setState({ previewPlaying: false }); };
+  }, [status.playing]);
 
   const load = useCallback(async () => {
     try {

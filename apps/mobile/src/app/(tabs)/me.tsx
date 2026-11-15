@@ -9,6 +9,7 @@ import { TRACKING } from '@/lib/platform';
 import { Sprite } from '@/components/sprites';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { ThemeSongCard } from '@/features/music/ThemeSongCard';
+import { SoundSettings } from '@/features/audio/SoundSettings';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
@@ -60,6 +61,7 @@ export default function Me() {
       </Row>
 
       <Btn label="Customize your pirate" color={C.indigo} onPress={() => router.push('/avatar')} />
+      <Btn label="Quest preferences" color={C.sky} onPress={() => router.push('/preferences')} />
 
       <Row gap={10}>
         <Stat label="LEGEND" value={u.legend} icon={<Sprite name="t_star" size={20} />} />
@@ -70,6 +72,7 @@ export default function Me() {
         </>) : null}
       </Row>
 
+      <SoundSettings />
       <ThemeSongCard />
 
       <Panel>
