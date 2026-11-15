@@ -216,6 +216,14 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     return ctx.json({ user: publicUser(user), crew: crew && publicCrew(crew), today });
   });
 
+  /** Change your display name (crewmates and the leaderboard see it). */
+  app.put('/me/name', async (ctx) => {
+    const user = ctx.get('user');
+    const { name } = await body(ctx, z.object({ name: z.string().transform((s) => s.trim().replace(/\s+/g, ' ')).pipe(z.string().min(1).max(32)) }));
+    await c.users.updateOne({ _id: user._id }, { $set: { name } });
+    return ctx.json({ user: publicUser({ ...user, name }) });
+  });
+
   app.put('/me/limits', async (ctx) => {
     const user = ctx.get('user');
     const limits = clampLimits(await body(ctx, z.object({ swipes: z.number(), minutes: z.number() })));

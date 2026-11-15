@@ -4,13 +4,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat } from '@/components/kit';
 import { TRACKING } from '@/lib/platform';
 import { Sprite } from '@/components/sprites';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { SoundSettings } from '@/features/audio/SoundSettings';
 import { LeaveCrew } from '@/features/crew/LeaveCrew';
+import { EditName } from '@/features/profile/EditName';
 import { LEGEND_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
@@ -57,7 +58,7 @@ export default function Me() {
       <Row gap={12} style={{ flexWrap: "nowrap" }}>
         <Float amplitude={3} tilt={2}><PlayerAvatar userId={u.id} avatarId={u.avatarId} size={96} /></Float>
         <View style={{ flexShrink: 1 }}>
-          <Title>{u.name}</Title>
+          <EditName />
           <P dim>{ROLE[top]} of the {me.crew?.name}</P>
         </View>
       </Row>

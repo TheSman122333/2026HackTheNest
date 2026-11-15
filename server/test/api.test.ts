@@ -33,6 +33,14 @@ const call = async (method: string, path: string, token?: string, body?: unknown
 };
 
 describe('api', () => {
+  it('lets you change your name, trimmed and capped', async () => {
+    const a = (await call('POST', '/auth/dev', undefined, { name: 'Sailor', tz: 'UTC' })).json;
+    expect((await call('PUT', '/me/name', a.token, { name: '  Captain   Rin ' })).json.user.name).toBe('Captain Rin');
+    expect((await call('GET', '/me', a.token)).json.user.name).toBe('Captain Rin');
+    expect((await call('PUT', '/me/name', a.token, { name: '   ' })).status).toBe(400);
+    expect((await call('PUT', '/me/name', a.token, { name: 'x'.repeat(33) })).status).toBe(400);
+  });
+
   it('legend ranks you in your crew and across crews, and End the Year crowns the top pirate', async () => {
     const a = (await call('POST', '/auth/dev', undefined, { name: 'Lea', tz: 'UTC' })).json;
     const b = (await call('POST', '/auth/dev', undefined, { name: 'Max', tz: 'UTC' })).json;
