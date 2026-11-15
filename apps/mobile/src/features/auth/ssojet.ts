@@ -27,9 +27,30 @@ const PENDING_TTL_MS = 30 * 60_000;
 
 export const ssojetConfigured = Boolean(ISSUER && CLIENT_ID);
 
+/**
+ * Web callbacks can go through one address SSOJet already trusts (EXPO_PUBLIC_SSOJET_WEB_CALLBACK_ORIGIN).
+ * That page relays code + state back to the site where sign-in started (EXPO_PUBLIC_APP_URL),
+ * which holds the PKCE verifier and finishes it. Lets new domains work without SSOJet changes.
+ */
+const WEB_CALLBACK_ORIGIN = process.env.EXPO_PUBLIC_SSOJET_WEB_CALLBACK_ORIGIN;
+const APP_URL = process.env.EXPO_PUBLIC_APP_URL;
+
 function redirectUri(): string {
-  if (Platform.OS === 'web') return `${globalThis.location.origin}/auth/callback`;
+  if (Platform.OS === 'web') return `${WEB_CALLBACK_ORIGIN || globalThis.location.origin}/auth/callback`;
   return `${API_BASE}/auth/ssojet/callback`;
+}
+
+/**
+ * On the relay origin with no sign-in of its own in progress: send the callback on to the site
+ * that started it. Only ever to our fixed APP_URL, never to an address taken from the request.
+ */
+export async function relayWebCallback(search: string): Promise<boolean> {
+  if (Platform.OS !== 'web' || !APP_URL) return false;
+  const target = new URL(APP_URL);
+  if (globalThis.location.origin === target.origin) return false;
+  if (await storage.get(PENDING_KEY)) return false; // sign-in started on this origin: finish it here
+  globalThis.location.replace(`${target.origin}/auth/callback${search}`);
+  return true;
 }
 
 type Pending = { state: string; verifier: string; redirectUri: string; at: number };
@@ -40,6 +61,13 @@ type Pending = { state: string; verifier: string; redirectUri: string; at: numbe
  */
 export async function signInWithSsojet(): Promise<boolean> {
   if (!ISSUER || !CLIENT_ID) throw new Error('SSOJet is not configured in this build');
+  // PKCE needs the browser's Web Crypto, which only exists on https:// (or localhost). On a plain
+  // http:// page, hop to the real HTTPS site instead of failing with a cryptic crypto error.
+  if (Platform.OS === 'web' && globalThis.isSecureContext === false) {
+    const site = process.env.EXPO_PUBLIC_APP_URL || `https://${globalThis.location.host}`;
+    globalThis.location.replace(`${site}/welcome`);
+    return new Promise<boolean>(() => {});
+  }
   const discovery = await AuthSession.fetchDiscoveryAsync(ISSUER);
   const request = new AuthSession.AuthRequest({
     clientId: CLIENT_ID,

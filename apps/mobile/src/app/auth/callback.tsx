@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { Btn, C, P, Panel, Screen } from '@/components/kit';
-import { completeSsojet } from '@/features/auth/ssojet';
+import { completeSsojet, relayWebCallback } from '@/features/auth/ssojet';
 import { loadToken } from '@/lib/api';
 import { useSession } from '@/state/session';
 import { useT } from '@/features/language/i18n';
@@ -19,7 +19,9 @@ export default function AuthCallback() {
 
   useEffect(() => {
     let alive = true;
-    completeSsojet({ code: params.code, state: params.state, error: params.error })
+    // A sign-in started on our main site may land on the trusted relay address: hand it back.
+    relayWebCallback(typeof globalThis.location === 'undefined' ? '' : globalThis.location.search)
+      .then((relayed) => (relayed ? new Promise<never>(() => {}) : completeSsojet({ code: params.code, state: params.state, error: params.error })))
       .then(async () => {
         // Signed in here, or already signed in by the other path: either way, refresh and go.
         if (await loadToken()) {
