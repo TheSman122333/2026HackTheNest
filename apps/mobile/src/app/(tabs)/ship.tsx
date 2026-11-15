@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { TRACKING } from '@/lib/platform';
 import { avatarFor, ITEM_SPRITE, MONTH_CARD, Sprite } from '@/components/sprites';
 import { ShipwrightPanel } from '@/features/ship/ShipwrightPanel';
 import { api } from '@/lib/api';
@@ -64,9 +65,11 @@ export default function Ship() {
 
       <Row gap={10}>
         <Stat label="MOVES LEFT" value={m.remaining} icon={<Sprite name="boots" size={22} />} />
+        {TRACKING ? (<>
         <Stat label="STEPS" value={t.steps.toLocaleString()} color={C.cloud} icon={<Sprite name="fx_footsteps" size={20} />} />
         <Stat label="CALM DAYS" value={t.streak.calmDays} color={C.cloud} icon={<Sprite name="t_campfire" size={22} />} />
         <Stat label="SHIELDS" value={t.streak.shields} color={C.cloud} icon={<Sprite name="shield" size={22} />} />
+        </>) : null}
       </Row>
 
       <ShipwrightPanel />
@@ -76,11 +79,15 @@ export default function Ship() {
         <View style={s.math}>
           <MathCell n={m.base} label="free" />
           <Text style={s.op}>+</Text>
+          {TRACKING ? (<>
           <MathCell n={m.fromSteps} label="steps" />
           <Text style={s.op}>+</Text>
+          </>) : null}
           <MathCell n={m.fromActivities} label="quests" />
+          {TRACKING ? (<>
           <Text style={s.op}>×</Text>
           <MathCell n={m.multiplier} label="streak" />
+          </>) : null}
           <Text style={s.op}>=</Text>
           <MathCell n={m.total} label="moves" hot />
         </View>

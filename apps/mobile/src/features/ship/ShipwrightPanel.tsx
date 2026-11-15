@@ -3,6 +3,7 @@ import { SHIPWRIGHT, shipwrightReport, type ShipSpeed } from '@last-voyage/game'
 import { StyleSheet, Text, View } from 'react-native';
 
 import { C, F, P, Panel, Row } from '@/components/kit';
+import { TRACKING } from '@/lib/platform';
 import { useSession } from '@/state/session';
 
 const SPEEDS: ShipSpeed[] = ['becalmed', 'slow', 'steady', 'swift', 'flying'];
@@ -18,7 +19,7 @@ export function ShipwrightPanel() {
   const me = useSession((s) => s.me);
   if (!me) return null;
   const t = me.today;
-  const r = shipwrightReport({ moves: t.moves, steps: t.steps, screen: t.screen, limits: me.user.limits, streak: t.streak });
+  const r = shipwrightReport({ moves: t.moves, steps: t.steps, screen: t.screen, limits: me.user.limits, streak: t.streak, tracking: TRACKING });
   const level = SPEEDS.indexOf(r.speed);
 
   return (

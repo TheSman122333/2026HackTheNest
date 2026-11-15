@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { TRACKING } from '@/lib/platform';
 import { avatarFor, Sprite } from '@/components/sprites';
 import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { api } from '@/lib/api';
@@ -58,9 +59,11 @@ export default function Me() {
 
       <Row gap={10}>
         <Stat label="LEGEND" value={`⭐${u.legend}`} />
+        {TRACKING ? (<>
         <Stat label="CALM DAYS" value={`🔥${st.calmDays}`} color={C.cloud} />
         <Stat label="BEST" value={st.best} color={C.cloud} />
         <Stat label="SHIELDS" value={`🛡️${st.shields}/${STREAK.maxShields}`} color={C.cloud} />
+        </>) : null}
       </Row>
 
       <ThemeSongCard />
@@ -73,6 +76,7 @@ export default function Me() {
         <P dim>Skills grow from real activities and power you up in boss fights.</P>
       </Panel>
 
+      {TRACKING ? (<>
       <Panel>
         <H>Streak bonus: ×{(1 + Math.min(st.calmDays, STREAK.calmMaxDays) * STREAK.calmStepBonus + (st.shoreLeaveBonus ? STREAK.shoreLeaveBonus : 0)).toFixed(2)}</H>
         <P>+10% Moves for every calm day in a row (max ×2). A Streak Shield every 7 days saves you once. A day without opening the apps gives +25% tomorrow.</P>
@@ -94,6 +98,7 @@ export default function Me() {
         <P dim>Set up scroll tracking and step access, and see live counts.</P>
         <Btn small label="Open Scroll Lab" onPress={() => router.push('/dev/scroll-lab')} />
       </Panel>
+      </>) : null}
 
       <Btn
         label="Log out"

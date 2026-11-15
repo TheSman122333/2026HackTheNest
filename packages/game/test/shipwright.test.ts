@@ -26,6 +26,12 @@ describe('shipwright', () => {
     expect(r.tips.length).toBeLessThanOrEqual(3);
   });
 
+  it('skips step and scroll tips when the device cannot track', () => {
+    const r = shipwrightReport({ ...base, tracking: false });
+    expect(r.tips.join(' ')).not.toMatch(/steps|scroll|swipes/);
+    expect(r.tips.length).toBeGreaterThan(0);
+  });
+
   it('never scolds when over the scroll limit', () => {
     const r = shipwrightReport({ ...base, screen: { ...base.screen, swipes: 999 } });
     expect(r.tips.join(' ')).toContain('No harm done');
