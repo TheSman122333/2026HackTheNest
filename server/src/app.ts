@@ -71,6 +71,28 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   app.get('/health', (ctx) => ctx.json({ ok: true }));
 
   // ---------- auth ----------
+  /**
+   * SSOJet only accepts http(s) callback URLs, so it redirects the phone's browser here and we
+   * bounce the code/state into the app's deep link. Only these three params are forwarded.
+   */
+  app.get('/auth/ssojet/callback', (ctx) => {
+    const out = new URLSearchParams();
+    for (const k of ['code', 'state', 'error'] as const) {
+      const v = ctx.req.query(k);
+      if (v && v.length <= 4096) out.set(k, v);
+    }
+    const target = `lastvoyage://auth/callback?${out.toString()}`;
+    const safe = target.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    return ctx.html(
+      `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">` +
+        `<meta http-equiv="refresh" content="0;url=${safe}"><title>The Last Voyage</title></head>` +
+        `<body style="background:#27187E;color:#F1F2F6;font-family:sans-serif;text-align:center;padding:48px 16px">` +
+        `<h2>Boarding…</h2><p><a href="${safe}" style="display:inline-block;background:#FF8600;color:#140C4F;` +
+        `padding:14px 22px;border-radius:14px;font-weight:800;text-decoration:none;border:3px solid #140C4F">Return to The Last Voyage</a></p>` +
+        `<script>location.replace(${JSON.stringify(target)})</script></body></html>`,
+    );
+  });
+
   app.post('/auth/ssojet', async (ctx) => {
     const parsed = z
       .object({

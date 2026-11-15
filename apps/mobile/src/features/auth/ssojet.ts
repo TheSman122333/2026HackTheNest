@@ -1,20 +1,25 @@
 /**
  * SSOJet sign-in (OIDC authorization code + PKCE). The app only gets a one-time code; the
  * server exchanges it with the client secret, verifies the ID token and mints our own JWT.
+ *
+ * SSOJet only allows http(s) callbacks, so the redirect URI is our server's bridge page
+ * (GET /auth/ssojet/callback), which bounces the code into lastvoyage://auth/callback.
  * Public config (not secrets): EXPO_PUBLIC_SSOJET_ISSUER, EXPO_PUBLIC_SSOJET_CLIENT_ID.
  */
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 
-import { api, setToken } from '@/lib/api';
+import { api, API_BASE, setToken } from '@/lib/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
 const ISSUER = process.env.EXPO_PUBLIC_SSOJET_ISSUER;
 const CLIENT_ID = process.env.EXPO_PUBLIC_SSOJET_CLIENT_ID;
+const APP_RETURN = 'lastvoyage://auth/callback';
 
 export const ssojetConfigured = Boolean(ISSUER && CLIENT_ID);
-export const SSOJET_REDIRECT = AuthSession.makeRedirectUri({ scheme: 'lastvoyage', path: 'auth/callback' });
+/** must match SSOJet's "Sign-in callback URLs" and the server's SSOJET_REDIRECT_URI */
+export const SSOJET_REDIRECT = `${API_BASE}/auth/ssojet/callback`;
 
 /** Returns true when signed in, false if the user cancelled. Throws on real errors. */
 export async function signInWithSsojet(): Promise<boolean> {
@@ -27,14 +32,19 @@ export async function signInWithSsojet(): Promise<boolean> {
     responseType: AuthSession.ResponseType.Code,
     usePKCE: true,
   });
-  const result = await request.promptAsync(discovery);
-  if (result.type === 'cancel' || result.type === 'dismiss') return false;
-  if (result.type !== 'success' || !result.params.code) {
-    throw new Error(result.type === 'error' ? (result.error?.message ?? 'sign-in failed') : 'sign-in failed');
-  }
+  const authUrl = await request.makeAuthUrlAsync(discovery);
+  const result = await WebBrowser.openAuthSessionAsync(authUrl, APP_RETURN);
+  if (result.type !== 'success') return false;
+
+  const params = new URL(result.url).searchParams;
+  if (params.get('error')) throw new Error(`SSOJet: ${params.get('error')}`);
+  const code = params.get('code');
+  if (!code) throw new Error('SSOJet returned no code');
+  if (params.get('state') !== request.state) throw new Error('sign-in state mismatch, please try again');
+
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
   const r = await api<{ token: string }>('POST', '/auth/ssojet', {
-    authorizationCode: result.params.code,
+    authorizationCode: code,
     codeVerifier: request.codeVerifier,
     redirectUri: SSOJET_REDIRECT,
     tz,
