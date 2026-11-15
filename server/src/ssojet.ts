@@ -14,7 +14,26 @@ type OidcDiscovery = {
   issuer: string;
   jwks_uri: string;
   token_endpoint: string;
+  userinfo_endpoint?: string;
 };
+
+const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+
+/**
+ * Best display name from OIDC claims. Email-only sign-ins carry no `name`, so fall back to
+ * given/family name, nickname, then the email's local part ("sam.lee" → "Sam Lee").
+ * Only the resulting name is stored; the email itself is never saved.
+ */
+export function displayNameFromClaims(claims: Record<string, unknown>): string | null {
+  const full = str(claims.name) ?? ([str(claims.given_name), str(claims.family_name)].filter(Boolean).join(' ') || null);
+  const nick = str(claims.nickname) ?? str(claims.preferred_username);
+  const email = str(claims.email);
+  const fromEmail = email?.includes('@')
+    ? email.split('@')[0]!.replace(/[._+-]+/g, ' ').replace(/\d+/g, ' ').trim().replace(/\b\w/g, (ch) => ch.toUpperCase())
+    : null;
+  const picked = full ?? (nick && !nick.includes('@') ? nick : null) ?? fromEmail;
+  return picked ? picked.replace(/\s+/g, ' ').slice(0, 32) : null;
+}
 
 function httpsUrl(value: unknown): URL {
   if (typeof value !== 'string') throw new SsojetUnavailableError('invalid SSOJet configuration');
@@ -66,7 +85,7 @@ export async function exchangeSsojetCode(
     signal: AbortSignal.timeout(12_000),
   });
   if (!tokenRes.ok) throw new SsojetUnavailableError('SSOJet authorization-code exchange failed');
-  const tokenBody = (await tokenRes.json()) as { id_token?: unknown };
+  const tokenBody = (await tokenRes.json()) as { id_token?: unknown; access_token?: unknown };
   if (typeof tokenBody.id_token !== 'string') throw new SsojetUnavailableError('SSOJet did not return an ID token');
 
   const jwks = createRemoteJWKSet(jwksUrl, { [customFetch]: fetchImpl });
@@ -83,6 +102,21 @@ export async function exchangeSsojetCode(
   if (typeof payload.sub !== 'string' || payload.sub.length < 1 || payload.sub.length > 255) {
     throw new SsojetAuthenticationError('SSOJet ID token has no valid subject');
   }
-  const name = typeof payload.name === 'string' ? payload.name.trim().slice(0, 32) : null;
-  return { sub: payload.sub, name: name || null };
+  let name = displayNameFromClaims(payload);
+  // ID tokens often omit profile claims; the userinfo endpoint has them.
+  if (!name && typeof tokenBody.access_token === 'string' && discovery.userinfo_endpoint) {
+    try {
+      const info = await fetchImpl(httpsUrl(discovery.userinfo_endpoint), {
+        headers: { authorization: `Bearer ${tokenBody.access_token}` },
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (info.ok) {
+        const claims = (await info.json()) as Record<string, unknown>;
+        if (claims.sub === payload.sub) name = displayNameFromClaims(claims);
+      }
+    } catch {
+      // A missing name never blocks sign-in.
+    }
+  }
+  return { sub: payload.sub, name };
 }

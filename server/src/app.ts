@@ -148,6 +148,9 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
         user = await c.users.findOne({ ssojetSub: identity.sub });
         if (!user) throw error;
       }
+    } else if (user.name === 'Sailor' && identity.name) {
+      // Accounts made before names were read from SSOJet get their real name now.
+      await c.users.updateOne({ _id: user._id }, { $set: { name: identity.name } });
     }
 
     const resumed = await resumeVoyage(c, user);
