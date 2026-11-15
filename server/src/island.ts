@@ -36,7 +36,7 @@ import { z } from 'zod';
 
 import type { Collections, GmEventDoc, IslandDoc, UserDoc } from './db';
 import { askTidekeeper, brainState, pickDestination, summarizeEvents } from './brain';
-import { fallbackLine, generateGmProposal, type StreakContext } from './gm';
+import { fallbackLine, generateGmProposal, isWorldEventDay, type StreakContext } from './gm';
 import { ledger, spendMoves, todayMoves } from './moves';
 import {
   resolveVoiceIntent,
@@ -386,17 +386,23 @@ export function registerIsland(
 
   app.post('/island/gm-event', async (ctx) => {
     const parsed = z
-      .object({ requestId: z.string().uuid(), trigger: z.enum(['daily_briefing', 'advance_night']) })
+      .object({ requestId: z.string().uuid(), trigger: z.enum(['daily_briefing', 'advance_night', 'scheduled']) })
       .safeParse(await ctx.req.json().catch(() => ({})));
     if (!parsed.success) throw new HTTPException(400, { message: parsed.error.message });
 
     const user = ctx.get('user');
     const crewId = requireCrew(user);
     const isle = await currentIsland(c, crewId);
-    if (isle.conqueredAt) throw new HTTPException(409, { message: 'island already conquered' });
+    const scheduled = parsed.data.trigger === 'scheduled';
     const day = new Date().toISOString().slice(0, 10);
+    // The app asks on every island visit; only the crew's 3 event days a week actually fire.
+    if (scheduled && (isle.conqueredAt || !isWorldEventDay(crewId.toHexString(), day))) {
+      return ctx.json({ requestId: parsed.data.requestId, status: 'not_today' as const });
+    }
+    if (isle.conqueredAt) throw new HTTPException(409, { message: 'island already conquered' });
     // GM_DEMO_REPEAT=true lets judges trigger a fresh event on every press (one per day otherwise).
-    const eventKey = `${crewId.toHexString()}:${isle._id.toHexString()}:${day}${env.GM_DEMO_REPEAT === 'true' ? `:${parsed.data.requestId}` : ''}`;
+    const repeat = env.GM_DEMO_REPEAT === 'true' && !scheduled;
+    const eventKey = `${crewId.toHexString()}:${isle._id.toHexString()}:${day}${repeat ? `:${parsed.data.requestId}` : ''}`;
     const existing = await c.gmEvents.findOne({ eventKey });
     if (existing) {
       const complete = await completePendingGmEvent(existing);
@@ -445,7 +451,6 @@ export function registerIsland(
     }
 
     const hex = candidates[0]!;
-    const tile = isle.island.tiles[hex as HexKey]!;
     const now = new Date();
     const doc: GmEventDoc = {
       _id: eventKey,

@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Bar, Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
 import { BOSS_SPRITE, ITEM_SPRITE, Sprite } from '@/components/sprites';
 import { HexBoard } from '@/features/island/HexBoard';
+import { useNarrator } from '@/features/narrator/useNarrator';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
@@ -24,6 +25,7 @@ export default function IslandScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
+      void useNarrator.getState().scheduledWorldEvent();
     }, [load]),
   );
 

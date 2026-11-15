@@ -18,6 +18,6 @@ export function SoundSettings() {
     <P dim>The narrator gives three short first-visit tips. Moves, attacks, and quest completions use visual feedback instead of a voice line.</P>
     {!unlocked ? <Btn small label="Enable game audio" onPress={unlock} /> : null}
     {loading ? <P dim>Preparing the soundtrack. The game is ready to play while audio loads.</P> : null}
-    {failed ? <><P dim>Some audio is unavailable. The server needs ElevenLabs configured, including Music access.</P><Btn small label="Retry audio" color={C.sky} onPress={retry} /></> : null}
+    {failed ? <><P dim>Audio is unavailable right now. Keep playing and try again later.</P><Btn small label="Retry audio" color={C.sky} onPress={retry} /></> : null}
   </Panel>;
 }

@@ -24,7 +24,7 @@ SSOJet continues to use the existing issuer/client configuration and server-side
 
 ## Narration and game audio
 
-Automatic narration is limited to three short, non-repeating first-visit tips: Ship, Island, and Quests. Movement, attacks, quest completions, and ordinary tab changes do not each trigger another voice line. The narrator uses plain language and a neutral ElevenLabs voice; `ELEVENLABS_NARRATOR_VOICE_ID` can select another natural voice. This replaces the older pirate-performance voice setting for narration. The opening retains the supplied story and uses the same neutral voice.
+Automatic narration is limited to three short, non-repeating first-visit tips: Ship, Island, and Quests. Movement, attacks, quest completions, and ordinary tab changes do not each trigger another voice line. Scheduled world events still appear as captions. The narrator uses plain language and a neutral ElevenLabs voice; `ELEVENLABS_NARRATOR_VOICE_ID` can select another natural voice. This replaces the older pirate-performance voice setting for narration. The opening keeps the game's original Tidewake story and uses the same neutral voice.
 
 Set `ELEVENLABS_API_KEY` in the server environment to enable five original effects (movement, sword strike, cannon, recovery, and blocking) plus a quiet 30-second instrumental background loop. The account must have access to ElevenLabs Sound Effects and Music. Generation happens on the server with fixed prompts, and MongoDB caches the results for reuse. If generation is unavailable, gameplay continues with its existing visual feedback.
 

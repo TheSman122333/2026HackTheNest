@@ -2,8 +2,8 @@
 import * as Haptics from 'expo-haptics';
 import { create } from 'zustand';
 
-import { api, ApiError, uuid } from '@/lib/api';
-import type { GmEvent, VoiceTurn } from '@/lib/types';
+import { api, ApiError, storage, uuid } from '@/lib/api';
+import type { GmCheck, GmEvent, VoiceTurn } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
 import { cleanText } from '@/ui/text';
@@ -14,6 +14,7 @@ export type NarrationScene = 'arrival' | 'ship' | 'island' | 'quests' | 'log' | 
 export type NarratorLine = { id: string; who: 'narrator' | 'you' | 'world'; text: string; sources?: GmEvent['event']['sources'] };
 export type NarrationClip = { id: string; text: string; audioPath: string | null; scene: NarrationScene };
 type Job = { id: string; scene: NarrationScene; detail?: string };
+const MUTE_KEY = 'lv_narrator_muted';
 const isVisit = (scene: NarrationScene) => ['ship', 'island', 'quests', 'log', 'me'].includes(scene);
 const automaticScenes = new Set<NarrationScene>(['ship', 'island', 'quests']);
 
@@ -40,7 +41,11 @@ type NarratorState = {
   briefing: () => Promise<void>;
   say: (input: { text: string } | { audio: { mimeType: string; base64: string } }) => Promise<void>;
   worldEvent: () => Promise<void>;
+  /** Quiet check on each island visit; fires on the crew's 3 world-event days a week. */
+  scheduledWorldEvent: () => Promise<void>;
 };
+
+let checkedEventDay: string | null = null;
 
 function localStory(scene: NarrationScene, detail?: string) {
   const me = useSession.getState().me;
@@ -124,7 +129,11 @@ export const useNarrator = create<NarratorState>((set, get) => {
     lines: [], busy: null, error: null, conversationId: null, briefed: false, audioPath: null, audioNonce: 0,
     current: null, queue: [], muted: false,
     reset: () => { generation++; memoryLines.clear(); hydration = null; hydrationScope = null; set({ scope: null, hydrated: false, visited: [], lines: [], busy: null, error: null, conversationId: null, briefed: false, audioPath: null, audioNonce: 0, current: null, queue: [] }); },
-    toggleMute: () => set({ muted: !get().muted }),
+    toggleMute: () => {
+      const muted = !get().muted;
+      set({ muted });
+      void storage.set(MUTE_KEY, muted ? '1' : '0').catch(() => {});
+    },
     narrate: (scene, detail) => {
       // Three first-visit tips only. Repeated actions already have visual and sound feedback.
       if (!automaticScenes.has(scene)) return;
@@ -149,7 +158,8 @@ export const useNarrator = create<NarratorState>((set, get) => {
       const [job, ...rest] = get().queue;
       set({ queue: rest });
       if (!job!.detail && onceScene(job!.scene) && get().visited.includes(job!.scene)) return;
-      const result = await request({ mode: 'narration', scene: job!.scene, ...(job!.detail ? { detail: job!.detail } : {}) }, 'briefing');
+      // Scheduled world-event details remain captions; only the three tips request speech.
+      const result = job!.detail ? null : await request({ mode: 'narration', scene: job!.scene }, 'briefing');
       if (version !== generation) return;
       if (isVisit(job!.scene) && get().queue.some((next) => isVisit(next.scene))) { set({ busy: null }); return; }
       await publish({ id: job!.id, scene: job!.scene, text: result ? cleanText(result.reply) : localStory(job!.scene, job!.detail), audioPath: result?.audio?.url ?? null }, version, !job!.detail);
@@ -176,5 +186,26 @@ export const useNarrator = create<NarratorState>((set, get) => {
       } catch (e) { if (version === generation) set({ error: e instanceof Error ? e.message : String(e) }); }
       finally { if (version === generation) set({ busy: null }); }
     },
+    scheduledWorldEvent: async () => {
+      const crewId = useSession.getState().me?.crew?.id;
+      const key = `${crewId}:${new Date().toISOString().slice(0, 10)}`;
+      if (!crewId || checkedEventDay === key) return;
+      checkedEventDay = key;
+      const version = generation;
+      try {
+        const r = await api<GmCheck>('POST', '/island/gm-event', { requestId: uuid(), trigger: 'scheduled' });
+        if (version !== generation || r.status === 'not_today' || r.status === 'no_event') return;
+        // A crewmate may have triggered today's event first; everyone still hears it once.
+        set({ lines: [{ id: r.event.id, who: 'world' as const, text: cleanText(r.event.narration), sources: r.event.sources }, ...get().lines.filter((l) => l.id !== r.event.id)].slice(0, 20) });
+        get().narrate('island', r.event.narration);
+        if (r.status === 'applied') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        await useIsland.getState().load();
+      } catch {
+        checkedEventDay = null; // offline: try again on the next visit
+      }
+    },
   };
 });
+
+// Sound off sticks across lines, tabs and app restarts until the player turns it back on.
+void storage.get(MUTE_KEY).then((v) => { if (v === '1') useNarrator.setState({ muted: true }); }).catch(() => {});
