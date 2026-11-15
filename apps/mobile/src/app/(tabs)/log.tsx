@@ -5,6 +5,9 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { C, P, Panel, Screen, Title } from '@/components/kit';
 import { ITEM_SPRITE, Sprite, type SpriteName } from '@/components/sprites';
+import { useT } from '@/features/language/i18n';
+import { formatLogText, relativeLogTime } from '@/features/language/logText';
+import { useLanguage } from '@/state/language';
 import { api } from '@/lib/api';
 import type { LogEntry } from '@/lib/types';
 
@@ -15,15 +18,9 @@ const EVENT_SPRITE: Record<string, SpriteName> = {
   hp: 'fx_wave',
 };
 
-function ago(iso: string) {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-}
-
 export default function Log() {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -52,8 +49,8 @@ export default function Log() {
           <Panel key={e.id} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
             <Sprite name={ITEM_SPRITE[e.item] ?? EVENT_SPRITE[e.item] ?? 'journal'} size={30} />
             <View style={{ flex: 1 }}>
-              <P>{e.text}</P>
-              <P dim>{ago(e.at)}</P>
+              <P translatable={false}>{formatLogText(e, tx, language)}</P>
+              <P dim translatable={false}>{relativeLogTime(e.at, language)}</P>
             </View>
           </Panel>
         ))}

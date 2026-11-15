@@ -1,6 +1,8 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Title } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';

@@ -1,8 +1,10 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 /** A readable, pannable sea chart. Rules and reachable tiles stay server-owned. */
 import { distance, parseKey, toPixel, type HexKey, type Terrain } from '@last-voyage/game';
 import * as Haptics from 'expo-haptics';
 import { memo, useEffect, useRef, useState, type ElementRef } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { C, F } from '@/components/kit';
 import { BOSS_SPRITE, ITEM_SPRITE, Sprite } from '@/components/sprites';

@@ -1,16 +1,21 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
 /** The Lodestar ceremony: the star rises and the year's top Legend pirate is crowned. */
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, P, Screen, Title } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { Sprite } from '@/components/sprites';
+import { useT } from '@/features/language/i18n';
+import { useLanguage } from '@/state/language';
 import { api } from '@/lib/api';
 import type { LegendBoard } from '@/lib/types';
 import { useMotionEnabled } from '@/ui/motion';
 
 export default function Lodestar() {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const motion = useMotionEnabled();
   const [board, setBoard] = useState<LegendBoard | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +47,7 @@ export default function Lodestar() {
             <Animated.View style={{ opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [160, 0] }) }, { scale: rise.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }] }}>
               <Sprite name="t_star" size={120} />
             </Animated.View>
-            <Text style={s.eyebrow}>THE YEAR&apos;S VOYAGE IS COMPLETE · {season?.year ?? new Date().getFullYear()}</Text>
+            <Text style={s.eyebrow}>{tx('THE YEAR\'S VOYAGE IS COMPLETE · {year}', { year: (season?.year ?? new Date().getFullYear()).toLocaleString(language, { useGrouping: false }) })}</Text>
             <Title size={40}>The Lodestar</Title>
             {winner ? (
               <>
@@ -50,10 +55,12 @@ export default function Lodestar() {
                   <Animated.Text style={[s.crown, { opacity: crown, transform: [{ translateY: crown.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }) }] }]}>👑</Animated.Text>
                   <PlayerAvatar userId={winner.id} avatarId={winner.avatarId} size={120} />
                 </View>
-                <Title size={30}>{winner.isYou ? 'You claimed it!' : winner.name}</Title>
-                <P center>
-                  {winner.isYou ? 'With' : `${winner.crewName ? `Of ${winner.crewName}, with` : 'With'}`} {winner.legend} Legend, the greatest pirate among {season!.players} sailors. {winner.isYou ? 'Your' : 'Their'} crew earns the legendary ship, and next year&apos;s sea will carry an island in {winner.isYou ? 'your' : 'their'} name.
-                </P>
+                <Title size={30} translatable={winner.isYou}>{winner.isYou ? 'You claimed it!' : winner.name}</Title>
+                {winner.crewName ? <P center translatable={false}>{tx('Of {crew}', { crew: winner.crewName })}</P> : null}
+                <P center>{tx(winner.isYou
+                  ? 'With {legend} Legend, you are the greatest pirate among {players} sailors. Your crew earns the legendary ship, and next year\'s sea will carry an island in your name.'
+                  : 'With {legend} Legend, they are the greatest pirate among {players} sailors. Their crew earns the legendary ship, and next year\'s sea will carry an island in their name.',
+                { legend: winner.legend.toLocaleString(language), players: season!.players.toLocaleString(language) })}</P>
               </>
             ) : (
               <P center>No pirate earned Legend this year. The star waits for whoever lives boldest next year.</P>

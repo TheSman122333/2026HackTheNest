@@ -1,5 +1,6 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
 import { useMemo } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { qrMatrix } from './qr';
 

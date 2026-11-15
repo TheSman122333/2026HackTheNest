@@ -1,13 +1,16 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 import { setAudioModeAsync, useAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, AppState, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { C, F } from '@/components/kit';
 import { fetchAudio, releaseAudio } from '@/lib/audio';
 import { useSession } from '@/state/session';
 import { useOpening } from '@/state/opening';
+import { useLanguage } from '@/state/language';
 import { useDeviceMotionEnabled } from '@/ui/motion';
 
 import { useNarrator, type NarrationClip, type NarrationScene } from './useNarrator';
@@ -16,6 +19,7 @@ const SCENES: Record<string, NarrationScene> = { ship: 'ship', island: 'island',
 
 /** One host above the navigator: changing tabs never cuts off a spoken sentence. */
 export function TidekeeperSubtitles() {
+  const language = useLanguage((state) => state.language);
   const pathname = usePathname();
   const userId = useSession((s) => s.me?.user.id);
   const crewId = useSession((s) => s.me?.crew?.id);
@@ -39,19 +43,19 @@ export function TidekeeperSubtitles() {
   }, []);
 
   useEffect(() => {
-    const key = userId && crewId ? `${userId}:${crewId}` : null;
+    const key = userId && crewId ? `${userId}:${crewId}:${language}` : null;
     if (identity.current !== key) {
       identity.current = key;
       previous.current = null;
       reset();
-      if (key) void hydrate(`lv_narrator_v3_${userId}_${crewId}`);
+      if (key) void hydrate(`lv_narrator_v3_${userId}_${crewId}_${language}`);
       return;
     }
     if (!key || opening || !hydrated || previous.current === pathname) return;
     previous.current = pathname;
     const scene = SCENES[pathname.split('/').filter(Boolean).pop() ?? ''];
     if (scene) narrate(scene);
-  }, [userId, crewId, pathname, opening, hydrated, reset, narrate, hydrate]);
+  }, [userId, crewId, language, pathname, opening, hydrated, reset, narrate, hydrate]);
 
   useEffect(() => {
     if (!opening && hydrated && foreground && crewId && !current && !busy && queue.length) void playNext();
@@ -146,7 +150,7 @@ function SubtitlePlayback({ clip, foreground, tabbed }: { clip: NarrationClip; f
     if (mode !== 'text' || !foreground) return;
     // No voice configured/offline: give the entire passage a comfortable reading window.
     const words = clip.text.trim().split(/\s+/).length;
-    const timer = setTimeout(() => setMode('closing'), Math.max(4500, words * 380 + 1200));
+    const timer = setTimeout(() => setMode('closing'), Math.max(4500, words * 380 + 1200, clip.text.length * 60));
     return () => clearTimeout(timer);
   }, [mode, foreground, clip.text]);
 
@@ -160,7 +164,7 @@ function SubtitlePlayback({ clip, foreground, tabbed }: { clip: NarrationClip; f
           <Text style={s.soundText}>{muted ? 'Sound off' : 'Sound on'}</Text>
         </Pressable>
       </View>
-      <View pointerEvents="none"><Text accessibilityLiveRegion={Platform.OS === 'android' ? 'polite' : undefined} style={s.words}>{clip.text}</Text></View>
+      <View pointerEvents="none"><Text translatable={false} accessibilityLiveRegion={Platform.OS === 'android' ? 'polite' : undefined} style={s.words}>{clip.text}</Text></View>
     </Animated.View>
   </View>;
 }

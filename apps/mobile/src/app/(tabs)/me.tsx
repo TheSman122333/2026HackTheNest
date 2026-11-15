@@ -15,6 +15,8 @@ import { LEGEND_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
+import { LanguageSettings } from '@/features/language/LanguagePicker';
+import { useT } from '@/features/language/i18n';
 
 const SKILL_LABEL: Record<Skill, string> = {
   grit: 'Grit',
@@ -33,6 +35,7 @@ const ROLE: Record<Skill, string> = {
 };
 
 export default function Me() {
+  const tx = useT();
   const me = useSession((s) => s.me);
   const refresh = useSession((s) => s.refresh);
   const logout = useSession((s) => s.logout);
@@ -57,8 +60,8 @@ export default function Me() {
       <Row gap={12} style={{ flexWrap: "nowrap" }}>
         <Float amplitude={3} tilt={2}><PlayerAvatar userId={u.id} avatarId={u.avatarId} size={96} /></Float>
         <View style={{ flexShrink: 1 }}>
-          <Title>{u.name}</Title>
-          <P dim>{ROLE[top]} of the {me.crew?.name}</P>
+          <Title translatable={false}>{u.name}</Title>
+          <P translatable={false} dim>{tx('{role} of the {crew}', { role: tx(ROLE[top]), crew: me.crew?.name ?? '' })}</P>
         </View>
       </Row>
 
@@ -67,7 +70,7 @@ export default function Me() {
 
       <Panel color={C.deep}>
         <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-          <Row gap={8} style={{ flexWrap: 'nowrap' }}><Sprite name="t_star" size={26} /><H>{u.legend} Legend</H></Row>
+          <Row gap={8} style={{ flexWrap: 'nowrap' }}><Sprite name="t_star" size={26} /><H>{tx('{count} Legend', { count: u.legend })}</H></Row>
           <LegendHelp />
         </Row>
         <P dim>{LEGEND_SUMMARY} Earn it from real-life activities and boss fights. The top pirate across every crew claims the Lodestar at year end.</P>
@@ -82,27 +85,28 @@ export default function Me() {
         </>) : null}
       </Row>
 
+      <LanguageSettings onPress={() => router.push('/language')} />
       <SoundSettings />
       <ThemeSongCard />
 
       <Panel>
         <H>Skills</H>
         {SKILLS.map((k) => (
-          <Bar key={k} value={u.skills[k]} max={100} color={C.sky} label={`${SKILL_LABEL[k]} ${u.skills[k]}`} />
+          <Bar key={k} value={u.skills[k]} max={100} color={C.sky} label={`${tx(SKILL_LABEL[k])} ${u.skills[k]}`} />
         ))}
         <P dim>Skills grow from real activities and power you up in boss fights.</P>
       </Panel>
 
       {TRACKING ? (<>
       <Panel>
-        <H>Streak bonus: ×{(1 + Math.min(st.calmDays, STREAK.calmMaxDays) * STREAK.calmStepBonus + (st.shoreLeaveBonus ? STREAK.shoreLeaveBonus : 0)).toFixed(2)}</H>
+        <H>{tx('Streak bonus: ×{bonus}', { bonus: (1 + Math.min(st.calmDays, STREAK.calmMaxDays) * STREAK.calmStepBonus + (st.shoreLeaveBonus ? STREAK.shoreLeaveBonus : 0)).toFixed(2) })}</H>
         <P>+10% Moves for every calm day in a row (max ×2). A Streak Shield every 7 days saves you once. A day without opening the apps gives +25% tomorrow.</P>
       </Panel>
 
       <Panel>
         <H>My daily short-form limit</H>
         <P>
-          {u.limits.swipes} swipes · {u.limits.minutes} minutes
+          {tx('{swipes} swipes · {minutes} minutes', { swipes: u.limits.swipes, minutes: u.limits.minutes })}
         </P>
         <Row>
           <Btn small label="Stricter" color={C.green} busy={saving} onPress={() => setLimits(Math.max(0, u.limits.swipes - 10), Math.max(0, u.limits.minutes - 5))} />

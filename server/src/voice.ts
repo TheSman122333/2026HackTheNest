@@ -1,4 +1,6 @@
-import { ACTIVITIES, NARRATOR, REWARDS, type ActivityKind, type FightAction, type FightEvent, type IslandEvent } from '@last-voyage/game';
+import { ACTIVITIES, NARRATOR, REWARDS, type ActivityKind, type AppLanguage, type FightAction, type FightEvent, type IslandEvent } from '@last-voyage/game';
+
+import { localizedVoiceStatus } from './voice-language';
 
 export class VoiceProviderError extends Error {}
 
@@ -32,7 +34,9 @@ export function responseForScene(
     moves: { total: number; remaining: number };
     streak: { calmDays: number; shields: number };
   },
+  language: AppLanguage = 'en',
 ): string {
+  if (language !== 'en') return localizedVoiceStatus(language, view);
   const moves = `${view.movesRemaining} Move${view.movesRemaining === 1 ? '' : 's'}`;
   const island = `island ${view.island.index + 1}`;
   const completed = view.island.conquered || view.boss.defeated;
@@ -74,12 +78,63 @@ export function responseForScene(
   }
 }
 
-export function resolveVoiceIntent(text: string): VoiceIntent | null {
-  const command = text.trim().toLowerCase().replace(/[.!]+$/g, '');
+const LOCAL_COMMANDS: Partial<Record<AppLanguage, readonly string[]>> = {
+  es: ['atacar', 'cañón', 'tónico', 'defender'], fr: ['attaquer', 'canon', 'tonique', 'défendre'], de: ['angreifen', 'kanone', 'heiltrank', 'verteidigen'],
+  it: ['attacca', 'cannone', 'tonico', 'difendi'], pt: ['atacar', 'canhão', 'tônico', 'defender'], nl: ['aanvallen', 'kanon', 'tonicum', 'verdedigen'],
+  pl: ['atakuj', 'armata', 'tonik', 'broń się'], ru: ['атаковать', 'пушка', 'тоник', 'защищаться'], uk: ['атакувати', 'гармата', 'тонік', 'захищатися'],
+  cs: ['zaútočit', 'dělo', 'tonikum', 'bránit'], sk: ['zaútočiť', 'delo', 'tonikum', 'brániť'], ro: ['atacă', 'tun', 'tonic', 'apără'],
+  bg: ['атакувай', 'оръдие', 'тоник', 'защитавай'], hr: ['napadni', 'top', 'tonik', 'obrani'], el: ['επίθεση', 'κανόνι', 'τονωτικό', 'άμυνα'],
+  sv: ['attackera', 'kanon', 'tonikum', 'försvara'], da: ['angrib', 'kanon', 'tonikum', 'forsvar'], fi: ['hyökkää', 'tykki', 'rohto', 'puolusta'],
+  no: ['angrip', 'kanon', 'tonikum', 'forsvar'], hu: ['támadj', 'ágyú', 'gyógyital', 'védekezz'], tr: ['saldır', 'top', 'iksir', 'savun'],
+  ar: ['هاجم', 'مدفع', 'جرعة', 'دافع'], hi: ['हमला करो', 'तोप', 'औषधि', 'बचाव करो'], ta: ['தாக்கு', 'பீரங்கி', 'மருந்து', 'தற்காப்பு'],
+  zh: ['攻击', '大炮', '药水', '防御'], ja: ['攻撃', '大砲', '回復薬', '防御'], ko: ['공격', '대포', '물약', '방어'],
+  id: ['serang', 'meriam', 'tonik', 'bertahan'], ms: ['serang', 'meriam', 'tonik', 'bertahan'], fil: ['umatake', 'kanyon', 'gamot', 'dumepensa'],
+  vi: ['tấn công', 'đại bác', 'thuốc bổ', 'phòng thủ'],
+};
+
+/** Transcribers often omit question marks. Ambiguous questions must never spend a Move. */
+const LOCAL_QUESTIONS: Partial<Record<AppLanguage, RegExp>> = {
+  es: /^[¿\s]*(?:qué|que|cómo|como|cuándo|cuando|dónde|donde|por qué|quién|cuánto|puedo|podría|debo|debería|puedes|podrías|dime)(?:\s|$)/u,
+  fr: /^(?:comment|pourquoi|où|quand|qui|quel|quelle|quels|quelles|combien|est-ce|puis-je|dois-je|peux-tu|pourrais-tu|dis-moi)(?:\s|$)/u,
+  de: /^(?:wie|was|wo|wann|warum|wer|welche|welcher|welches|kann|könnte|soll|sollte|erkläre|sag)(?:\s|$)/u,
+  it: /^(?:come|cosa|che|quando|dove|perché|chi|quanti|quanto|posso|potrei|devo|dovrei|puoi|dimmi)(?:\s|$)/u,
+  pt: /^(?:como|o que|quando|onde|por que|por quê|quem|quanto|posso|poderia|devo|deveria|podes|pode|diga)(?:\s|$)/u,
+  nl: /^(?:hoe|wat|waar|wanneer|waarom|wie|welke|hoeveel|kan|kun|zou|moet|vertel)(?:\s|$)/u,
+  pl: /^(?:jak|co|gdzie|kiedy|dlaczego|kto|który|która|ile|czy|powiedz)(?:\s|$)/u,
+  ru: /^(?:как|что|где|когда|почему|зачем|кто|какой|какая|сколько|могу|можно|стоит|должен|расскажи)(?:\s|$)/u,
+  uk: /^(?:як|що|де|коли|чому|навіщо|хто|який|яка|скільки|чи|можна|розкажи)(?:\s|$)/u,
+  cs: /^(?:jak|co|kde|kdy|proč|kdo|který|kolik|mohu|můžu|mám|řekni)(?:\s|$)/u,
+  sk: /^(?:ako|čo|kde|kedy|prečo|kto|ktorý|koľko|môžem|mám|povedz)(?:\s|$)/u,
+  ro: /^(?:cum|ce|unde|când|de ce|cine|care|cât|pot|trebuie|ar trebui|spune)(?:\s|$)/u,
+  bg: /^(?:как|какво|къде|кога|защо|кой|коя|колко|мога|може|трябва|кажи)(?:\s|$)/u,
+  hr: /^(?:kako|što|gdje|kada|zašto|tko|koji|koliko|mogu|trebam|reci)(?:\s|$)/u,
+  el: /^(?:πώς|πως|τι|πού|που|πότε|γιατί|ποιος|ποια|πόσο|μπορώ|πρέπει|πες)(?:\s|$)/u,
+  sv: /^(?:hur|vad|var|när|varför|vem|vilken|vilka|kan|ska|borde|berätta)(?:\s|$)/u,
+  da: /^(?:hvordan|hvad|hvor|hvornår|hvorfor|hvem|hvilken|kan|skal|burde|fortæl)(?:\s|$)/u,
+  fi: /^(?:miten|mitä|missä|milloin|miksi|kuka|mikä|kuinka|voinko|pitäisikö|kerro)(?:\s|$)/u,
+  no: /^(?:hvordan|hva|hvor|når|hvorfor|hvem|hvilken|kan|skal|bør|fortell)(?:\s|$)/u,
+  hu: /^(?:hogyan|hogy|mi|mit|hol|mikor|miért|ki|melyik|mennyi|lehet|kell|mondd)(?:\s|$)/u,
+  tr: /^(?:nasıl|ne|nerede|nereye|ne zaman|neden|niçin|kim|hangi|kaç|söyle)(?:\s|$)|(?:mıyım|miyim|muyum|müyüm|mısın|misin|musun|müsün)$/u,
+  ar: /^(?:كيف|ما|ماذا|أين|متى|لماذا|من|أي|كم|هل|يمكنني|أستطيع|أخبرني)(?:\s|$)/u,
+  hi: /^(?:कैसे|क्या|कहाँ|कहां|कब|क्यों|कौन|कितने|कितना|मुझे बताओ)(?:\s|$)|(?:सकता हूँ|सकती हूँ|चाहिए)$/u,
+  ta: /^(?:எப்படி|என்ன|எங்கே|எப்போது|ஏன்|யார்|எத்தனை)|(?:முடியுமா|வேண்டுமா)$/u,
+  zh: /^(?:怎么|怎樣|怎样|如何|什么|什麼|哪|何时|何時|为什么|為什麼|谁|誰|多少|能否|是否|可以|我该|我該|告诉我|告訴我)|[吗嗎呢么麼]$/u,
+  ja: /^(?:どう|なぜ|何|どこ|いつ|誰|だれ|どれ|どの|いくつ|教えて)|(?:か|かな|でしょうか)$/u,
+  ko: /^(?:어떻게|무엇|뭐|어디|언제|왜|누구|어느|얼마|몇|알려)|(?:까|나요|가요|까요|니|는지)$/u,
+  id: /^(?:bagaimana|apa|di mana|dimana|kapan|mengapa|kenapa|siapa|berapa|bisakah|bolehkah|haruskah|jelaskan)(?:\s|$)/u,
+  ms: /^(?:bagaimana|apa|di mana|bila|mengapa|kenapa|siapa|berapa|bolehkah|perlukah|terangkan)(?:\s|$)/u,
+  fil: /^(?:paano|ano|saan|kailan|bakit|sino|alin|ilan|maaari|pwede|puwede|dapat|sabihin)(?:\s|$)/u,
+  vi: /^(?:làm sao|làm thế nào|cái gì|gì|ở đâu|khi nào|tại sao|vì sao|ai|bao nhiêu|có nên|có thể|tôi nên|cho tôi biết)(?:\s|$)/u,
+};
+
+export function resolveVoiceIntent(text: string, language: AppLanguage = 'en'): VoiceIntent | null {
+  const command = text.trim().normalize('NFKC').toLowerCase().replace(/[.!。！]+$/g, '');
   if (!command) return null;
-  if (/^(what|where|when|why|how|who|tell me|can you|could you|should i)\b/.test(command) || command.endsWith('?')) {
+  if (/^(what|where|when|why|how|who|tell me|can you|could you|should i)\b/.test(command) || /[?？؟]$/.test(command) || LOCAL_QUESTIONS[language]?.test(command)) {
     return { type: 'question' };
   }
+  const localized = LOCAL_COMMANDS[language]?.indexOf(command);
+  if (localized !== undefined && localized >= 0) return { type: 'fight', action: (['strike', 'cannon', 'tonic', 'brace'] as const)[localized]! };
   if (/^(strike|attack)(?:\s|$)/.test(command)) return { type: 'fight', action: 'strike' };
   if (/^(fire\s+)?cannon(?:\s|$)/.test(command)) return { type: 'fight', action: 'cannon' };
   if (/^(use\s+)?tonic(?:\s|$)|^heal(?:\s|$)/.test(command)) return { type: 'fight', action: 'tonic' };
@@ -93,6 +148,7 @@ export async function transcribeAudio(
   audio: { mimeType: string; base64: string },
   apiKey: string | undefined,
   fetchImpl: typeof fetch,
+  language: AppLanguage = 'en',
 ): Promise<string> {
   if (!apiKey) throw new VoiceProviderError('voice transcription is not configured; use a text turn');
   if (!AUDIO_MIME_TYPES.has(audio.mimeType)) throw new VoiceProviderError('unsupported audio format');
@@ -102,6 +158,7 @@ export async function transcribeAudio(
   }
   const form = new FormData();
   form.append('model_id', 'scribe_v1');
+  form.append('language_code', language);
   form.append('file', new Blob([bytes], { type: audio.mimeType }), 'voice-turn');
   let response: Response;
   try {
@@ -120,7 +177,7 @@ export async function transcribeAudio(
   return body.text.trim().slice(0, 400);
 }
 
-export const NARRATOR_VOICE_VERSION = 'captain-short-v1';
+export const NARRATOR_VOICE_VERSION = 'captain-flash-localized-v2';
 /** The project lead's custom captain voice; a neutral stock voice only if none is configured. */
 export const narratorVoiceId = (env: NodeJS.ProcessEnv) => env.ELEVENLABS_NARRATOR_VOICE_ID || env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
 
@@ -128,6 +185,7 @@ export async function synthesizeSpeech(
   text: string,
   env: NodeJS.ProcessEnv,
   fetchImpl: typeof fetch,
+  language: AppLanguage = 'en',
 ): Promise<Uint8Array | null> {
   const apiKey = env.ELEVENLABS_API_KEY;
   const voiceId = narratorVoiceId(env);
@@ -137,7 +195,8 @@ export async function synthesizeSpeech(
     headers: { 'xi-api-key': apiKey, 'content-type': 'application/json', accept: 'audio/mpeg' },
     body: JSON.stringify({
       text: text.slice(0, 1200),
-      model_id: 'eleven_multilingual_v2',
+      model_id: 'eleven_flash_v2_5',
+      language_code: language,
       voice_settings: { stability: 0.75, similarity_boost: 0.75, style: 0, speed: 1, use_speaker_boost: false },
     }),
     signal: AbortSignal.timeout(12_000),
@@ -155,7 +214,9 @@ export function responseForQuestion(
     explorer: { hp: number; maxHp: number };
   },
   calmDays: number,
+  language: AppLanguage = 'en',
 ): string {
+  if (language !== 'en') return localizedVoiceStatus(language, view);
   const query = text.toLowerCase();
   if (/\b(move|moves)\b/.test(query)) return `You have ${view.movesRemaining} Moves left today.`;
   if (/\b(boss|guardian|enemy)\b/.test(query)) {

@@ -22,6 +22,7 @@ import { ledger, spendMoves, todayMoves } from './moves';
 import { registerLegend } from './legend';
 import { registerMusic } from './music';
 import { registerOpening } from './opening';
+import { registerLocalizationRoutes } from './localization';
 import { registerQuests } from './quests';
 import { registerSoundtrack } from './soundtrack';
 import { registerShip, shipWindMultiplier } from './ship';
@@ -377,6 +378,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   registerIsland(app, c, { env, fetchImpl });
   registerMusic(app, c, { env, fetchImpl });
   registerOpening(app, c, { env, fetchImpl });
+  registerLocalizationRoutes(app, env, fetchImpl);
   registerShip(app, c);
   registerLegend(app, c);
   registerQuests(app, c, { env, fetchImpl, now });

@@ -1,14 +1,19 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { Image } from 'expo-image';
 import { router, usePathname } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, AppState, Easing, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, AppState, Easing, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { F } from '@/components/kit';
 import { API_BASE } from '@/lib/api';
 import { useOpening } from '@/state/opening';
 import { useSession } from '@/state/session';
+import { useLanguage } from '@/state/language';
+import { translate } from '@/features/language/i18n';
+import openingNarrations from '../../../../../content/localization/opening.json';
 import { useDeviceMotionEnabled } from '@/ui/motion';
 
 // The game's original opening story, matching the server's fixed passage.
@@ -45,6 +50,7 @@ function Cloud({ side, travel, width, pale, y }: { side: number; travel: Animate
 }
 
 function OpeningScene({ mode }: { mode: 'storm' | 'reveal' }) {
+  const language = useLanguage((state) => state.language);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const motion = useDeviceMotionEnabled();
@@ -52,6 +58,7 @@ function OpeningScene({ mode }: { mode: 'storm' | 'reveal' }) {
   const player = useAudioPlayer(null, { updateInterval: 150 });
   const [parting, setParting] = useState(mode === 'reveal');
   const [voice, setVoice] = useState<'loading' | 'playing' | 'paused' | 'text'>('loading');
+  const [words, setWords] = useState(() => openingNarrations[language] ?? translate(OPENING_WORDS));
   const [foreground, setForeground] = useState(AppState.currentState !== 'background' && AppState.currentState !== 'inactive');
   const [cover] = useState(() => new Animated.Value(1));
   const [clouds] = useState(() => new Animated.Value(0));
@@ -112,10 +119,11 @@ function OpeningScene({ mode }: { mode: 'storm' | 'reveal' }) {
     }, 1000);
     void (async () => {
       try {
-        const response = await fetch(`${API_BASE}/opening/narration`, { signal: controller.signal });
+        const response = await fetch(`${API_BASE}/opening/narration?language=${encodeURIComponent(language)}`, { signal: controller.signal });
         if (!response.ok) throw new Error('opening unavailable');
-        const data = await response.json() as { audioUrl?: string | null };
+        const data = await response.json() as { text?: string; audioUrl?: string | null };
         if (!live || fallbackUsed || ending.current) return;
+        if (data.text) setWords(data.text);
         if (!data.audioUrl) { fallBack(); return; }
         await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false, shouldPlayInBackground: false, interruptionMode: 'duckOthers' });
         if (!live || fallbackUsed || ending.current) return;
@@ -126,13 +134,13 @@ function OpeningScene({ mode }: { mode: 'storm' | 'reveal' }) {
       } catch { fallBack(); }
     })();
     return () => { live = false; controller.abort(); clearInterval(watchdog); listener.remove(); player.pause(); };
-  }, [mode, player, depart]);
+  }, [mode, player, depart, language]);
 
   useEffect(() => {
     if (voice !== 'text' || mode !== 'storm' || parting || !foreground) return;
-    const timer = setTimeout(depart, Math.max(10_000, OPENING_WORDS.split(/\s+/).length * 390));
+    const timer = setTimeout(depart, Math.max(10_000, words.length * 70));
     return () => clearTimeout(timer);
-  }, [voice, mode, parting, foreground, depart]);
+  }, [voice, mode, parting, foreground, depart, words]);
 
   const begin = () => { if (ready.current && !ending.current) { player.play(); setVoice('loading'); } };
   return <Animated.View accessibilityViewIsModal importantForAccessibility="yes" style={[s.scene, { opacity: cover, backgroundColor: mode === 'storm' ? '#061A32' : '#0C4D82' }]}>
@@ -158,7 +166,7 @@ function OpeningScene({ mode }: { mode: 'storm' | 'reveal' }) {
     {mode === 'storm' && !parting ? <View style={[s.copy, { paddingBottom: insets.bottom + 28 }]}>
       <Text style={s.eyebrow}>BEFORE THE VOYAGE</Text>
       <Text style={s.title}>A tale carried by the storm.</Text>
-      <Text accessibilityLiveRegion="polite" style={s.words}>{OPENING_WORDS}</Text>
+      <Text accessibilityLiveRegion="polite" style={s.words}>{words}</Text>
       {voice === 'paused' ? <Pressable accessibilityRole="button" onPress={begin} style={s.begin}><Text style={s.beginText}>Hear the tale</Text></Pressable> : null}
       {voice === 'loading' ? <Text style={s.hint}>The tide is gathering its voice…</Text> : null}
       {voice === 'text' ? <Text style={s.hint}>The tale lives in the words.</Text> : null}

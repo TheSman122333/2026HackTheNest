@@ -6,6 +6,8 @@ import { api, ApiError, storage, uuid } from '@/lib/api';
 import type { GmCheck, GmEvent, VoiceTurn } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
+import { useLanguage } from '@/state/language';
+import { translate as t } from '@/features/language/i18n';
 import { cleanText } from '@/ui/text';
 
 import { heardLine, loadVisited, normalizeNarration, onceScene, rememberNarration } from './narrationHistory';
@@ -53,15 +55,15 @@ function localStory(scene: NarrationScene, detail?: string) {
   const moves = me?.today.moves.remaining ?? v?.movesRemaining ?? 0;
   if (detail) return cleanText(detail);
   switch (scene) {
-    case 'arrival': return `Welcome, ${me?.user.name ?? 'friend'}. You have ${moves} Moves to start exploring.`;
-    case 'ship': return 'Your real-life activities move the ship forward. Tap it to see your crew, upgrades, and route.';
-    case 'island': return v?.island.conquered ? 'Your crew completed this island. The next destination opens tonight.' : v?.explorer.hp === 0 ? 'Rest today. You return tomorrow with full health, and your crew keeps its progress.' : `You have ${moves} Moves. Follow the highlighted tiles to explore the island.`;
-    case 'quests': return 'These quests fit your preferences. Complete them in real life, then claim your rewards here.';
-    case 'log': return 'Your crew’s activities, discoveries, and rewards are recorded here.';
-    case 'me': return `You have ${me?.user.legend ?? 0} Legend. Your profile tracks the progress you have earned.`;
-    case 'night': return 'A new day is ready. Check the map for your next destination.';
-    case 'fight': return 'Each action costs one Move. Your crew shares the progress against this guardian.';
-    default: return 'Your progress is saved.';
+    case 'arrival': return t('Welcome, {name}. You have {moves} Moves to start exploring.', { name: me?.user.name ?? t('friend'), moves });
+    case 'ship': return t('Your real-life activities move the ship forward. Tap it to see your crew, upgrades, and route.');
+    case 'island': return v?.island.conquered ? t('Your crew completed this island. The next destination opens tonight.') : v?.explorer.hp === 0 ? t('Rest today. You return tomorrow with full health, and your crew keeps its progress.') : t('You have {moves} Moves. Follow the highlighted tiles to explore the island.', { moves });
+    case 'quests': return t('These quests fit your preferences. Complete them in real life, then claim your rewards here.');
+    case 'log': return t('Your crew’s activities, discoveries, and rewards are recorded here.');
+    case 'me': return t('You have {legend} Legend. Your profile tracks the progress you have earned.', { legend: me?.user.legend ?? 0 });
+    case 'night': return t('A new day is ready. Check the map for your next destination.');
+    case 'fight': return t('Each action costs one Move. Your crew shares the progress against this guardian.');
+    default: return t('Your progress is saved.');
   }
 }
 
@@ -139,7 +141,7 @@ export const useNarrator = create<NarratorState>((set, get) => {
       if (!automaticScenes.has(scene)) return;
       const me = useSession.getState().me;
       if (!me?.crew) return;
-      const scope = `lv_narrator_v3_${me.user.id}_${me.crew.id}`;
+      const scope = `lv_narrator_v3_${me.user.id}_${me.crew.id}_${useLanguage.getState().language}`;
       if (get().scope !== scope || !get().hydrated) {
         void get().hydrate(scope).then(() => { if (get().scope === scope && get().hydrated) get().narrate(scene, detail); });
         return;
@@ -188,7 +190,7 @@ export const useNarrator = create<NarratorState>((set, get) => {
     },
     scheduledWorldEvent: async () => {
       const crewId = useSession.getState().me?.crew?.id;
-      const key = `${crewId}:${new Date().toISOString().slice(0, 10)}`;
+      const key = `${crewId}:${useLanguage.getState().language}:${new Date().toISOString().slice(0, 10)}`;
       if (!crewId || checkedEventDay === key) return;
       checkedEventDay = key;
       const version = generation;

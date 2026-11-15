@@ -1,18 +1,21 @@
+import { LocalizedTextInput as TextInput } from '@/features/language/LocalizedControls';
 /**
  * Leave your crew to sail with another. Typing the crew's name unlocks the button, so nobody
  * leaves by accident. Nothing is lost: Legend, skills and your pirate come with you.
  */
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Btn, C, F, H, P, Panel } from '@/components/kit';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
+import { useT } from '@/features/language/i18n';
 
 const norm = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
 
 export function LeaveCrew() {
+  const tx = useT();
   const crew = useSession((s) => s.me?.crew);
   const refresh = useSession((s) => s.refresh);
   const [open, setOpen] = useState(false);
@@ -40,18 +43,19 @@ export function LeaveCrew() {
   }
   return (
     <Panel>
-      <H>Leave {crew.name}?</H>
+      <H translatable={false}>{tx('Leave {crew}?', { crew: crew.name })}</H>
       <P>You keep your Legend, skills and pirate. The crew keeps its stores and island, and you can come back any time with the invite code.</P>
       <P dim>Type the crew name to confirm.</P>
       <TextInput
         value={typed}
         onChangeText={setTyped}
         placeholder={crew.name}
+        translatePlaceholder={false}
         placeholderTextColor={C.dimDark}
         autoCapitalize="none"
         autoCorrect={false}
         maxLength={80}
-        accessibilityLabel={`Type ${crew.name} to confirm leaving`}
+        accessibilityLabel={tx('Type {crew} to confirm leaving', { crew: crew.name })}
         style={s.input}
       />
       {error ? <P color={C.red}>{error}</P> : null}

@@ -1,9 +1,13 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { Btn, C, F, P, Row } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
+import { useT } from '@/features/language/i18n';
+import { useLanguage } from '@/state/language';
 import type { ShipMember } from '@/lib/shipTypes';
 import { Float } from '@/ui/motion';
 import { cleanText } from '@/ui/text';
@@ -16,6 +20,8 @@ const PLACES = [
 
 /** Six comfortable tap targets per deck page; every sailor also appears in the roster. */
 export function DeckAboard({ members, meId, onSelect }: { members: ShipMember[]; meId: string; onSelect: (member: ShipMember) => void }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const { width } = useWindowDimensions();
   const [page, setPage] = useState(0);
   const chartWidth = Math.min(Math.max(240, width - 40), 620);
@@ -37,7 +43,7 @@ export function DeckAboard({ members, meId, onSelect }: { members: ShipMember[];
         style={{ position: 'absolute', width: shipSize, height: shipSize, left: (chartWidth - shipSize) / 2 }} />
       {visible.map((member, index) => {
         const place = PLACES[index]!;
-        return <Pressable key={member.id} accessibilityRole="button" accessibilityLabel={`View ${cleanText(member.name)}'s contributions`}
+        return <Pressable key={member.id} accessibilityRole="button" accessibilityLabel={tx('View {name}\'s contributions', { name: cleanText(member.name) })}
           onPress={() => onSelect(member)} style={({ pressed }) => [s.sailor, {
             left: chartWidth / 2 + place.x * scale - 27,
             top: place.y * scale - 27,
@@ -45,16 +51,16 @@ export function DeckAboard({ members, meId, onSelect }: { members: ShipMember[];
             transform: [{ scale: pressed ? 0.93 : 1 }],
           }]}>
           <PlayerAvatar userId={member.id} avatarId={member.avatarId} size={47} />
-          <View style={s.nameplate}><Text numberOfLines={1} style={s.sailorName}>{cleanText(member.name)}</Text></View>
+          <View style={s.nameplate}><Text translatable={false} numberOfLines={1} style={s.sailorName}>{cleanText(member.name)}</Text></View>
         </Pressable>;
       })}
     </Float>
     <View style={s.footer}>
       {pages > 1 ? <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
         <Btn small label="Previous" color={C.indigo} disabled={deckPage === 0} onPress={() => setPage(deckPage - 1)} />
-        <P>{pages > 1 ? `Deck ${deckPage + 1} / ${pages}` : `${members.length} aboard`}</P>
+        <P>{tx('Deck {page} / {pages}', { page: (deckPage + 1).toLocaleString(language), pages: pages.toLocaleString(language) })}</P>
         <Btn small label="Next" color={C.indigo} disabled={deckPage + 1 >= pages} onPress={() => setPage(deckPage + 1)} />
-      </Row> : <P center>{members.length} {members.length === 1 ? 'sailor' : 'sailors'} aboard</P>}
+      </Row> : <P center>{tx(members.length === 1 ? '{count} sailor aboard' : '{count} sailors aboard', { count: members.length.toLocaleString(language) })}</P>}
     </View>
   </View>;
 }

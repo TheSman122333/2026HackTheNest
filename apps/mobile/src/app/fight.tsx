@@ -1,9 +1,10 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
 /** Server-resolved combat, with a short visual beat for each action and counterattack. */
 import type { FightAction } from '@last-voyage/game';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { Bar, Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
 import { BOSS_SPRITE, Sprite } from '@/components/sprites';
@@ -12,6 +13,7 @@ import type { FightResponse } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
 import { Float, useMotionEnabled } from '@/ui/motion';
+import { translate as tx, useT } from '@/features/language/i18n';
 
 const ACTION_NAME: Record<FightAction, string> = {
   strike: 'Cutlass strike', cannon: 'Cannon fire', tonic: 'Restoring tonic', brace: 'Hold your ground',
@@ -28,16 +30,17 @@ function feedbackFrom(result: FightResponse): Feedback {
     boss: hit ? `${hit.crit ? 'CRIT ' : ''}−${hit.damage}` : null,
     player: counter ? `−${counter.damage}` : null,
     summary: [
-      hit ? `${hit.crit ? 'Critical hit. ' : ''}${hit.damage} damage dealt.` : null,
-      heal ? `${heal.amount} HP restored.` : null,
-      braced ? 'Guard raised.' : null,
-      counter ? `${counter.damage} damage taken${counter.braced ? ' behind your guard' : ''}.` : null,
-      result.events.some((event) => event.type === 'boss_defeated') ? 'Guardian defeated.' : null,
+      hit ? `${hit.crit ? tx('Critical hit. ') : ''}${tx('{damage} damage dealt.', { damage: hit.damage })}` : null,
+      heal ? tx('{amount} HP restored.', { amount: heal.amount }) : null,
+      braced ? tx('Guard raised.') : null,
+      counter ? tx('{damage} damage taken{guard}.', { damage: counter.damage, guard: counter.braced ? tx(' behind your guard') : '' }) : null,
+      result.events.some((event) => event.type === 'boss_defeated') ? tx('Guardian defeated.') : null,
     ].filter(Boolean).join(' '),
   };
 }
 
 export default function Fight() {
+  const tx = useT();
   const { view, busy, error, feed, fight } = useIsland();
   const meId = useSession((state) => state.me?.user.id);
   const motion = useMotionEnabled();
@@ -216,12 +219,12 @@ export default function Fight() {
         </View>
         <View style={s.bossHealth}>
           {enraged ? <Tag label="ENRAGED · +50% damage" color={C.red} /> : null}
-          <Bar value={boss.hp} max={boss.maxHp} color={C.red} label={`GUARDIAN  ${boss.hp} / ${boss.maxHp} HP · ${boss.armor} armor`} />
+          <Bar value={boss.hp} max={boss.maxHp} color={C.red} label={tx('GUARDIAN {hp} / {max} HP · {armor} armor', { hp: boss.hp, max: boss.maxHp, armor: boss.armor })} />
         </View>
       </Panel>
 
       <Panel color={C.deep}>
-        <Bar value={ex.hp} max={ex.maxHp} color={ko ? C.red : C.green} label={`YOUR HEALTH  ${ex.hp} / ${ex.maxHp} HP`} />
+        <Bar value={ex.hp} max={ex.maxHp} color={ko ? C.red : C.green} label={tx('YOUR HEALTH {hp} / {max} HP', { hp: ex.hp, max: ex.maxHp })} />
         {ex.inventory.cutlass ? <P dim>Cutlass equipped · +3 strike damage</P> : null}
       </Panel>
 
@@ -240,10 +243,10 @@ export default function Fight() {
         <View style={{ gap: 10 }}>
           <Row gap={10} style={{ flexWrap: 'nowrap' }}>
             <View style={{ flex: 1 }}><Btn label="Strike" icon={<Sprite name="cutlass" size={24} />} onPress={() => doAct('strike')} disabled={unavailable} /></View>
-            <View style={{ flex: 1 }}><Btn label={`Cannon · ${cannons}`} icon={<Sprite name="cannon" size={24} />} color={C.red} onPress={() => doAct('cannon')} disabled={unavailable || !cannons} /></View>
+            <View style={{ flex: 1 }}><Btn label={`${tx('Cannon')} · ${cannons}`} icon={<Sprite name="cannon" size={24} />} color={C.red} onPress={() => doAct('cannon')} disabled={unavailable || !cannons} /></View>
           </Row>
           <Row gap={10} style={{ flexWrap: 'nowrap' }}>
-            <View style={{ flex: 1 }}><Btn label={`Tonic · ${tonics}`} icon={<Sprite name="tonic" size={24} />} color={C.green} onPress={() => doAct('tonic')} disabled={unavailable || !tonics} /></View>
+            <View style={{ flex: 1 }}><Btn label={`${tx('Tonic')} · ${tonics}`} icon={<Sprite name="tonic" size={24} />} color={C.green} onPress={() => doAct('tonic')} disabled={unavailable || !tonics} /></View>
             <View style={{ flex: 1 }}><Btn label="Brace" icon={<Sprite name="shield" size={24} />} color={C.indigo} onPress={() => doAct('brace')} disabled={unavailable} /></View>
           </Row>
           <P center dim>{noMoves ? 'Out of Moves. Go live a little and come back.' : '1 Move per action · the guardian counters each turn'}</P>

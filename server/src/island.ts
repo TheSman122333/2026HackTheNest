@@ -27,6 +27,8 @@ import {
   type IslandEvent,
   type Item,
   NARRATOR,
+  normalizeLanguage,
+  type AppLanguage,
 } from '@last-voyage/game';
 import type { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -35,7 +37,8 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import type { Collections, GmEventDoc, IslandDoc, UserDoc } from './db';
-import { askTidekeeper, brainState, pickDestination, summarizeEvents } from './brain';
+import { askTidekeeper, brainState, pickDestination, summarizeEvents, translateNarrationText } from './brain';
+import { localizedVoiceStatus } from './voice-language';
 import { fallbackLine, generateGmProposal, isWorldEventDay, type StreakContext } from './gm';
 import { ledger, spendMoves, todayMoves } from './moves';
 import {
@@ -279,13 +282,22 @@ export function registerIsland(
     return ctx.json({ events: result.events, ...result.view });
   });
 
-  const gmResponse = (doc: GmEventDoc, requestId: string, status = doc.status) => ({
-    requestId,
-    status,
-    event: doc.event,
-    island: { id: doc.islandDocId.toHexString(), changedTile: doc.changedTile },
-    audit: doc.audit,
-  });
+  // A crew shares one event/reward, but each reader receives narration in their own language.
+  const localizedEvents = new Map<string, Promise<string | null>>();
+  const gmResponse = async (doc: GmEventDoc, requestId: string, status = doc.status, language: AppLanguage = 'en') => {
+    let narration = doc.event.narration;
+    if (language !== 'en') {
+      const key = `${doc.event.id}:${language}`;
+      if (!localizedEvents.has(key)) {
+        if (localizedEvents.size >= 128) localizedEvents.delete(localizedEvents.keys().next().value!);
+        localizedEvents.set(key, translateNarrationText(narration, language, env, fetchImpl));
+      }
+      const translated = await localizedEvents.get(key)!;
+      if (translated) narration = translated;
+      else localizedEvents.delete(key); // Retry after a transient provider outage.
+    }
+    return { requestId, status, event: { ...doc.event, narration }, island: { id: doc.islandDocId.toHexString(), changedTile: doc.changedTile }, audit: doc.audit };
+  };
 
   const saveGmAudit = async (doc: GmEventDoc) => {
     try {
@@ -385,6 +397,7 @@ export function registerIsland(
   };
 
   app.post('/island/gm-event', async (ctx) => {
+    const language = normalizeLanguage(ctx.req.header('X-App-Language'));
     const parsed = z
       .object({ requestId: z.string().uuid(), trigger: z.enum(['daily_briefing', 'advance_night', 'scheduled']) })
       .safeParse(await ctx.req.json().catch(() => ({})));
@@ -407,7 +420,7 @@ export function registerIsland(
     if (existing) {
       const complete = await completePendingGmEvent(existing);
       await saveGmAudit(complete);
-      return ctx.json(gmResponse(complete, parsed.data.requestId, complete.status === 'applied' ? 'already_applied' : complete.status));
+      return ctx.json(await gmResponse(complete, parsed.data.requestId, complete.status === 'applied' ? 'already_applied' : complete.status, language));
     }
 
     const today = await todayMoves(c, user);
@@ -431,7 +444,7 @@ export function registerIsland(
     if (!candidates.length) {
       const narration = await fallbackLine('noTile', isle.island.theme, streakContext);
       const doc = await persistNoGmEvent(eventKey, user, isle, narration);
-      return ctx.json(gmResponse(doc, parsed.data.requestId));
+      return ctx.json(await gmResponse(doc, parsed.data.requestId, doc.status, language));
     }
 
     const proposal = await generateGmProposal({
@@ -447,7 +460,7 @@ export function registerIsland(
     if (!proposal) {
       const narration = await fallbackLine('unavailable', isle.island.theme, streakContext);
       const doc = await persistNoGmEvent(eventKey, user, isle, narration);
-      return ctx.json(gmResponse(doc, parsed.data.requestId));
+      return ctx.json(await gmResponse(doc, parsed.data.requestId, doc.status, language));
     }
 
     const hex = candidates[0]!;
@@ -479,14 +492,15 @@ export function registerIsland(
       const winner = (await c.gmEvents.findOne({ eventKey }))!;
       const complete = await completePendingGmEvent(winner);
       await saveGmAudit(complete);
-      return ctx.json(gmResponse(complete, parsed.data.requestId, complete.status === 'applied' ? 'already_applied' : complete.status));
+      return ctx.json(await gmResponse(complete, parsed.data.requestId, complete.status === 'applied' ? 'already_applied' : complete.status, language));
     }
     const complete = await completePendingGmEvent(doc);
     await saveGmAudit(complete);
-    return ctx.json(gmResponse(complete, parsed.data.requestId));
+    return ctx.json(await gmResponse(complete, parsed.data.requestId, complete.status, language));
   });
 
   app.post('/island/voice-turn', async (ctx) => {
+    const language = normalizeLanguage(ctx.req.header('X-App-Language'));
     const length = Number(ctx.req.header('content-length') ?? 0);
     if (length > 3 * 1024 * 1024) throw new HTTPException(413, { message: 'voice request is too large' });
     const parsed = z
@@ -542,6 +556,12 @@ export function registerIsland(
       if (existingTurn.status === 'processing' || !existingTurn.response) {
         throw new HTTPException(409, { message: 'voice turn is still processing; refresh the game state' });
       }
+      // A retry must never reapply a command, nor play audio saved in a previous app language.
+      if (normalizeLanguage(existingTurn.response.language) !== language) {
+        const savedReply = typeof existingTurn.response.reply === 'string' ? existingTurn.response.reply : '';
+        const translated = language === 'en' ? null : await translateNarrationText(savedReply, language, env, fetchImpl);
+        return ctx.json({ ...existingTurn.response, language, reply: translated ?? localizedVoiceStatus(language, await view(user)), audio: null, audioError: 'language_changed' });
+      }
       const previousAudio = existingTurn.response.audio as { url?: unknown } | null | undefined;
       const audioId = typeof previousAudio?.url === 'string' ? /\/voice\/audio\/([^/]+)$/.exec(previousAudio.url)?.[1] : null;
       if (audioId) {
@@ -556,7 +576,7 @@ export function registerIsland(
     let transcript: string | null = null;
     if (input.audio) {
       try {
-        transcript = await transcribeAudio(input.audio, env.ELEVENLABS_API_KEY, fetchImpl);
+        transcript = await transcribeAudio(input.audio, env.ELEVENLABS_API_KEY, fetchImpl, language);
       } catch (error) {
         if (error instanceof VoiceProviderError) {
           console.error('[voice] transcription failed:', error.message);
@@ -571,11 +591,11 @@ export function registerIsland(
 
     let intent: VoiceIntent = input.mode === 'narration'
       ? { type: 'narration', scene: input.scene! }
-      : input.mode === 'briefing' ? { type: 'briefing' } : resolveVoiceIntent(transcript ?? '') ?? { type: 'question' };
+      : input.mode === 'briefing' ? { type: 'briefing' } : resolveVoiceIntent(transcript ?? '', language) ?? { type: 'question' };
     const userForTurn: UserDoc = (await c.users.findOne({ _id: user._id })) ?? user;
     const current = await view(userForTurn);
     const today = await todayMoves(c, userForTurn);
-    const sceneReply = input.mode === 'narration' ? responseForScene(input.scene!, userForTurn.name, current, today) : null;
+    const sceneReply = input.mode === 'narration' ? responseForScene(input.scene!, userForTurn.name, current, today, language) : null;
 
     // The brain (OpenAI) understands free speech and picks an allowlisted action; without a key
     // we fall back to the keyword matcher above.
@@ -584,6 +604,7 @@ export function registerIsland(
       env,
       fetchImpl,
       mode: input.mode,
+      language,
       narration: sceneReply ? { scene: input.scene!, facts: sceneReply, detail: input.detail } : undefined,
       text: transcript,
       state: brainState(userForTurn.name, current, {
@@ -595,7 +616,7 @@ export function registerIsland(
       history: convo?.history ?? [],
     });
     // Questions never spend Moves, whatever the model picked.
-    const askedQuestion = resolveVoiceIntent(transcript ?? '')?.type === 'question';
+    const askedQuestion = resolveVoiceIntent(transcript ?? '', language)?.type === 'question';
     if (brain && input.mode === 'command') {
       if (askedQuestion) brain.action = 'none';
       const a = brain.action;
@@ -636,7 +657,7 @@ export function registerIsland(
       // emits an action or client context contains an order. The game state is read only here.
       reply = brain?.reply ?? sceneReply!;
     } else if (intent.type === 'briefing') {
-      reply = brain?.reply ?? `Welcome back, ${user.name}. Your crew is exploring a ${current.island.theme} island. You have ${current.movesRemaining} Moves, ${current.explorer.hp} health, and a ${today.streak.calmDays}-day Calm Seas streak. ${current.boss.name} has ${current.boss.hp} health remaining.`;
+      reply = brain?.reply ?? (language === 'en' ? `Welcome back, ${user.name}. Your crew is exploring a ${current.island.theme} island. You have ${current.movesRemaining} Moves, ${current.explorer.hp} health, and a ${today.streak.calmDays}-day Calm Seas streak. ${current.boss.name} has ${current.boss.hp} health remaining.` : localizedVoiceStatus(language, current));
       cues = today.streakEvents.flatMap((event) => {
         if (event.type === 'calm_day') return ['streak.calm_day'];
         if (event.type === 'shield_earned') return ['streak.shield_earned'];
@@ -648,14 +669,14 @@ export function registerIsland(
     } else if (intent.type === 'question') {
       reply =
         brain?.reply ??
-        (transcript && resolveVoiceIntent(transcript)?.type === 'question'
-          ? responseForQuestion(transcript, current, today.streak.calmDays)
-          : await fallbackLine('unclear'));
+        (transcript && resolveVoiceIntent(transcript, language)?.type === 'question'
+          ? responseForQuestion(transcript, current, today.streak.calmDays, language)
+          : language === 'en' ? await fallbackLine('unclear') : localizedVoiceStatus(language, current));
     } else {
       try {
         if (intent.type === 'island.move') {
           const moved = await performMove(userForTurn, intent.to);
-          reply = brain ? `${brain.reply} ${summarizeEvents(moved.events, current.boss.name)}`.trim() : voiceCommandReply(intent, moved.view);
+          reply = language !== 'en' ? `${brain?.reply ?? ''} ${localizedVoiceStatus(language, moved.view)}`.trim() : brain ? `${brain.reply} ${summarizeEvents(moved.events, current.boss.name)}`.trim() : voiceCommandReply(intent, moved.view);
           result = {
             events: moved.events,
             movesRemaining: moved.view.movesRemaining,
@@ -665,7 +686,7 @@ export function registerIsland(
           cues = sfxCueKeys(moved.events);
         } else {
           const fought = await performFight(userForTurn, intent.action);
-          reply = brain ? `${brain.reply} ${summarizeEvents(fought.events, current.boss.name)}`.trim() : voiceCommandReply(intent, fought.view);
+          reply = language !== 'en' ? `${brain?.reply ?? ''} ${localizedVoiceStatus(language, fought.view)}`.trim() : brain ? `${brain.reply} ${summarizeEvents(fought.events, current.boss.name)}`.trim() : voiceCommandReply(intent, fought.view);
           result = {
             events: fought.events,
             movesRemaining: fought.view.movesRemaining,
@@ -676,7 +697,7 @@ export function registerIsland(
         }
       } catch (error) {
         if (!(error instanceof HTTPException)) throw error;
-        reply = error.message;
+        reply = language === 'en' ? error.message : await translateNarrationText(error.message, language, env, fetchImpl) ?? localizedVoiceStatus(language, current);
       }
     }
 
@@ -689,7 +710,7 @@ export function registerIsland(
     let audio: { url: string; expiresAt: string } | null = null;
     let audioError: string | null = null;
     try {
-      const bytes = await synthesizeSpeech(reply, env, fetchImpl);
+      const bytes = await synthesizeSpeech(reply, env, fetchImpl, language);
       if (bytes?.length && bytes.byteLength <= 1024 * 1024) {
         const id = randomUUID();
         const expiresAt = new Date(Date.now() + 10 * 60_000);
@@ -704,6 +725,7 @@ export function registerIsland(
     }
 
     const response = {
+      language,
       requestId: input.requestId,
       conversationId,
       transcript: input.mode === 'command' ? transcript : null,

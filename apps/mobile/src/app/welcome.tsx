@@ -1,15 +1,19 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedTextInput as TextInput } from '@/features/language/LocalizedControls';
 /** Sign in: SSOJet (real accounts, resumes your voyage) or a dev quick-join fallback. */
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, P, Panel, Screen } from '@/components/kit';
 import { Sprite } from '@/components/sprites';
 import { ssojetConfigured } from '@/features/auth/ssojet';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
+import { useT } from '@/features/language/i18n';
 
 export default function Welcome() {
+  const tx = useT();
   const login = useSession((s) => s.login);
   const ssoLogin = useSession((s) => s.ssoLogin);
   const [name, setName] = useState('');
@@ -43,6 +47,8 @@ export default function Welcome() {
         <Text accessibilityRole="header" style={s.wordmark}>The Last Voyage</Text>
         <P center dim>Real life fills your sails. Walk, read, see friends. Every day takes your crew a little further.</P>
       </View>
+
+      <Btn small label="Change language" color={C.deep} onPress={() => router.push('/language')} />
 
       {/* Boarding pass: SSOJet sign-in */}
       <View style={s.pass}>
@@ -90,7 +96,7 @@ export default function Welcome() {
       </Panel>
       {err ? (
         <Panel color={C.red}>
-          <P>Couldn&apos;t board: {err}</P>
+          <P>{tx('Couldn’t board: {error}', { error: err })}</P>
         </Panel>
       ) : null}
     </Screen>

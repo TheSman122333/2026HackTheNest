@@ -1,17 +1,23 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 /** Legend leaderboard: your rank in your crew and across every crew, plus the demo "End the Year". */
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, P, Panel, Row, Screen, Tag, Title } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { LEGEND_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
+import { useT } from '@/features/language/i18n';
+import { useLanguage } from '@/state/language';
 import { api } from '@/lib/api';
 import type { LegendBoard, LegendRow } from '@/lib/types';
 
 type Tab = 'crew' | 'global';
 
 export default function LegendScreen() {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const [board, setBoard] = useState<LegendBoard | null>(null);
   const [tab, setTab] = useState<Tab>('crew');
   const [error, setError] = useState<string | null>(null);
@@ -70,14 +76,14 @@ export default function LegendScreen() {
       {board ? (
         <Panel color={C.deep}>
           {rows.length ? rows.map((r) => <LegendRowView key={r.id} row={r} showCrew={tab === 'global'} />) : <P dim>No pirates here yet.</P>}
-          {tab === 'global' && me && me.globalRank > rows.length ? <P dim>You are #{me.globalRank} of {me.players}. Keep living, keep climbing.</P> : null}
+          {tab === 'global' && me && me.globalRank > rows.length ? <P dim>{tx('You are #{rank} of {players}. Keep living, keep climbing.', { rank: me.globalRank.toLocaleString(language), players: me.players.toLocaleString(language) })}</P> : null}
         </Panel>
       ) : null}
 
       {board?.lodestar?.winner ? (
         <Panel color={C.navy}>
-          <Text style={s.eyebrow}>LAST LODESTAR · {board.lodestar.year}</Text>
-          <P>👑 {board.lodestar.winner.isYou ? 'You' : board.lodestar.winner.name} claimed the Lodestar with {board.lodestar.winner.legend} Legend.</P>
+          <Text style={s.eyebrow}>{tx('LAST LODESTAR · {year}', { year: board.lodestar.year.toLocaleString(language, { useGrouping: false }) })}</Text>
+          <P translatable={false}>👑 {tx(board.lodestar.winner.isYou ? 'You claimed the Lodestar with {legend} Legend.' : '{name} claimed the Lodestar with {legend} Legend.', { name: board.lodestar.winner.name, legend: board.lodestar.winner.legend.toLocaleString(language) })}</P>
           <Btn small label="Replay the ceremony" color={C.indigo} onPress={() => router.push('/lodestar')} />
         </Panel>
       ) : null}
@@ -92,25 +98,29 @@ export default function LegendScreen() {
 }
 
 function RankCard({ label, rank, of, value }: { label: string; rank?: number | null; of?: number; value?: number }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   return (
     <View style={s.card}>
-      <Text style={s.cardN}>{value !== undefined ? value : rank ? `#${rank}` : '—'}</Text>
-      {of ? <Text style={s.cardOf}>of {of}</Text> : null}
+      <Text style={s.cardN}>{value !== undefined ? value.toLocaleString(language) : rank ? `#${rank.toLocaleString(language)}` : '—'}</Text>
+      {of ? <Text style={s.cardOf}>{tx('of {count}', { count: of.toLocaleString(language) })}</Text> : null}
       <Text style={s.cardL}>{label}</Text>
     </View>
   );
 }
 
 function LegendRowView({ row, showCrew }: { row: LegendRow; showCrew: boolean }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   return (
     <View style={[s.row, row.isYou && s.rowYou]}>
-      <Text style={[s.rank, row.rank <= 3 && { color: C.gold }]}>{row.rank}</Text>
+      <Text style={[s.rank, row.rank <= 3 && { color: C.gold }]}>{row.rank.toLocaleString(language)}</Text>
       <PlayerAvatar userId={row.id} avatarId={row.avatarId} size={40} />
       <View style={{ flex: 1 }}>
-        <Text style={s.name} numberOfLines={1}>{row.lodestar ? '👑 ' : ''}{row.name}{row.isYou ? ' (you)' : ''}</Text>
-        {showCrew && row.crewName ? <Text style={s.crew} numberOfLines={1}>{row.crewName}</Text> : null}
+        <Text translatable={false} style={s.name} numberOfLines={1}>{row.lodestar ? '👑 ' : ''}{row.name}{row.isYou ? tx(' (you)') : ''}</Text>
+        {showCrew && row.crewName ? <Text translatable={false} style={s.crew} numberOfLines={1}>{row.crewName}</Text> : null}
       </View>
-      <Tag label={`${row.legend} LEGEND`} color={row.isYou ? C.gold : C.indigo} />
+      <Tag label={tx('{count} LEGEND', { count: row.legend.toLocaleString(language) })} color={row.isYou ? C.gold : C.indigo} />
     </View>
   );
 }

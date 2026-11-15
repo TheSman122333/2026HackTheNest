@@ -1,7 +1,8 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
 /** The player's personal theme song (ElevenLabs Music, generated on our server). */
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, P, Panel, Row, Tag } from '@/components/kit';
 import { Sprite } from '@/components/sprites';

@@ -4,6 +4,7 @@
  */
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { getRequestLanguage } from '@/features/language/requestLanguage';
 
 // Web build: talk to the API on the same host that served the page (works over LAN/hotspot).
 const BASE =
@@ -41,10 +42,11 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown, options?: { signal?: AbortSignal }): Promise<T> {
+  const language = getRequestLanguage();
   const t = await loadToken();
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { 'content-type': 'application/json', ...(t ? { authorization: `Bearer ${t}` } : {}) },
+    headers: { 'content-type': 'application/json', 'X-App-Language': language, ...(t ? { authorization: `Bearer ${t}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: options?.signal,
   });

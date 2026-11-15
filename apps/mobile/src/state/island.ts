@@ -5,6 +5,8 @@ import { api } from '@/lib/api';
 import type { FightResponse, IslandView, MoveResponse } from '@/lib/types';
 import { useSession } from '@/state/session';
 import { playGameSound } from '@/state/gameAudio';
+import { useLanguage } from '@/state/language';
+import { translate as tx } from '@/features/language/i18n';
 
 type IslandState = {
   view: IslandView | null;
@@ -61,7 +63,7 @@ export const useIsland = create<IslandState>((set, get) => {
     advanceNight: async () => {
       await run(
         () => api<IslandView & { sailed: boolean }>('POST', '/crew/advance-night'),
-        (r) => [r.sailed ? `The ship sailed to a new ${r.island.theme} island.` : 'Night passed. New items washed ashore.'],
+        (r) => [r.sailed ? tx('The ship sailed to a new {theme} island.', { theme: tx(r.island.theme.charAt(0).toUpperCase() + r.island.theme.slice(1)) }) : tx('Night passed. New items washed ashore.')],
       );
     },
   };
@@ -83,15 +85,15 @@ export const ITEM_GLYPH: Record<string, string> = {
 function islandLine(e: MoveResponse['events'][number]): string | null {
   switch (e.type) {
     case 'moved':
-      return `Moved (−${e.cost} Moves)`;
+      return tx('Moved (−{cost} Moves)', { cost: e.cost });
     case 'found':
-      return `Found ${e.item}.`;
+      return tx('Found {item}.', { item: tx(ITEM_GLYPH[e.item] ?? e.item) });
     case 'hazard':
-      return `The ${e.terrain} hurt you (−${e.damage} HP)`;
+      return tx('The {terrain} hurt you (−{damage} HP)', { terrain: tx(e.terrain.charAt(0).toUpperCase() + e.terrain.slice(1)), damage: e.damage });
     case 'washed_overboard':
-      return 'Washed overboard. Rest up, you are back tomorrow.';
+      return tx('Washed overboard. Rest up, you are back tomorrow.');
     case 'boss_in_sight':
-      return 'The guardian is within reach.';
+      return tx('The guardian is within reach.');
     case 'revealed':
       return null;
   }
@@ -101,18 +103,23 @@ function fightLine(e: FightResponse['events'][number], r: FightResponse): string
   const boss = r.boss.name;
   switch (e.type) {
     case 'hit':
-      return `${e.weapon === 'cannon' ? 'Cannon hit.' : e.crit ? 'Critical strike.' : 'Strike.'} ${e.damage} damage to ${boss}`;
+      return tx('{action} {damage} damage to {boss}', { action: tx(e.weapon === 'cannon' ? 'Cannon hit.' : e.crit ? 'Critical strike.' : 'Strike.'), damage: e.damage, boss });
     case 'heal':
-      return `Healed ${e.amount} HP`;
+      return tx('Healed {amount} HP', { amount: e.amount });
     case 'brace':
-      return 'You brace yourself';
+      return tx('You brace yourself');
     case 'boss_hit':
-      return `${e.enraged ? 'Enraged: ' : ''}${boss} hits you for ${e.damage}${e.braced ? ' (braced)' : ''}`;
+      return tx('{enraged}{boss} hits you for {damage}{braced}', { enraged: e.enraged ? tx('Enraged: ') : '', boss, damage: e.damage, braced: e.braced ? tx(' (braced)') : '' });
     case 'enraged':
-      return `${boss} is enraged.`;
+      return tx('{boss} is enraged.', { boss });
     case 'washed_overboard':
-      return `${boss} knocked you overboard.`;
+      return tx('{boss} knocked you overboard.', { boss });
     case 'boss_defeated':
-      return `${boss} is defeated. The island is yours!`;
+      return tx('{boss} is defeated. The island is yours!', { boss });
   }
 }
+
+// Action feedback is transient; discard the old language when the player changes it.
+useLanguage.subscribe((state, previous) => {
+  if (state.language !== previous.language) useIsland.setState({ feed: [] });
+});

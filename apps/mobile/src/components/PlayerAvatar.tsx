@@ -5,6 +5,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { AVATARS, isAvatarId } from '@/features/avatar/catalog';
 import { useAvatarPhoto, type FacePhoto } from '@/state/avatarPhoto';
 import { useSession } from '@/state/session';
+import { useT } from '@/features/language/i18n';
 
 import { avatarFor, Sprite } from './sprites';
 
@@ -13,6 +14,7 @@ export function PlayerAvatar({ userId, avatarId, size = 48, photo, style, label 
   userId?: string; avatarId?: string | null; size?: number; photo?: FacePhoto | null;
   style?: StyleProp<ViewStyle>; label?: string;
 }) {
+  const tx = useT();
   const me = useSession((state) => state.me?.user);
   const { userId: photoOwner, photo: savedPhoto, hydrate } = useAvatarPhoto();
   const [failedUri, setFailedUri] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export function PlayerAvatar({ userId, avatarId, size = 48, photo, style, label 
   const zoom = Math.max(1, Math.min(4, Number.isFinite(available?.zoom) ? available!.zoom : 1));
   const pan = (value: number) => Math.max(-(zoom - 1) / 2, Math.min((zoom - 1) / 2, Number.isFinite(value) ? value : 0));
 
-  return <View accessible={Boolean(label)} accessibilityRole={label ? 'image' : undefined} accessibilityLabel={label}
+  return <View accessible={Boolean(label)} accessibilityRole={label ? 'image' : undefined} accessibilityLabel={label ? tx(label) : undefined}
     importantForAccessibility={label ? 'yes' : 'no-hide-descendants'} style={[{ width: size, height: size }, style]}>
     <View style={[s.face, slot]}>
       {available ? <Image source={{ uri: available.uri }} contentFit="cover" cachePolicy="none" accessible={false}
