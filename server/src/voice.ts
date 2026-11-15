@@ -1,15 +1,78 @@
-import { NARRATOR, type FightAction, type FightEvent, type IslandEvent } from '@last-voyage/game';
+import { ACTIVITIES, NARRATOR, REWARDS, type ActivityKind, type FightAction, type FightEvent, type IslandEvent } from '@last-voyage/game';
 
 export class VoiceProviderError extends Error {}
 
+export const NARRATION_SCENES = ['arrival', 'ship', 'island', 'quests', 'log', 'me', 'activity', 'move', 'fight', 'night'] as const;
+export type NarrationScene = (typeof NARRATION_SCENES)[number];
+
 export type VoiceIntent =
   | { type: 'briefing' }
+  | { type: 'narration'; scene: NarrationScene }
   | { type: 'question' }
   | { type: 'island.move'; to: string }
   | { type: 'fight'; action: FightAction };
 
 const AUDIO_MIME_TYPES = new Set(['audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/webm']);
 const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
+
+/** A short, factual story still works when speech or the language provider is unavailable. */
+export function responseForScene(
+  scene: NarrationScene,
+  name: string,
+  view: {
+    island: { theme: string; index: number; conquered: boolean };
+    explorer: { hp: number; maxHp: number; pos: string };
+    boss: { name: string; hp: number; maxHp: number; defeated: boolean };
+    movesRemaining: number;
+    canFight: boolean;
+  },
+  today: {
+    steps: number;
+    activities: { kind: ActivityKind; moves: number; supplies: number; at: Date }[];
+    moves: { total: number; remaining: number };
+    streak: { calmDays: number; shields: number };
+  },
+): string {
+  const moves = `${view.movesRemaining} Move${view.movesRemaining === 1 ? '' : 's'}`;
+  const island = `island ${view.island.index + 1}`;
+  const completed = view.island.conquered || view.boss.defeated;
+  const latest = [...today.activities].sort((a, b) => b.at.getTime() - a.at.getTime())[0];
+  switch (scene) {
+    case 'arrival':
+      return completed
+        ? `Welcome aboard, ${name}. Your crew has claimed ${island}; ${moves} remain for today's adventures, and a new shore awaits at nightfall.`
+        : `Welcome aboard, ${name}. Your crew is exploring a ${view.island.theme} shore; you have ${moves}, and ${view.boss.name} waits with ${view.boss.hp} health.`;
+    case 'ship':
+      return `Hear those sails, ${name}? Your day has earned ${today.moves.total} Moves; walks and real-life quests put the wind behind our voyage.`;
+    case 'island':
+      if (view.explorer.hp <= 0) return `The sea carried you back to shore, ${name}. Rest until tomorrow; your crew's progress and the guardian's wounds remain.`;
+      if (completed) return `${island.charAt(0).toUpperCase() + island.slice(1)} belongs to your crew! Gather your bearings, sailor; the next horizon opens at nightfall.`;
+      return view.canFight
+        ? `${view.boss.name} is within reach! You have ${moves} and ${view.explorer.hp} health; choose your next move, sailor.`
+        : `Boots ashore, ${name}. You have ${moves} and ${view.explorer.hp} health; follow the marked hexes toward ${view.boss.name}.`;
+    case 'quests':
+      return `Here's where real life fills our sails. You've logged ${today.activities.length} ${today.activities.length === 1 ? 'activity' : 'activities'} and ${today.steps} steps today; every ${REWARDS.stepsPerMove.toLocaleString('en-US')} steps earns a Move, up to ${REWARDS.movesFromStepsPerDay} a day.`;
+    case 'log':
+      return `Every voyage leaves a story. Your ship's log keeps the crew's finds, hard-won supplies, and victories together.`;
+    case 'me':
+      return `A fine pirate in the making, ${name}. Your Calm Seas streak stands at ${today.streak.calmDays} days, with ${today.streak.shields} shields tucked safely away.`;
+    case 'activity':
+      return latest
+        ? `${ACTIVITIES[latest.kind].label} logged, sailor! That effort earned ${latest.moves} ${latest.moves === 1 ? 'Move' : 'Moves'} and ${latest.supplies} Supplies; you now have ${moves} for the adventure.`
+        : `Small efforts make grand voyages, ${name}. Choose a real-life activity you've finished, and let it fill our sails.`;
+    case 'move':
+      return view.explorer.hp <= 0
+        ? `The shore will keep you safe for tonight. Rest, sailor; tomorrow brings full health and another chance.`
+        : `Another mark on the chart, ${name}. You have ${moves} and ${view.explorer.hp} health${view.canFight ? `; ${view.boss.name} is now within reach` : '; new ground waits beyond the mist'}.`;
+    case 'fight':
+      if (completed) return `${view.boss.name} is defeated! The crew has claimed ${island}; that is a story worth carrying to the next shore.`;
+      return view.explorer.hp <= 0
+        ? `${view.boss.name} sent you overboard, but the battle isn't lost. Rest until tomorrow; the guardian stays at ${view.boss.hp} health.`
+        : `Steel and sea spray! ${view.boss.name} has ${view.boss.hp} health left, and you stand at ${view.explorer.hp}; ${moves} remain.`;
+    case 'night':
+      return `The night tide has turned our chart to ${island}, a ${view.island.theme} shore. Check the sand for fresh finds; you have ${moves} ready.`;
+  }
+}
 
 export function resolveVoiceIntent(text: string): VoiceIntent | null {
   const command = text.trim().toLowerCase().replace(/[.!]+$/g, '');

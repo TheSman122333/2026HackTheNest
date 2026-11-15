@@ -11,9 +11,14 @@ import type {
 } from '@last-voyage/game';
 import { MongoClient, type Binary, type Collection, type Db, type ObjectId } from 'mongodb';
 
+export const AVATAR_IDS = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11', 'a12'] as const;
+export type AvatarId = (typeof AVATAR_IDS)[number];
+
 export type UserDoc = {
   _id: ObjectId;
   name: string;
+  /** An approved outfit only. Face photos stay on the player's device. */
+  avatarId?: AvatarId;
   tz: string;
   crewId: ObjectId | null;
   skills: Record<Skill, number>;
@@ -34,6 +39,9 @@ export type CrewDoc = {
   memberIds: ObjectId[];
   /** supplies + materials (timber, iron, spice, shard) */
   stores: Record<string, number>;
+  upgrades?: { helm?: number; sails?: number };
+  /** Purchases live with the atomic resource debit; the Log is a recoverable projection. */
+  upgradeLog?: { id: string; key: 'helm' | 'sails'; level: number; cost: number; userId: string; at: Date }[];
   createdAt: Date;
 };
 

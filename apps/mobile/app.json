@@ -8,11 +8,15 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.hackthenest.lastvoyage"
+      "bundleIdentifier": "com.hackthenest.lastvoyage",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take an optional face photo to fit inside your pirate avatar. Your photo stays on this device.",
+        "NSPhotoLibraryUsageDescription": "Choose an optional face photo for your pirate avatar. Your photo stays on this device."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#27187E",
+        "backgroundColor": "#073A6B",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -30,8 +34,8 @@
       "output": "single",
       "name": "The Last Voyage",
       "shortName": "Last Voyage",
-      "themeColor": "#27187E",
-      "backgroundColor": "#27187E",
+      "themeColor": "#073A6B",
+      "backgroundColor": "#073A6B",
       "display": "standalone",
       "orientation": "portrait"
     },
@@ -41,7 +45,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#27187E",
+          "backgroundColor": "#073A6B",
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
         }

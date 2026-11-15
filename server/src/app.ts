@@ -16,10 +16,12 @@ import { SignJWT, jwtVerify } from 'jose';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 
-import type { Collections, UserDoc } from './db';
+import { AVATAR_IDS, type Collections, type UserDoc } from './db';
 import { createIsland, registerIsland, resumeVoyage } from './island';
 import { ledger, spendMoves, todayMoves } from './moves';
 import { registerMusic } from './music';
+import { registerOpening } from './opening';
+import { registerShip, shipWindMultiplier } from './ship';
 import { exchangeSsojetCode, SsojetAuthenticationError, SsojetRequestError, SsojetUnavailableError } from './ssojet';
 
 type Env = { Variables: { user: UserDoc } };
@@ -64,6 +66,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   const publicUser = (u: UserDoc) => ({
     id: u._id.toHexString(),
     name: u.name,
+    avatarId: u.avatarId ?? null,
     tz: u.tz,
     crewId: u.crewId?.toHexString() ?? null,
     skills: u.skills,
@@ -207,6 +210,14 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     return ctx.json({ limits });
   });
 
+  app.put('/me/avatar', async (ctx) => {
+    const user = ctx.get('user');
+    // This route accepts an outfit ID only; images and local photo paths are never uploaded.
+    const { avatarId } = await body(ctx, z.object({ avatarId: z.enum(AVATAR_IDS) }).strict());
+    await c.users.updateOne({ _id: user._id }, { $set: { avatarId } });
+    return ctx.json({ avatarId });
+  });
+
   // ---------- crews ----------
   const publicCrew = (cr: { _id: ObjectId; name: string; inviteCode: string; memberIds: ObjectId[]; stores: Record<string, number> }) => ({
     id: cr._id.toHexString(),
@@ -333,17 +344,31 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   // ---------- crew roster ----------
   app.get('/crew', async (ctx) => {
     const user = ctx.get('user');
-    if (!user.crewId) return ctx.json({ crew: null, members: [] });
+    if (!user.crewId) return ctx.json({ crew: null, members: [], sailing: null });
     const crew = await c.crews.findOne({ _id: user.crewId });
     const members = await c.users.find({ crewId: user.crewId }).toArray();
+    // Each sailor contributes their own local day. Spending Moves never slows the ship.
+    const now = new Date();
+    const days = await Promise.all(members.map((member) => todayMoves(c, member, now)));
+    const totalMoves = days.reduce((total, day) => total + day.moves.total, 0);
     return ctx.json({
       crew: crew && publicCrew(crew),
-      members: members.map((m) => ({ id: m._id.toHexString(), name: m.name, legend: m.legend, skills: m.skills, calmDays: m.streak.calmDays })),
+      members: members.map((m, i) => ({ id: m._id.toHexString(), name: m.name, avatarId: m.avatarId ?? null, legend: m.legend, skills: m.skills, calmDays: days[i]!.streak.calmDays })),
+      sailing: {
+        totalMoves,
+        averageMoves: members.length ? totalMoves / members.length * shipWindMultiplier(crew) : 0,
+        activities: days.reduce((total, day) => total + day.activities.length, 0),
+        steps: days.reduce((total, day) => total + day.steps, 0),
+        activeMembers: days.filter((day) => day.steps > 0 || day.activities.length > 0).length,
+        members: members.length,
+      },
     });
   });
 
   registerIsland(app, c, { env, fetchImpl });
   registerMusic(app, c, { env, fetchImpl });
+  registerOpening(app, c, { env, fetchImpl });
+  registerShip(app, c);
 
   app.onError((err, ctx) => {
     if (err instanceof HTTPException) return ctx.json({ error: err.message }, err.status);

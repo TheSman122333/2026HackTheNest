@@ -208,6 +208,44 @@
       "sourceName": "palette.png",
       "sha256": "a1f13f918c443fc8cadb792f4ae820233a566a1e5b56b7a86240ab3b0acb5fd9",
       "bytes": 37053
+    },
+    {
+      "id": "voyage_ship",
+      "file": "ships/voyage_ship.png",
+      "category": "ships",
+      "size": [
+        1254,
+        1254
+      ],
+      "anchor": [
+        0.5,
+        0.82
+      ],
+      "status": "approved",
+      "notes": "Supplied by the project lead and explicitly requested for use on the Ship screen in this conversation. Copied unchanged; preserve transparency.",
+      "feedback": "Approved for app use by the project lead request to replace the Ship screen tile with this attached ship.",
+      "sourceName": "Ship Sprite with Plain Bow.png",
+      "sha256": "3a563eddd1aad0622b85a81ee0e81ff4f18eb80e2ec8b44c3e3fd00ef663614c",
+      "bytes": 1120428
+    },
+    {
+      "id": "voyage_ship_overhead",
+      "file": "ships/voyage_ship_overhead.png",
+      "category": "ships",
+      "size": [
+        1254,
+        1254
+      ],
+      "anchor": [
+        0.5,
+        0.5
+      ],
+      "status": "approved",
+      "notes": "Supplied by the project lead and explicitly requested for the overhead crew deck in this conversation. Copied unchanged, including transparency.",
+      "feedback": "Approved for use by the project lead request to use the attached overhead caravel.",
+      "sourceName": "Overhead Amber Caravel Sprite.png",
+      "sha256": "dbfe755b3934cab8c2ddd342942ee245c95f8cb6b24d9674dbbbbdad8df0411d",
+      "bytes": 683967
     }
   ]
 }

@@ -40,12 +40,13 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown): Promise<T> {
+export async function api<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown, options?: { signal?: AbortSignal }): Promise<T> {
   const t = await loadToken();
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { 'content-type': 'application/json', ...(t ? { authorization: `Bearer ${t}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal: options?.signal,
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(res.status, (json as { error?: string }).error ?? res.statusText);

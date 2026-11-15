@@ -48,37 +48,37 @@ export const useIsland = create<IslandState>((set, get) => {
     advanceNight: async () => {
       await run(
         () => api<IslandView & { sailed: boolean }>('POST', '/crew/advance-night'),
-        (r) => [r.sailed ? `⛵ The ship sailed to a new ${r.island.theme} island!` : '🌙 Night passed. New items washed ashore.'],
+        (r) => [r.sailed ? `The ship sailed to a new ${r.island.theme} island.` : 'Night passed. New items washed ashore.'],
       );
     },
   };
 });
 
 export const ITEM_GLYPH: Record<string, string> = {
-  supplies: '📦',
-  timber: '🪵',
-  iron: '⛓️',
-  spice: '🌶️',
-  shard: '💎',
-  cutlass: '🗡️',
-  cannon: '💣',
-  tonic: '🧪',
-  chest: '🎁',
-  clue: '📜',
+  supplies: 'Supplies',
+  timber: 'Timber',
+  iron: 'Iron',
+  spice: 'Spice',
+  shard: 'Shard',
+  cutlass: 'Cutlass',
+  cannon: 'Cannon',
+  tonic: 'Tonic',
+  chest: 'Chest',
+  clue: 'Clue',
 };
 
 function islandLine(e: MoveResponse['events'][number]): string | null {
   switch (e.type) {
     case 'moved':
-      return `🧭 Moved (−${e.cost} Moves)`;
+      return `Moved (−${e.cost} Moves)`;
     case 'found':
-      return `${ITEM_GLYPH[e.item] ?? '✨'} Found ${e.item}!`;
+      return `Found ${e.item}.`;
     case 'hazard':
-      return `💥 Ouch! The ${e.terrain} hurt you (−${e.damage} HP)`;
+      return `The ${e.terrain} hurt you (−${e.damage} HP)`;
     case 'washed_overboard':
-      return '🌊 WASHED OVERBOARD! Rest up, you are back tomorrow.';
+      return 'Washed overboard. Rest up, you are back tomorrow.';
     case 'boss_in_sight':
-      return '👹 The guardian is right next to you!';
+      return 'The guardian is within reach.';
     case 'revealed':
       return null;
   }
@@ -88,18 +88,18 @@ function fightLine(e: FightResponse['events'][number], r: FightResponse): string
   const boss = r.boss.name;
   switch (e.type) {
     case 'hit':
-      return `${e.weapon === 'cannon' ? '💣 KA-BOOM!' : e.crit ? '⚡ CRITICAL!' : '🗡️ WHAM!'} ${e.damage} damage to ${boss}`;
+      return `${e.weapon === 'cannon' ? 'Cannon hit.' : e.crit ? 'Critical strike.' : 'Strike.'} ${e.damage} damage to ${boss}`;
     case 'heal':
-      return `🧪 Healed ${e.amount} HP`;
+      return `Healed ${e.amount} HP`;
     case 'brace':
-      return '🛡️ You brace yourself';
+      return 'You brace yourself';
     case 'boss_hit':
-      return `${e.enraged ? '🔥 ' : ''}${boss} hits you for ${e.damage}${e.braced ? ' (braced)' : ''}`;
+      return `${e.enraged ? 'Enraged: ' : ''}${boss} hits you for ${e.damage}${e.braced ? ' (braced)' : ''}`;
     case 'enraged':
-      return `🔥 ${boss} is ENRAGED!`;
+      return `${boss} is enraged.`;
     case 'washed_overboard':
-      return `🌊 ${boss} knocked you overboard!`;
+      return `${boss} knocked you overboard.`;
     case 'boss_defeated':
-      return `🏆 ${boss} is DEFEATED! The island is yours!`;
+      return `${boss} is defeated. The island is yours!`;
   }
 }

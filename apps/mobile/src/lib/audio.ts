@@ -20,3 +20,9 @@ export async function fetchAudio(path: string, name: string): Promise<string> {
   console.log('[audio] ready', file.uri, file.size, 'bytes');
   return file.uri;
 }
+
+/** Release short-lived narration files and browser object URLs after playback. */
+export function releaseAudio(uri: string) {
+  if (Platform.OS === 'web') { URL.revokeObjectURL(uri); return; }
+  try { new File(uri).delete(); } catch { /* The OS may already have reclaimed the cache. */ }
+}

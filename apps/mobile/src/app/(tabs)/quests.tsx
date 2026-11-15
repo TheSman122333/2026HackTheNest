@@ -8,6 +8,7 @@ import { View } from 'react-native';
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
 import { TRACKING } from '@/lib/platform';
 import { ACTIVITY_SPRITE, Sprite } from '@/components/sprites';
+import { useNarrator } from '@/features/narrator/useNarrator';
 import { useSentinelPermissions } from '@/features/scroll/useScrollSentinel';
 import { useTodaySteps } from '@/features/steps/steps';
 import { syncToday } from '@/features/sync/deviceSync';
@@ -36,9 +37,10 @@ export default function Quests() {
       setMe({ today: r.today });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       const g = r.grant;
+      useNarrator.getState().narrate('activity', `${ACTIVITIES[kind].label} logged. That earned ${g.moves} Moves and ${g.supplies} Supplies${g.reduced ? ' under the daily reward cap' : ''}. Real life puts the wind in our sails.`);
       setToast(
         g.supplies || g.moves
-          ? `WHAM! ${ACTIVITIES[kind].label}: +${g.moves} Moves, +${g.supplies} Supplies${g.reduced ? ' (daily cap)' : ''}`
+          ? `${ACTIVITIES[kind].label}: +${g.moves} Moves, +${g.supplies} Supplies${g.reduced ? ' (daily cap)' : ''}`
           : `${ACTIVITIES[kind].label} logged. Daily cap reached, but it still counts!`,
       );
       useSession.getState().refresh();
@@ -51,7 +53,7 @@ export default function Quests() {
 
   return (
     <Screen>
-      <Title>QUESTS</Title>
+      <Title>Earn your next move</Title>
       <P>Do it in real life, then log it here. Every quest fills your sails.</P>
 
       <Row gap={10}>
@@ -73,15 +75,16 @@ export default function Quests() {
               <Btn
                 icon={<Sprite name={ACTIVITY_SPRITE[k]!} size={26} />}
                 label={`${ACTIVITIES[k].label}${counts[k] ? ` ×${counts[k]}` : ''}`}
-                color={counts[k] ? C.cloud : C.orange}
+                color={counts[k] ? C.gold : C.white}
                 onPress={() => log(k)}
                 busy={busy === k}
+                disabled={busy !== null}
                 small
               />
             </View>
           ))}
         </View>
-        <P dim>Honor system. Logging the same thing 3+ times a day gives almost nothing.</P>
+        <P dim>Everyday efforts count. Repeating an activity 3+ times gives reduced rewards.</P>
       </Panel>
 
       {TRACKING ? (<>
@@ -90,14 +93,14 @@ export default function Quests() {
         <Bar value={t.moves.fromSteps} max={REWARDS.movesFromStepsPerDay} color={C.sea} label={`${t.moves.fromSteps}/${REWARDS.movesFromStepsPerDay} step Moves`} />
         <P dim>{next === null ? 'Step Moves maxed for today!' : `${next} more steps to the next Move`}</P>
         {steps.supported && !steps.granted ? <Btn small label="Allow step access" onPress={steps.request} /> : null}
-        <Btn small label="↻ Sync now" color={C.sky} onPress={() => syncToday().catch(() => {})} />
+        <Btn small label="Sync now" color={C.sky} onPress={() => syncToday().catch(() => {})} />
       </Panel>
 
       <Panel>
-        <Row><Sprite name="fx_wave" size={28} /><H>Calm Seas (short-form budget)</H></Row>
+        <Row><Sprite name="fx_wave" size={28} /><H>Calm Seas</H></Row>
         {perms.supported && !perms.accessibility ? (
           <Panel color={C.red}>
-            <P>⚠️ Swipe tracker is OFF, so swipes aren&apos;t counted and minutes are your total time in TikTok, Instagram and YouTube.</P>
+            <P>Swipe tracker is off. Swipes aren&apos;t counted and minutes reflect your total time in TikTok, Instagram and YouTube.</P>
             <Btn small label="Turn tracker on" onPress={() => router.push('/dev/scroll-lab')} />
           </Panel>
         ) : null}
