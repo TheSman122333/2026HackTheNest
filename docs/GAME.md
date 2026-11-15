@@ -77,7 +77,8 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 - **Ship rooms:** Helm, Workshop, Hold, Galley, Armory (levels 1–3), paid for with crew Supplies. Total room levels raise the hull: **Skiff → Sloop → Brigantine** (→ the Lodestar form for the yearly winner's crew).
 
 ## 7. The Crew 🟡
-- ✅ Create a crew, or join with a **6-letter invite code** (QR planned).
+- ✅ Create a crew, or join with a **6-letter invite code** or a QR invite.
+- ✅ **Leave a crew** to join another (Me screen): type the crew's name to confirm. You keep your Legend, skills and pirate; the crew keeps its stores and island.
 - ✅ **Shared Supplies:** every activity's Supplies also go to the crew store.
 - ✅ **Log feed:** every reward is recorded, so the crew sees who did what.
 - ⬜ **Heading vote:** the crew votes on the next island before midnight. The ship sails at midnight.
@@ -145,7 +146,7 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 - **KO** = washed overboard until tomorrow. Next day everyone returns at full HP; the boss doesn't heal.
 - **Win:** the island is conquered for the crew. Damage dealt is credited per player (feeds Legend ⬜).
 
-## 10. Legend and the Lodestar ⬜ (Legend from activities ✅)
+## 10. Legend and the Lodestar 🟡 (activities, boss fights, leaderboard and End the Year ✅)
 - **Legend** is your personal score for the year and **can never be taken away**.
 - **Sources:**
   - activities (max 2/day) ✅

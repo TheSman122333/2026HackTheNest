@@ -10,6 +10,8 @@ import { Sprite } from '@/components/sprites';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { SoundSettings } from '@/features/audio/SoundSettings';
+import { LeaveCrew } from '@/features/crew/LeaveCrew';
+import { LEGEND_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
@@ -63,8 +65,16 @@ export default function Me() {
       <Btn label="Customize your pirate" color={C.indigo} onPress={() => router.push('/avatar')} />
       <Btn label="Quest preferences" color={C.sky} onPress={() => router.push('/preferences')} />
 
+      <Panel color={C.deep}>
+        <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+          <Row gap={8} style={{ flexWrap: 'nowrap' }}><Sprite name="t_star" size={26} /><H>{u.legend} Legend</H></Row>
+          <LegendHelp />
+        </Row>
+        <P dim>{LEGEND_SUMMARY} Earn it from real-life activities and boss fights. The top pirate across every crew claims the Lodestar at year end.</P>
+        <Btn small label="Legend leaderboard" color={C.gold} onPress={() => router.push('/legend')} />
+      </Panel>
+
       <Row gap={10}>
-        <Stat label="LEGEND" value={u.legend} icon={<Sprite name="t_star" size={20} />} />
         {TRACKING ? (<>
           <Stat label="CALM DAYS" value={st.calmDays} color={C.cloud} />
           <Stat label="BEST" value={st.best} color={C.cloud} />
@@ -106,6 +116,8 @@ export default function Me() {
         <Btn small label="Open Scroll Lab" onPress={() => router.push('/dev/scroll-lab')} />
       </Panel>
       </>) : null}
+
+      <LeaveCrew />
 
       <Btn
         label="Log out"

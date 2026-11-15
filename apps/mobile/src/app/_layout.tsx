@@ -53,6 +53,8 @@ export default function RootLayout() {
             <Stack.Screen name="preferences" options={{ presentation: 'card', animation: 'fade' }} />
             <Stack.Screen name="invite" options={{ presentation: 'card', animation: 'fade' }} />
             <Stack.Screen name="join" options={{ presentation: 'card', animation: 'fade' }} />
+            <Stack.Screen name="legend" options={{ presentation: 'card', animation: 'fade' }} />
+            <Stack.Screen name="lodestar" options={{ presentation: 'card', animation: 'fade' }} />
             <Stack.Screen name="dev/scroll-lab" options={{ headerShown: true, title: 'Scroll Lab', headerStyle: { backgroundColor: C.navy }, headerTintColor: C.cloud }} />
           </Stack>
           <TidekeeperSubtitles />

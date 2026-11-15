@@ -179,6 +179,16 @@ export type MediaDoc = {
   expiresAt?: Date;
 };
 
+/** One Lodestar ceremony ("End the Year"). The demo can run it more than once. */
+export type SeasonDoc = {
+  _id: ObjectId;
+  year: number;
+  winner: { userId: ObjectId; name: string; avatarId: string | null; legend: number; crewId: ObjectId | null; crewName: string | null } | null;
+  players: number;
+  endedBy: ObjectId;
+  at: Date;
+};
+
 export type Collections = {
   users: Collection<UserDoc>;
   crews: Collection<CrewDoc>;
@@ -192,6 +202,7 @@ export type Collections = {
   voiceTurns: Collection<VoiceTurnDoc>;
   media: Collection<MediaDoc>;
   questWeeks: Collection<QuestWeekDoc>;
+  seasons: Collection<SeasonDoc>;
 };
 
 export function collections(db: Db): Collections {
@@ -208,6 +219,7 @@ export function collections(db: Db): Collections {
     voiceTurns: db.collection<VoiceTurnDoc>('voice_turns'),
     media: db.collection<MediaDoc>('media'),
     questWeeks: db.collection<QuestWeekDoc>('quest_weeks'),
+    seasons: db.collection<SeasonDoc>('seasons'),
   };
 }
 
@@ -218,6 +230,8 @@ export async function ensureIndexes(c: Collections) {
     c.activities.createIndex({ userId: 1, day: 1 }),
     c.activities.createIndex({ eventId: 1 }, { unique: true, sparse: true }),
     c.questWeeks.createIndex({ userId: 1 }),
+    c.users.createIndex({ legend: -1, createdAt: 1 }),
+    c.seasons.createIndex({ at: -1 }),
     c.dayLogs.createIndex({ userId: 1, day: 1 }, { unique: true }),
     c.ledger.createIndex({ crewId: 1, at: -1 }),
     c.ledger.createIndex({ userId: 1, at: -1 }),

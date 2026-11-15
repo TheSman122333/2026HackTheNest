@@ -22,5 +22,5 @@ Store server values only in the server's ignored local environment or deployment
 
 No additional npm dependencies are required for the questionnaire, Gemini quest generation, or local QR rendering.
 
-- [ ] Server audio: configure `ELEVENLABS_API_KEY` with Sound Effects and Music access for the cached game soundtrack. Optional `ELEVENLABS_NARRATOR_VOICE_ID` selects a natural narrator voice; the default is neutral and no longer uses the old pirate-performance `ELEVENLABS_VOICE_ID` setting. Keys stay on the server.
+- [ ] Server audio: configure `ELEVENLABS_API_KEY` with Sound Effects and Music access for the cached game soundtrack. The Tidekeeper speaks with the custom captain voice in `ELEVENLABS_VOICE_ID` (`ELEVENLABS_NARRATOR_VOICE_ID` overrides it; a neutral stock voice is used only when neither is set). Keys stay on the server.
 

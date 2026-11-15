@@ -120,8 +120,9 @@ export async function transcribeAudio(
   return body.text.trim().slice(0, 400);
 }
 
-export const NARRATOR_VOICE_VERSION = 'neutral-short-v1';
-export const narratorVoiceId = (env: NodeJS.ProcessEnv) => env.ELEVENLABS_NARRATOR_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
+export const NARRATOR_VOICE_VERSION = 'captain-short-v1';
+/** The project lead's custom captain voice; a neutral stock voice only if none is configured. */
+export const narratorVoiceId = (env: NodeJS.ProcessEnv) => env.ELEVENLABS_NARRATOR_VOICE_ID || env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
 
 export async function synthesizeSpeech(
   text: string,

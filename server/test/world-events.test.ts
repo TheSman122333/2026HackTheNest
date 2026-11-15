@@ -48,3 +48,14 @@ describe('franchise guard', () => {
     expect(OPENING_NARRATION).not.toMatch(/wealth, fame|roger|one piece|grand line/i);
   });
 });
+
+describe('ssojet display name', () => {
+  it('uses the best claim and never falls back to the raw email', async () => {
+    const { displayNameFromClaims } = await import('../src/ssojet');
+    expect(displayNameFromClaims({ name: 'Ada Lovelace' })).toBe('Ada Lovelace');
+    expect(displayNameFromClaims({ given_name: 'Ada', family_name: 'King' })).toBe('Ada King');
+    expect(displayNameFromClaims({ email: 'sam.lee09@example.com' })).toBe('Sam Lee');
+    expect(displayNameFromClaims({ preferred_username: 'ada@example.com', email: 'ada_k@example.com' })).toBe('Ada K');
+    expect(displayNameFromClaims({})).toBeNull();
+  });
+});
