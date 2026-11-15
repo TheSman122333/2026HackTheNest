@@ -1,3 +1,5 @@
+import type { AvatarId } from './types';
+
 export type ShipMetrics = {
   quests: number;
   coins: number;
@@ -11,6 +13,7 @@ export type ShipMetrics = {
 export type ShipMember = {
   id: string;
   name: string;
+  avatarId?: AvatarId | null;
   legend: number;
   monthly: ShipMetrics;
   overall: ShipMetrics;

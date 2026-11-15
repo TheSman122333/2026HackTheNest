@@ -44,6 +44,7 @@ export default function RootLayout() {
             <Stack.Screen name="auth/callback" />
             <Stack.Screen name="fight" options={{ presentation: 'card', animation: 'fade' }} />
             <Stack.Screen name="deck" options={{ presentation: 'card', animation: 'fade' }} />
+            <Stack.Screen name="avatar" options={{ presentation: 'card', animation: 'fade' }} />
             <Stack.Screen name="dev/scroll-lab" options={{ headerShown: true, title: 'Scroll Lab', headerStyle: { backgroundColor: C.navy }, headerTintColor: C.cloud }} />
           </Stack>
           <TidekeeperSubtitles />

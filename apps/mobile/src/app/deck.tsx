@@ -3,7 +3,8 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Tag, Title } from '@/components/kit';
-import { avatarFor, Sprite } from '@/components/sprites';
+import { Sprite } from '@/components/sprites';
+import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { DeckAboard } from '@/features/ship/DeckAboard';
 import { MemberRecord } from '@/features/ship/MemberRecord';
 import { VoyageChart } from '@/features/ship/VoyageChart';
@@ -84,7 +85,7 @@ export default function ShipDeckScreen() {
         <Row style={{ justifyContent: 'space-between' }}><H>Your crew</H><Tag label={`${deck.members.length} SAILORS`} color={C.deep} /></Row>
         <P dim>Open any sailor&apos;s record for {deck.month.label} and their whole voyage.</P>
         {deck.members.map((sailor) => <Pressable key={sailor.id} accessibilityRole="button" accessibilityLabel={`View ${cleanText(sailor.name)}'s contribution record`} onPress={() => setSelected(sailor.id)} style={({ pressed }) => [s.rosterRow, pressed && { backgroundColor: '#E9DDBF' }]}>
-          <View style={s.avatar}><Sprite name={avatarFor(sailor.id)} size={44} /></View>
+          <View style={s.avatar}><PlayerAvatar userId={sailor.id} avatarId={sailor.avatarId} size={44} /></View>
           <View style={{ flex: 1, gap: 3 }}><Text style={s.memberName}>{cleanText(sailor.name)}{sailor.id === me.user.id ? ' · you' : ''}</Text><Text style={s.memberNote}>{sailor.monthly.quests} quests · {sailor.monthly.bossDamage} damage this month</Text></View>
           <Text style={s.open}>View</Text>
         </Pressable>)}

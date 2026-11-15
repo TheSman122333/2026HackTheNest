@@ -8,7 +8,11 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.hackthenest.lastvoyage"
+      "bundleIdentifier": "com.hackthenest.lastvoyage",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take an optional face photo to fit inside your pirate avatar. Your photo stays on this device.",
+        "NSPhotoLibraryUsageDescription": "Choose an optional face photo for your pirate avatar. Your photo stays on this device."
+      }
     },
     "android": {
       "adaptiveIcon": {

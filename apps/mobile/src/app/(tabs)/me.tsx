@@ -6,7 +6,8 @@ import { View } from 'react-native';
 
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
 import { TRACKING } from '@/lib/platform';
-import { avatarFor, Sprite } from '@/components/sprites';
+import { Sprite } from '@/components/sprites';
+import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
@@ -51,12 +52,14 @@ export default function Me() {
   return (
     <Screen>
       <Row gap={12} style={{ flexWrap: "nowrap" }}>
-        <Float amplitude={3} tilt={2}><Sprite name={avatarFor(u.id)} size={96} /></Float>
+        <Float amplitude={3} tilt={2}><PlayerAvatar userId={u.id} avatarId={u.avatarId} size={96} /></Float>
         <View style={{ flexShrink: 1 }}>
           <Title>{u.name}</Title>
           <P dim>{ROLE[top]} of the {me.crew?.name}</P>
         </View>
       </Row>
+
+      <Btn label="Customize your pirate" color={C.indigo} onPress={() => router.push('/avatar')} />
 
       <Row gap={10}>
         <Stat label="LEGEND" value={u.legend} icon={<Sprite name="t_star" size={20} />} />

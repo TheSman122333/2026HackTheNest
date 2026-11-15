@@ -114,7 +114,7 @@ export async function shipDeck(c: Collections, user: UserDoc, now = new Date()) 
       const overall = metrics(false);
       const datedDamage = ownEntries.filter((entry) => entry.reason === 'fight:damage').reduce((total, entry) => total + entry.delta, 0);
       return {
-        id, name: member.name, legend: member.legend, monthly: metrics(true), overall,
+        id, name: member.name, avatarId: member.avatarId ?? null, legend: member.legend, monthly: metrics(true), overall,
         damageNote: overall.bossDamage > datedDamage ? 'Lifetime damage includes older island records. Monthly damage includes timestamped attacks recorded since crew-deck tracking began.' : null,
         history: ownEntries.slice(0, 30).map((entry) => ({ id: entry._id!.toHexString(), text: entry.text ?? `${entry.delta > 0 ? '+' : ''}${entry.delta} ${entry.item} (${entry.reason.startsWith('activity:') ? ACTIVITIES[entry.reason.slice(9) as keyof typeof ACTIVITIES]?.label ?? 'Activity' : entry.reason})`, item: entry.item, delta: entry.delta, reason: entry.reason, at: entry.at.toISOString() })),
       };

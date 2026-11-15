@@ -4,7 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Btn, C, F, H, P, Panel, Row } from '@/components/kit';
-import { avatarFor, Sprite } from '@/components/sprites';
+import { PlayerAvatar } from '@/components/PlayerAvatar';
 import type { ShipDeck, ShipMember, ShipMetrics } from '@/lib/shipTypes';
 import { cleanText } from '@/ui/text';
 
@@ -25,7 +25,7 @@ export function MemberRecord({ member, month, onClose }: { member: ShipMember; m
       <SafeAreaView edges={['bottom', 'left', 'right']} style={s.sheet}>
         <View style={s.handle} />
         <View style={s.sheetHead}>
-          <View style={s.identity}><Sprite name={avatarFor(member.id)} size={60} /><View style={{ flex: 1, gap: 3 }}><Text style={s.name}>{cleanText(member.name)}</Text><Text style={s.legend}>{member.legend.toLocaleString()} Legend · Crew contributor</Text></View></View>
+          <View style={s.identity}><PlayerAvatar userId={member.id} avatarId={member.avatarId} size={60} /><View style={{ flex: 1, gap: 3 }}><Text style={s.name}>{cleanText(member.name)}</Text><Text style={s.legend}>{member.legend.toLocaleString()} Legend · Crew contributor</Text></View></View>
           <Btn small label="Close" color={C.indigo} onPress={onClose} />
         </View>
         <View style={s.period}>

@@ -5,7 +5,8 @@ import { memo, useEffect, useRef, useState, type ElementRef } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { C, F } from '@/components/kit';
-import { avatarFor, BOSS_SPRITE, ITEM_SPRITE, Sprite } from '@/components/sprites';
+import { BOSS_SPRITE, ITEM_SPRITE, Sprite } from '@/components/sprites';
+import { PlayerAvatar } from '@/components/PlayerAvatar';
 import type { IslandView } from '@/lib/types';
 import { Float, useMotionEnabled } from '@/ui/motion';
 
@@ -165,7 +166,7 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
                   </Float>
                 ) : isMe ? null : mate ? (
                   <View style={[s.token, { width: 34, height: 34, borderColor: C.sky }]}>
-                    <Sprite name={avatarFor(mate.userId)} size={34} />
+                    <PlayerAvatar userId={mate.userId} avatarId={mate.avatarId} size={34} />
                   </View>
                 ) : tile?.item ? (
                   <Sprite name={item ?? 'chest'} size={d * 0.72} />
@@ -189,7 +190,7 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
             <View style={s.playerShadow} />
             <Float amplitude={3} tilt={5} duration={2300}>
               <View style={[s.token, { width: 42, height: 42, borderColor: C.gold }]}>
-                <Sprite name={avatarFor(meId)} size={42} />
+                <PlayerAvatar userId={meId} size={42} />
               </View>
             </Float>
           </Animated.View>

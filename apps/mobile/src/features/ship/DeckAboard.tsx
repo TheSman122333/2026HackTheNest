@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { Btn, C, F, P, Row } from '@/components/kit';
-import { avatarFor, Sprite } from '@/components/sprites';
+import { PlayerAvatar } from '@/components/PlayerAvatar';
 import type { ShipMember } from '@/lib/shipTypes';
 import { Float } from '@/ui/motion';
 import { cleanText } from '@/ui/text';
@@ -44,7 +44,7 @@ export function DeckAboard({ members, meId, onSelect }: { members: ShipMember[];
             borderColor: member.id === meId ? C.gold : '#D9F5FF',
             transform: [{ scale: pressed ? 0.93 : 1 }],
           }]}>
-          <Sprite name={avatarFor(member.id)} size={47} />
+          <PlayerAvatar userId={member.id} avatarId={member.avatarId} size={47} />
           <View style={s.nameplate}><Text numberOfLines={1} style={s.sailorName}>{cleanText(member.name)}</Text></View>
         </Pressable>;
       })}

@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["AvatarCameraModule"] },
+  "android": { "modules": ["expo.modules.avatarcamera.AvatarCameraModule"] }
+}

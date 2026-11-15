@@ -15,9 +15,12 @@ import type {
   Tile,
 } from '@last-voyage/game';
 
+export type AvatarId = 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6' | 'a7' | 'a8' | 'a9' | 'a10' | 'a11' | 'a12';
+
 export type User = {
   id: string;
   name: string;
+  avatarId?: AvatarId | null;
   tz: string;
   crewId: string | null;
   skills: Record<Skill, number>;
@@ -47,7 +50,7 @@ export type Me = { user: User; crew: Crew | null; today: Today };
 
 export type CrewRoster = {
   crew: Crew | null;
-  members: { id: string; name: string; legend: number; skills: Record<Skill, number>; calmDays: number }[];
+  members: { id: string; name: string; avatarId?: AvatarId | null; legend: number; skills: Record<Skill, number>; calmDays: number }[];
   sailing?: { totalMoves: number; averageMoves: number; activities: number; steps: number; activeMembers: number; members: number } | null;
 };
 
@@ -64,7 +67,7 @@ export type IslandView = {
     conquered: boolean;
   };
   explorer: Explorer;
-  crewmates: { userId: string; name: string; pos: HexKey; hp: number }[];
+  crewmates: { userId: string; name: string; avatarId?: AvatarId | null; pos: HexKey; hp: number }[];
   reachable: Record<HexKey, number>;
   canFight: boolean;
   boss: { key: string; name: string; title: string; maxHp: number; hp: number; atk: number; armor: number; defeated: boolean };

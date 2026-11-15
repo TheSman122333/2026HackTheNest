@@ -4,7 +4,8 @@ import { useCallback, useState } from 'react';
 import { AppState, StyleSheet, Text, View } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
-import { avatarFor, ITEM_SPRITE, Sprite } from '@/components/sprites';
+import { ITEM_SPRITE, Sprite } from '@/components/sprites';
+import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { ShipwrightPanel } from '@/features/ship/ShipwrightPanel';
 import { useNarrator } from '@/features/narrator/useNarrator';
 import { api } from '@/lib/api';
@@ -111,7 +112,7 @@ export default function Ship() {
           <Row key={mm.id} style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
             <Row gap={10} style={{ flexWrap: 'nowrap', flex: 1 }}>
               <View style={[s.avatar, mm.id === me.user.id && { borderColor: C.orange }]}>
-                <Sprite name={avatarFor(mm.id)} size={44} />
+                <PlayerAvatar userId={mm.id} avatarId={mm.avatarId} size={44} />
               </View>
               <View style={{ flex: 1 }}><P>{mm.name}</P></View>
             </Row>

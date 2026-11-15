@@ -155,9 +155,10 @@ export function registerIsland(
     const today = await todayMoves(c, user);
     const others = await c.explorers.find({ islandDocId: isle._id, userId: { $ne: user._id } }).toArray();
     const names = await c.users
-      .find({ _id: { $in: others.map((o) => o.userId) } }, { projection: { name: 1 } })
+      .find({ _id: { $in: others.map((o) => o.userId) } }, { projection: { name: 1, avatarId: 1 } })
       .toArray();
     const nameOf = new Map(names.map((n) => [n._id.toHexString(), n.name]));
+    const avatarOf = new Map(names.map((n) => [n._id.toHexString(), n.avatarId ?? null]));
     return {
       island: {
         id: isle._id.toHexString(),
@@ -174,7 +175,7 @@ export function registerIsland(
         conquered: isle.conqueredAt !== null,
       },
       explorer,
-      crewmates: others.map((o) => ({ userId: o.userId.toHexString(), name: nameOf.get(o.userId.toHexString()) ?? '?', pos: o.explorer.pos, hp: o.explorer.hp })),
+      crewmates: others.map((o) => ({ userId: o.userId.toHexString(), name: nameOf.get(o.userId.toHexString()) ?? '?', avatarId: avatarOf.get(o.userId.toHexString()) ?? null, pos: o.explorer.pos, hp: o.explorer.hp })),
       reachable: explorer.hp > 0 ? reachable(isle.island, explorer, today.moves.remaining) : {},
       canFight: explorer.hp > 0 && !isle.conqueredAt && nextToBoss(isle.island, explorer),
       boss: { ...isle.fight.boss, hp: isle.fight.bossHp, defeated: isle.fight.winner === 'crew' },

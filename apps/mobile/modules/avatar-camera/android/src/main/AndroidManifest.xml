@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Capture is delegated to the installed camera app; no broad camera/gallery grant. -->
+  <queries>
+    <intent><action android:name="android.media.action.IMAGE_CAPTURE" /></intent>
+    <intent><action android:name="android.intent.action.OPEN_DOCUMENT" /><data android:mimeType="image/*" /></intent>
+  </queries>
+  <application>
+    <provider android:name="expo.modules.avatarcamera.AvatarPhotoProvider"
+      android:authorities="${applicationId}.avatar-camera"
+      android:exported="false" android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/avatar_camera_paths" />
+    </provider>
+  </application>
+</manifest>

@@ -7,8 +7,10 @@ import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 import { Bar, Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
 import { BOSS_SPRITE, Sprite } from '@/components/sprites';
+import { PlayerAvatar } from '@/components/PlayerAvatar';
 import type { FightResponse } from '@/lib/types';
 import { useIsland } from '@/state/island';
+import { useSession } from '@/state/session';
 import { Float, useMotionEnabled } from '@/ui/motion';
 import { useNarrator } from '@/features/narrator/useNarrator';
 
@@ -38,6 +40,7 @@ function feedbackFrom(result: FightResponse): Feedback {
 
 export default function Fight() {
   const { view, busy, error, feed, fight } = useIsland();
+  const meId = useSession((state) => state.me?.user.id);
   const motion = useMotionEnabled();
   const motionRef = useRef(motion);
   const [action, setAction] = useState<FightAction | null>(null);
@@ -154,7 +157,7 @@ export default function Fight() {
             { translateX: phase === 'counter' ? playerRecoil : action === 'strike' && phase === 'action' ? progress.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 38, 0] }) : 0 },
           ] }]}>
             <Float amplitude={2} tilt={-3} duration={2300}>
-              <View style={s.crest}><Sprite name="t_anchor" size={35} /></View>
+              <View style={s.crest}><PlayerAvatar userId={meId} size={45} /></View>
             </Float>
             <Text style={s.playerLabel}>YOUR PIRATE</Text>
           </Animated.View>
