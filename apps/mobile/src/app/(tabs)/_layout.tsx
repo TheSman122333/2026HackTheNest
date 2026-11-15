@@ -1,4 +1,4 @@
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, usePathname } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,6 +7,7 @@ import { Sprite, type SpriteName } from '@/components/sprites';
 import { useDeviceSync } from '@/features/sync/deviceSync';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
+import { useNarrator, type NarrationScene } from '@/features/narrator/useNarrator';
 
 const icon = (name: SpriteName) =>
   function TabIcon({ focused }: { focused: boolean }) {
@@ -20,6 +21,10 @@ const icon = (name: SpriteName) =>
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+  const repeatStory = (scene: NarrationScene) => ({ tabPress: () => {
+    if (pathname === `/${scene}`) useNarrator.getState().narrate(scene);
+  } });
   const { token, me } = useSession();
   useDeviceSync();
   if (!token || !me) return <Redirect href="/welcome" />;
@@ -35,11 +40,11 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: F.bodyBold, fontSize: 10, letterSpacing: 0.5, marginTop: 3 },
       }}
     >
-      <Tabs.Screen name="ship" options={{ title: 'Ship', tabBarIcon: icon('t_anchor') }} />
-      <Tabs.Screen name="island" options={{ title: 'Island', tabBarIcon: icon('t_flag') }} />
-      <Tabs.Screen name="quests" options={{ title: 'Quests', tabBarIcon: icon('t_star') }} />
-      <Tabs.Screen name="log" options={{ title: 'Log', tabBarIcon: icon('t_book') }} />
-      <Tabs.Screen name="me" options={{ title: 'Me', tabBarIcon: icon('t_heart') }} />
+      <Tabs.Screen name="ship" listeners={repeatStory('ship')} options={{ title: 'Ship', tabBarIcon: icon('t_anchor') }} />
+      <Tabs.Screen name="island" listeners={repeatStory('island')} options={{ title: 'Island', tabBarIcon: icon('t_flag') }} />
+      <Tabs.Screen name="quests" listeners={repeatStory('quests')} options={{ title: 'Quests', tabBarIcon: icon('t_star') }} />
+      <Tabs.Screen name="log" listeners={repeatStory('log')} options={{ title: 'Log', tabBarIcon: icon('t_book') }} />
+      <Tabs.Screen name="me" listeners={repeatStory('me')} options={{ title: 'Me', tabBarIcon: icon('t_heart') }} />
     </Tabs>
   );
 }

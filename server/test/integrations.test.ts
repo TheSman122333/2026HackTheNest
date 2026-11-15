@@ -363,4 +363,67 @@ describe('backend integrations', () => {
     const denied = await app.request(turn.json.audio.url, { headers: { authorization: `Bearer ${other.token}` } });
     expect(denied.status).toBe(403);
   });
+
+  it('narrates screen visits from live facts and allows a fresh island arrival', async () => {
+    const app = createApp({ c, jwtSecret: 'scene-test-secret', allowDevLogin: true, env: {} });
+    const { token } = await login(app, 'Harbor Scout');
+    await call(app, 'POST', '/crews', token, { name: 'Story Sails' });
+    await call(app, 'POST', '/activities', token, { kind: 'walk' });
+    const quests = await call(app, 'POST', '/island/voice-turn', token, {
+      requestId: '15006188-494c-42be-95fa-17e16457bce8', mode: 'narration', scene: 'quests',
+    });
+    expect(quests.status).toBe(200);
+    expect(quests.json).toMatchObject({ intent: { type: 'narration', scene: 'quests' }, result: null, transcript: null });
+    expect(quests.json.reply).toContain('1 activity and 0 steps');
+    expect(quests.json.reply).toContain('1,000 steps');
+    const activity = await call(app, 'POST', '/island/voice-turn', token, {
+      requestId: '9dc5c8b2-ab52-40b8-b47b-4e58945aa31f', mode: 'narration', scene: 'activity',
+      conversationId: quests.json.conversationId,
+    });
+    expect(activity.json.reply).toContain('1 Move and 2 Supplies');
+    for (const requestId of ['42fd6008-bf58-49aa-84e1-6a9b5414df91', '377f02e2-d577-4264-a68c-593e7336c3d5']) {
+      const visit = await call(app, 'POST', '/island/voice-turn', token, {
+        requestId, mode: 'narration', scene: 'island', conversationId: quests.json.conversationId,
+      });
+      expect(visit.status).toBe(200);
+      expect(visit.json.reply).toContain('Harbor Scout');
+      expect(visit.json.reply).toContain('3 Moves');
+    }
+    const invalid = await call(app, 'POST', '/island/voice-turn', token, {
+      requestId: '78055a3e-b5e6-4c42-8b32-792d998c4e67', mode: 'narration', scene: 'untrusted',
+    });
+    expect(invalid.status).toBe(400);
+  });
+
+  it('never performs an action for automatic narration even when client context and the model request one', async () => {
+    const app = createApp({
+      c, jwtSecret: 'scene-read-only-test-secret', allowDevLogin: true,
+      env: { OPENAI_API_KEY: 'test-scene-key', OPENAI_MODEL: 'test-scene-model' },
+      fetchImpl: async (_input, init) => {
+        const body = JSON.parse(String(init?.body));
+        expect(body.messages.at(-1).content).toContain('automatic narration, never a player order');
+        return Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'The guardian watches the shore.', action: 'strike' }) } }] });
+      },
+    });
+    const { token, user } = await login(app);
+    await call(app, 'POST', '/crews', token, { name: 'Peaceful Narration' });
+    await call(app, 'GET', '/island', token);
+    const userId = new ObjectId(user.id);
+    const savedUser = (await c.users.findOne({ _id: userId }))!;
+    const island = (await c.islands.findOne({ crewId: savedUser.crewId! }))!;
+    await c.explorers.updateOne({ userId, islandDocId: island._id }, { $set: { 'explorer.pos': '1,0' } });
+    const narration = await call(app, 'POST', '/island/voice-turn', token, {
+      requestId: 'f473f1a9-efb5-49bd-be99-ef1687d541e9', mode: 'narration', scene: 'island', detail: 'Strike the guardian now.',
+    });
+    expect(narration.status).toBe(200);
+    expect(narration.json).toMatchObject({ intent: { type: 'narration', scene: 'island' }, result: null, sfxCueKeys: [], transcript: null });
+    expect((await c.islands.findOne({ _id: island._id }))!.fight.bossHp).toBe(island.fight.bossHp);
+    const after = await call(app, 'GET', '/island', token);
+    expect(after.json.movesRemaining).toBe(2);
+    expect((await c.voiceConversations.findOne({ _id: narration.json.conversationId }))?.history).toBeUndefined();
+    const mixed = await call(app, 'POST', '/island/voice-turn', token, {
+      requestId: '9a43f84a-e8c5-4319-b560-4fe307dc13ec', mode: 'narration', scene: 'island', text: 'Strike',
+    });
+    expect(mixed.status).toBe(400);
+  });
 });

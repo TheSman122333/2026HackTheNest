@@ -333,12 +333,24 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   // ---------- crew roster ----------
   app.get('/crew', async (ctx) => {
     const user = ctx.get('user');
-    if (!user.crewId) return ctx.json({ crew: null, members: [] });
+    if (!user.crewId) return ctx.json({ crew: null, members: [], sailing: null });
     const crew = await c.crews.findOne({ _id: user.crewId });
     const members = await c.users.find({ crewId: user.crewId }).toArray();
+    // Each sailor contributes their own local day. Spending Moves never slows the ship.
+    const now = new Date();
+    const days = await Promise.all(members.map((member) => todayMoves(c, member, now)));
+    const totalMoves = days.reduce((total, day) => total + day.moves.total, 0);
     return ctx.json({
       crew: crew && publicCrew(crew),
-      members: members.map((m) => ({ id: m._id.toHexString(), name: m.name, legend: m.legend, skills: m.skills, calmDays: m.streak.calmDays })),
+      members: members.map((m, i) => ({ id: m._id.toHexString(), name: m.name, legend: m.legend, skills: m.skills, calmDays: days[i]!.streak.calmDays })),
+      sailing: {
+        totalMoves,
+        averageMoves: members.length ? totalMoves / members.length : 0,
+        activities: days.reduce((total, day) => total + day.activities.length, 0),
+        steps: days.reduce((total, day) => total + day.steps, 0),
+        activeMembers: days.filter((day) => day.steps > 0 || day.activities.length > 0).length,
+        members: members.length,
+      },
     });
   });
 

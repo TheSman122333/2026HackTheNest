@@ -1,5 +1,6 @@
 /** A readable, pannable sea chart. Rules and reachable tiles stay server-owned. */
 import { distance, parseKey, toPixel, type HexKey, type Terrain } from '@last-voyage/game';
+import * as Haptics from 'expo-haptics';
 import { memo, useEffect, useRef, useState, type ElementRef } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
@@ -9,16 +10,16 @@ import type { IslandView } from '@/lib/types';
 import { Float, useMotionEnabled } from '@/ui/motion';
 
 export const TERRAIN_COLOR: Record<Terrain, string> = {
-  sea: '#16323D',
-  beach: '#C8B58D',
-  grass: '#779B7E',
-  jungle: '#416B58',
-  rock: '#828B91',
-  ruins: '#A99B82',
-  town: '#AF875C',
-  swamp: '#65745C',
-  volcano: '#A96556',
-  snow: '#D1DFDE',
+  sea: '#167CB2',
+  beach: '#F2D08A',
+  grass: '#90CC83',
+  jungle: '#398A67',
+  rock: '#9DB7CB',
+  ruins: '#D8BC88',
+  town: '#E5A868',
+  swamp: '#8EAA70',
+  volcano: '#E68A68',
+  snow: '#DEF6FF',
 };
 
 type Props = {
@@ -40,6 +41,23 @@ function HexSurface({ width, color }: { width: number; color: string }) {
   );
 }
 
+/** A tap marks the chosen destination immediately, before the server resolves travel. */
+function ChartRipple({ x, y, enabled }: { x: number; y: number; enabled: boolean }) {
+  const [ripple] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (!enabled) return;
+    const animation = Animated.timing(ripple, { toValue: 1, duration: 550, useNativeDriver: true, isInteraction: false });
+    animation.start();
+    return () => animation.stop();
+  }, [ripple, enabled]);
+  if (!enabled) return null;
+  return <Animated.View pointerEvents="none" style={[s.tapRipple, {
+    left: x - 23, top: y - 23,
+    opacity: ripple.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0.8, 0.65, 0] }),
+    transform: [{ scale: ripple.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1.8] }) }],
+  }]} />;
+}
+
 export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: Props) {
   const { width } = useWindowDimensions();
   const motion = useMotionEnabled();
@@ -59,6 +77,7 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
   const playerX = boardW / 2 + meX - 21;
   const playerY = boardH / 2 + meY - 21;
   const [player] = useState(() => new Animated.ValueXY({ x: playerX, y: playerY }));
+  const [tap, setTap] = useState<{ k: HexKey; sequence: number } | null>(null);
   const mates = new Map(view.crewmates.filter((m) => m.userId !== meId).map((m) => [m.pos, m]));
   const bossSprite = BOSS_SPRITE[view.boss.key] ?? 'b_octopus';
   const cameraX = Math.max(0, Math.min(boardW + 16 - viewportW, boardW / 2 + meX + 8 - viewportW / 2));
@@ -109,7 +128,7 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
             const isMe = k === me;
             const cost = view.reachable[k];
             const terrain: Terrain | null = tile?.terrain ?? (edge ? 'sea' : null);
-            const bg = isBoss ? (view.boss.defeated ? '#355E50' : '#35424A') : terrain ? TERRAIN_COLOR[terrain] : '#20313A';
+            const bg = isBoss ? (view.boss.defeated ? '#3BA991' : '#466AB0') : terrain ? TERRAIN_COLOR[terrain] : '#245A87';
             const reachable = cost !== undefined;
             const tappable = reachable && !disabled;
             const item = tile?.item ? ITEM_SPRITE[tile.item] : undefined;
@@ -121,7 +140,11 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
                 accessibilityRole="button"
                 accessibilityLabel={`${isMe ? 'Your position, ' : ''}${isBoss ? view.boss.name : terrain ?? 'Unexplored'}${reachable ? `, ${cost} Moves` : ''}${tile?.item ? `, ${tile.item}` : ''}`}
                 accessibilityState={{ disabled: !tappable, selected: isMe }}
-                onPress={tappable ? () => onTap(k) : undefined}
+                onPress={tappable ? () => {
+                  setTap((previous) => ({ k, sequence: (previous?.sequence ?? 0) + 1 }));
+                  Haptics.selectionAsync().catch(() => {});
+                  onTap(k);
+                } : undefined}
                 style={({ pressed }) => [
                   s.hex,
                   {
@@ -129,12 +152,12 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
                     height: tileH,
                     left: boardW / 2 + x - w / 2,
                     top: boardH / 2 + y - tileH / 2,
-                    opacity: terrain === 'sea' ? 0.62 : 1,
+                    opacity: terrain === 'sea' ? 0.8 : 1,
                     transform: [{ scale: pressed && motion ? 0.91 : 1 }],
                   },
                 ]}
               >
-                <HexSurface width={d} color={isMe || reachable ? C.gold : terrain ? '#52626A' : '#2B3E47'} />
+                <HexSurface width={d} color={isMe || reachable ? C.gold : terrain ? '#83BAD5' : '#3D78A3'} />
                 <HexSurface width={d - (isMe || reachable ? 3 : 1.5)} color={bg} />
                 {isBoss ? (
                   <Float amplitude={2} tilt={2} duration={2600}>
@@ -156,6 +179,9 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
               </Pressable>
             );
           })}
+          {tap ? <ChartRipple key={tap.sequence} enabled={motion}
+            x={boardW / 2 + toPixel(parseKey(tap.k), size).x}
+            y={boardH / 2 + toPixel(parseKey(tap.k), size).y} /> : null}
           <Animated.View
             pointerEvents="none"
             style={[s.player, { opacity: view.explorer.hp > 0 ? 1 : 0.5, transform: player.getTranslateTransform() }]}
@@ -181,17 +207,18 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
 });
 
 const s = StyleSheet.create({
-  board: { alignSelf: 'center', backgroundColor: C.deep, borderRadius: 20, borderWidth: 1, borderColor: '#30444C', overflow: 'hidden' },
-  chartHeader: { padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#293C44' },
+  board: { alignSelf: 'center', backgroundColor: C.deep, borderRadius: 20, borderWidth: 1, borderColor: '#438DBB', overflow: 'hidden' },
+  chartHeader: { padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#397BAA' },
   eyebrow: { fontFamily: F.bodyBold, color: C.gold, fontSize: 10, letterSpacing: 2 },
   hint: { fontFamily: F.body, color: C.dimLight, fontSize: 11, lineHeight: 16 },
-  chartFooter: { paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', gap: 5, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#293C44', flexWrap: 'wrap' },
+  chartFooter: { paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', gap: 5, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#397BAA', flexWrap: 'wrap' },
   keyDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.gold },
   hex: { position: 'absolute', alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
   token: { backgroundColor: C.paper, borderWidth: 1.5, borderRadius: 30, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   player: { position: 'absolute', left: 0, top: 0, width: 42, height: 42 },
   playerShadow: { position: 'absolute', bottom: -3, left: 7, width: 28, height: 7, borderRadius: 20, backgroundColor: '#00000050' },
   cost: { fontFamily: F.bodyBold, fontSize: 15 },
-  fogDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#6C828B' },
+  tapRipple: { position: 'absolute', width: 46, height: 46, borderRadius: 23, borderWidth: 2, borderColor: C.gold },
+  fogDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#8CB9D8' },
   wave: { color: C.sky, fontSize: 22, opacity: 0.35, fontFamily: F.title },
 });

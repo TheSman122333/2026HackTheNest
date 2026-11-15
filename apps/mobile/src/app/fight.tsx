@@ -10,6 +10,7 @@ import { BOSS_SPRITE, Sprite } from '@/components/sprites';
 import type { FightResponse } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { Float, useMotionEnabled } from '@/ui/motion';
+import { useNarrator } from '@/features/narrator/useNarrator';
 
 const ACTION_NAME: Record<FightAction, string> = {
   strike: 'Cutlass strike', cannon: 'Cannon fire', tonic: 'Restoring tonic', brace: 'Hold your ground',
@@ -110,6 +111,7 @@ export default function Fight() {
       if (result.events.some((event) => event.type === 'boss_defeated')) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
+      useNarrator.getState().narrate('fight', `${feedbackFrom(result).summary} ${result.boss.name} has ${result.boss.hp} health remaining. You have ${result.explorer.hp} health.`);
     } finally {
       locked.current = false;
       if (mounted.current) setPhase('ready');

@@ -1,4 +1,4 @@
-/** Quiet nautical colors, brass details, and readable surfaces. */
+/** Sunlit seas, warm sailcloth, and polished nautical details. */
 import { Children, createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,10 +6,10 @@ import { OceanBackdrop, useMotionEnabled } from '@/ui/motion';
 import { cleanText } from '@/ui/text';
 
 export const C = {
-  navy: '#0B1821', indigo: '#24434E', peri: '#789CA6', sky: '#78B9C6', cloud: '#F3EEE3',
-  red: '#C97063', orange: '#D5B576', ink: '#152B34', deep: '#10242D', white: '#FFFCF6',
-  green: '#5FAD97', gold: '#D5B576', dimDark: '#59676B', dimLight: '#9BB0B6', paper: '#F3EEE3',
-  sea: '#78B9C6', seaLight: '#789CA6', night: '#0B1821', sun: '#D5B576', jungle: '#5FAD97', dim: '#59676B', fog: '#29414B',
+  navy: '#073A6B', indigo: '#195F9C', peri: '#8EBEFF', sky: '#75D8F4', cloud: '#FFF5DE',
+  red: '#F08B75', orange: '#FFD16A', ink: '#123B5D', deep: '#0C4D82', white: '#FFFCF3',
+  green: '#74DFC0', gold: '#FFD16A', dimDark: '#486176', dimLight: '#C3E9FF', paper: '#FFF5DE',
+  sea: '#75D8F4', seaLight: '#8EBEFF', night: '#073A6B', sun: '#FFD16A', jungle: '#74DFC0', dim: '#486176', fog: '#1C6093',
 } as const;
 export const F = { title: 'VoyageSerif', ui: 'VoyageSansBold', uiBold: 'VoyageSansMedium', body: 'VoyageSans', bodyBold: 'VoyageSansMedium' } as const;
 type Tone = 'dark' | 'light';
@@ -27,7 +27,7 @@ const toneFor = (bg: string): Tone => {
   });
   const luminance = 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
   // Pick the foreground with greater contrast against the actual surface.
-  return (luminance + 0.05) / (0.022 + 0.05) > (0.858 + 0.05) / (luminance + 0.05) ? 'light' : 'dark';
+  return (luminance + 0.05) / (0.0405 + 0.05) > (0.9184 + 0.05) / (luminance + 0.05) ? 'light' : 'dark';
 };
 export function Screen({ children, scroll = true, padded = true }: { children: ReactNode; scroll?: boolean; padded?: boolean }) {
   return <ToneContext.Provider value="dark"><SafeAreaView style={s.screen} edges={['top', 'left', 'right']}>
@@ -50,7 +50,7 @@ export function P({ children, dim, center, color }: { children: ReactNode; dim?:
 }
 export function Panel({ children, style, color = C.cloud }: { children: ReactNode; style?: ViewStyle; color?: string }) {
   const tone = toneFor(color);
-  return <ToneContext.Provider value={tone}><View style={[s.panel, { backgroundColor: color, borderColor: tone === 'dark' ? '#2A414A' : '#DCD7CB' }, style]}>{children}</View></ToneContext.Provider>;
+  return <ToneContext.Provider value={tone}><View style={[s.panel, { backgroundColor: color, borderColor: tone === 'dark' ? '#3976A2' : '#ECDCB9' }, style]}>{children}</View></ToneContext.Provider>;
 }
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function Btn({ label, onPress, color = C.orange, disabled, busy, small, icon }: {

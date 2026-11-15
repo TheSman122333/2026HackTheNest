@@ -40,7 +40,9 @@ import { fallbackLine, generateGmProposal, type StreakContext } from './gm';
 import { ledger, spendMoves, todayMoves } from './moves';
 import {
   resolveVoiceIntent,
+  responseForScene,
   responseForQuestion,
+  NARRATION_SCENES,
   sfxCueKeys,
   synthesizeSpeech,
   transcribeAudio,
@@ -483,7 +485,9 @@ export function registerIsland(
     const parsed = z
       .object({
         requestId: z.string().uuid(),
-        mode: z.enum(['briefing', 'command']),
+        mode: z.enum(['briefing', 'command', 'narration']),
+        scene: z.enum(NARRATION_SCENES).optional(),
+        detail: z.string().trim().max(400).optional(),
         conversationId: z.string().min(1).max(80).nullable().optional(),
         text: z.string().trim().min(1).max(400).optional(),
         audio: z
@@ -500,9 +504,11 @@ export function registerIsland(
     const input = parsed.data;
     if (
       (input.mode === 'briefing' && (input.audio || input.text)) ||
-      (input.mode === 'command' && Number(Boolean(input.audio)) + Number(Boolean(input.text)) !== 1)
+      (input.mode === 'command' && Number(Boolean(input.audio)) + Number(Boolean(input.text)) !== 1) ||
+      (input.mode === 'narration' && (!input.scene || input.audio || input.text)) ||
+      (input.mode !== 'narration' && (input.scene !== undefined || input.detail !== undefined))
     ) {
-      throw new HTTPException(400, { message: 'briefing takes no input; command requires exactly one audio or text input' });
+      throw new HTTPException(400, { message: 'briefing takes no input; command requires one audio or text input; narration requires a scene and no command input' });
     }
 
     const user = ctx.get('user');
@@ -556,10 +562,13 @@ export function registerIsland(
       transcript = input.text;
     }
 
-    let intent: VoiceIntent = input.mode === 'briefing' ? { type: 'briefing' } : resolveVoiceIntent(transcript ?? '') ?? { type: 'question' };
+    let intent: VoiceIntent = input.mode === 'narration'
+      ? { type: 'narration', scene: input.scene! }
+      : input.mode === 'briefing' ? { type: 'briefing' } : resolveVoiceIntent(transcript ?? '') ?? { type: 'question' };
     const userForTurn: UserDoc = (await c.users.findOne({ _id: user._id })) ?? user;
     const current = await view(userForTurn);
     const today = await todayMoves(c, userForTurn);
+    const sceneReply = input.mode === 'narration' ? responseForScene(input.scene!, userForTurn.name, current, today) : null;
 
     // The brain (OpenAI) understands free speech and picks an allowlisted action; without a key
     // we fall back to the keyword matcher above.
@@ -568,6 +577,7 @@ export function registerIsland(
       env,
       fetchImpl,
       mode: input.mode,
+      narration: sceneReply ? { scene: input.scene!, facts: sceneReply, detail: input.detail } : undefined,
       text: transcript,
       state: brainState(userForTurn.name, current, {
         calmDays: today.streak.calmDays,
@@ -614,7 +624,11 @@ export function registerIsland(
     } | null = null;
     let cues: string[] = [];
 
-    if (intent.type === 'briefing') {
+    if (intent.type === 'narration') {
+      // Automatic screen/event narration cannot enter either action branch, even if a provider
+      // emits an action or client context contains an order. The game state is read only here.
+      reply = brain?.reply ?? sceneReply!;
+    } else if (intent.type === 'briefing') {
       reply = brain?.reply ?? `Welcome back, ${user.name}. Your crew is exploring a ${current.island.theme} island. You have ${current.movesRemaining} Moves, ${current.explorer.hp} health, and a ${today.streak.calmDays}-day Calm Seas streak. ${current.boss.name} has ${current.boss.hp} health remaining.`;
       cues = today.streakEvents.flatMap((event) => {
         if (event.type === 'calm_day') return ['streak.calm_day'];
@@ -686,7 +700,7 @@ export function registerIsland(
     const response = {
       requestId: input.requestId,
       conversationId,
-      transcript: input.mode === 'briefing' ? null : transcript,
+      transcript: input.mode === 'command' ? transcript : null,
       reply,
       intent,
       result,

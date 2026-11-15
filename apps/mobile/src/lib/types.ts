@@ -48,6 +48,7 @@ export type Me = { user: User; crew: Crew | null; today: Today };
 export type CrewRoster = {
   crew: Crew | null;
   members: { id: string; name: string; legend: number; skills: Record<Skill, number>; calmDays: number }[];
+  sailing?: { totalMoves: number; averageMoves: number; activities: number; steps: number; activeMembers: number; members: number } | null;
 };
 
 export type IslandView = {
@@ -80,7 +81,7 @@ export type VoiceTurn = {
   conversationId: string;
   transcript: string | null;
   reply: string;
-  intent: { type: 'briefing' | 'question' | 'island.move' | 'fight'; to?: string; action?: string };
+  intent: { type: 'briefing' | 'question' | 'island.move' | 'fight' | 'narration'; to?: string; action?: string; scene?: string };
   result: { events: (IslandEvent | FightEvent)[]; movesRemaining: number; playerHp: number; bossHp: number } | null;
   audio: { url: string; expiresAt: string } | null;
   audioError: string | null;

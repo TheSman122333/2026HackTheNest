@@ -61,6 +61,9 @@ describe('api', () => {
     expect(spent.json.today.moves.remaining).toBe(3);
     expect((await call('POST', '/moves/spend', a.token, { n: 5 })).status).toBe(409);
 
+    const sailing = (await call('GET', '/crew', a.token)).json.sailing;
+    expect(sailing).toEqual({ totalMoves: 10, averageMoves: 5, activities: 1, steps: 4200, activeMembers: 1, members: 2 });
+
     const me = (await call('GET', '/me', a.token)).json;
     expect(me.crew.stores.supplies).toBe(3);
     expect(me.user.skills.grit).toBe(15);
@@ -72,5 +75,18 @@ describe('api', () => {
   it('validates input', async () => {
     const a = (await call('POST', '/auth/dev', undefined, { name: 'Cy' })).json;
     expect((await call('POST', '/activities', a.token, { kind: 'doomscroll' })).status).toBe(400);
+  });
+
+  it('combines crew effort across each member’s local day', async () => {
+    const a = (await call('POST', '/auth/dev', undefined, { name: 'East', tz: 'Pacific/Kiritimati' })).json;
+    const b = (await call('POST', '/auth/dev', undefined, { name: 'West', tz: 'Pacific/Pago_Pago' })).json;
+    const crew = (await call('POST', '/crews', a.token, { name: 'Across the Date Line' })).json.crew;
+    await call('POST', '/crews/join', b.token, { code: crew.inviteCode });
+    await call('POST', '/activities', a.token, { kind: 'workout' });
+    await call('POST', '/activities', b.token, { kind: 'walk' });
+    const before = (await call('GET', '/crew', a.token)).json.sailing;
+    expect(before).toEqual({ totalMoves: 7, averageMoves: 3.5, activities: 2, steps: 0, activeMembers: 2, members: 2 });
+    await call('POST', '/moves/spend', b.token, { n: 1 });
+    expect((await call('GET', '/crew', b.token)).json.sailing).toEqual(before);
   });
 });

@@ -1,31 +1,17 @@
 /** Home: the crew's ship. Today's Moves at a glance, crew roster, stores, and demo controls. */
 import { useFocusEffect, router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, Text, View } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
-import { avatarFor, ITEM_SPRITE, MONTH_CARD, Sprite } from '@/components/sprites';
+import { avatarFor, ITEM_SPRITE, Sprite } from '@/components/sprites';
 import { ShipwrightPanel } from '@/features/ship/ShipwrightPanel';
+import { useNarrator } from '@/features/narrator/useNarrator';
 import { api } from '@/lib/api';
 import type { CrewRoster } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
-import { Float } from '@/ui/motion';
-
-const MONTH_EVENT = [
-  'New Year',
-  'Black History Month',
-  "Women's History Month",
-  'Spring',
-  'Mental Health Awareness',
-  'Pride',
-  'Summer',
-  'Back to School',
-  'Self-Care',
-  'Spooky Season',
-  'Remembrance',
-  'Winter Holidays',
-];
+import { ShipScene } from '@/ui/ShipScene';
 
 export default function Ship() {
   const me = useSession((s) => s.me);
@@ -33,22 +19,37 @@ export default function Ship() {
   const advanceNight = useIsland((s) => s.advanceNight);
   const [roster, setRoster] = useState<CrewRoster | null>(null);
   const [busy, setBusy] = useState(false);
+  const crewId = me?.crew?.id;
 
   useFocusEffect(
     useCallback(() => {
-      refresh();
-      api<CrewRoster>('GET', '/crew').then(setRoster).catch(() => {});
-    }, [refresh]),
+      if (!crewId) return;
+      let active = true;
+      const load = () => {
+        if (AppState.currentState === 'background' || AppState.currentState === 'inactive') return;
+        refresh();
+        api<CrewRoster>('GET', '/crew').then((next) => { if (active) setRoster(next); }).catch(() => {});
+      };
+      load();
+      const timer = setInterval(load, 30_000);
+      const visibility = AppState.addEventListener('change', (state) => { if (state === 'active') load(); });
+      return () => { active = false; clearInterval(timer); visibility.remove(); };
+    }, [refresh, crewId]),
   );
 
   if (!me?.crew) return null;
   const t = me.today;
   const m = t.moves;
-  const month = new Date().getMonth();
+  const crewSailing = roster?.crew?.id === me.crew.id ? roster.sailing : null;
+  const sailing = crewSailing ?? {
+    totalMoves: m.total, averageMoves: m.total, activities: t.activities.length, steps: t.steps,
+    activeMembers: t.steps > 0 || t.activities.length > 0 ? 1 : 0, members: 1,
+  };
 
   const night = async () => {
     setBusy(true);
     await advanceNight();
+    if (!useIsland.getState().error) useNarrator.getState().narrate('night');
     await refresh();
     setBusy(false);
   };
@@ -58,11 +59,8 @@ export default function Ship() {
       <P dim>ABOARD YOUR SHIP</P>
       <Title>{me.crew.name}</Title>
 
-      <Panel color={C.deep} style={{ alignItems: 'center', gap: 8, paddingVertical: 22 }}>
-        <Float amplitude={5} duration={4200} tilt={2}><Sprite name={MONTH_CARD[month]!} size={140} /></Float>
-        <H>The next shore awaits</H>
-        <P dim>{MONTH_EVENT[month]} · Your crew sails at midnight.</P>
-      </Panel>
+      <ShipScene sailing={sailing} personal={!crewSailing} />
+      <P dim>Walk, finish quests, and live a little. Every sailor helps fill these sails.</P>
 
       <Row gap={10}>
         <Stat label="MOVES LEFT" value={m.remaining} icon={<Sprite name="boots" size={22} />} />

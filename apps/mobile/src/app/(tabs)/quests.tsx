@@ -7,6 +7,7 @@ import { View } from 'react-native';
 
 import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
 import { ACTIVITY_SPRITE, Sprite } from '@/components/sprites';
+import { useNarrator } from '@/features/narrator/useNarrator';
 import { useSentinelPermissions } from '@/features/scroll/useScrollSentinel';
 import { useTodaySteps } from '@/features/steps/steps';
 import { syncToday } from '@/features/sync/deviceSync';
@@ -35,6 +36,7 @@ export default function Quests() {
       setMe({ today: r.today });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       const g = r.grant;
+      useNarrator.getState().narrate('activity', `${ACTIVITIES[kind].label} logged. That earned ${g.moves} Moves and ${g.supplies} Supplies${g.reduced ? ' under the daily reward cap' : ''}. Real life puts the wind in our sails.`);
       setToast(
         g.supplies || g.moves
           ? `${ACTIVITIES[kind].label}: +${g.moves} Moves, +${g.supplies} Supplies${g.reduced ? ' (daily cap)' : ''}`
