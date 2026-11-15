@@ -27,7 +27,7 @@ export function ShipwrightPanel({ crewAverageMoves }: { crewAverageMoves?: numbe
   const level = SPEEDS.indexOf(r.speed);
 
   return (
-    <Panel color={C.paper}>
+    <Panel color={C.deep}>
       <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
         <View style={{ flexShrink: 1 }}>
           <Text style={s.name}>The {SHIPWRIGHT.name}</Text>
@@ -58,7 +58,7 @@ export function ShipwrightPanel({ crewAverageMoves }: { crewAverageMoves?: numbe
 }
 
 const s = StyleSheet.create({
-  name: { fontFamily: F.title, fontSize: 28, color: C.ink },
+  name: { fontFamily: F.title, fontSize: 28, color: C.gold },
   knots: { borderWidth: 1, borderColor: '#38535D', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center' },
   knotsN: { fontFamily: F.ui, fontSize: 28, color: C.ink, lineHeight: 32 },
   knotsL: { fontFamily: F.bodyBold, fontSize: 10, color: C.ink, letterSpacing: 1 },

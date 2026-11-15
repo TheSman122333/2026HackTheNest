@@ -11,7 +11,6 @@ import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
-import { PaperArt } from '@/ui/NauticalArt';
 
 const SKILL_LABEL: Record<Skill, string> = {
   grit: 'Grit',
@@ -51,12 +50,11 @@ export default function Me() {
 
   return (
     <Screen>
-      <Row gap={12} style={{ flexWrap: 'nowrap', backgroundColor: C.paper, borderWidth: 2, borderColor: C.ink, padding: 16, borderRadius: 8 }}>
-        <PaperArt />
+      <Row gap={12} style={{ flexWrap: "nowrap" }}>
         <Float amplitude={3} tilt={2}><Sprite name={avatarFor(u.id)} size={96} /></Float>
         <View style={{ flexShrink: 1 }}>
-          <Title color={C.ink}>{u.name}</Title>
-          <P color={C.dimDark}>{ROLE[top]} of the {me.crew?.name}</P>
+          <Title>{u.name}</Title>
+          <P dim>{ROLE[top]} of the {me.crew?.name}</P>
         </View>
       </Row>
 

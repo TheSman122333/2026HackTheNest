@@ -4,13 +4,12 @@ import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OceanBackdrop, useMotionEnabled } from '@/ui/motion';
 import { cleanText } from '@/ui/text';
-import { PaperArt } from '@/ui/NauticalArt';
 
 export const C = {
-  navy: '#087DBB', indigo: '#15578A', peri: '#8AC5E4', sky: '#42B6E8', cloud: '#F4D99C',
-  red: '#D94B35', orange: '#D94B35', ink: '#25221C', deep: '#063B65', white: '#FFF3D5',
-  green: '#79CCAA', gold: '#F4B942', dimDark: '#615944', dimLight: '#D9F1FF', paper: '#F4D99C',
-  sea: '#42B6E8', seaLight: '#8AC5E4', night: '#063B65', sun: '#F4B942', jungle: '#79CCAA', dim: '#615944', fog: '#155A8B',
+  navy: '#073A6B', indigo: '#195F9C', peri: '#8EBEFF', sky: '#75D8F4', cloud: '#FFF5DE',
+  red: '#F08B75', orange: '#FFD16A', ink: '#123B5D', deep: '#0C4D82', white: '#FFFCF3',
+  green: '#74DFC0', gold: '#FFD16A', dimDark: '#486176', dimLight: '#C3E9FF', paper: '#FFF5DE',
+  sea: '#75D8F4', seaLight: '#8EBEFF', night: '#073A6B', sun: '#FFD16A', jungle: '#74DFC0', dim: '#486176', fog: '#1C6093',
 } as const;
 export const F = { title: 'VoyageSerif', ui: 'VoyageSansBold', uiBold: 'VoyageSansMedium', body: 'VoyageSans', bodyBold: 'VoyageSansMedium' } as const;
 type Tone = 'dark' | 'light';
@@ -28,7 +27,7 @@ const toneFor = (bg: string): Tone => {
   });
   const luminance = 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
   // Pick the foreground with greater contrast against the actual surface.
-  return (luminance + 0.05) / (0.0162 + 0.05) > (0.9007 + 0.05) / (luminance + 0.05) ? 'light' : 'dark';
+  return (luminance + 0.05) / (0.0405 + 0.05) > (0.9184 + 0.05) / (luminance + 0.05) ? 'light' : 'dark';
 };
 export function Screen({ children, scroll = true, padded = true }: { children: ReactNode; scroll?: boolean; padded?: boolean }) {
   return <ToneContext.Provider value="dark"><SafeAreaView style={s.screen} edges={['top', 'left', 'right']}>
@@ -51,12 +50,7 @@ export function P({ children, dim, center, color }: { children: ReactNode; dim?:
 }
 export function Panel({ children, style, color = C.cloud }: { children: ReactNode; style?: ViewStyle; color?: string }) {
   const tone = toneFor(color);
-  return <ToneContext.Provider value={tone}><View style={[s.panel, { backgroundColor: color, borderColor: tone === 'dark' ? '#79C4E3' : C.ink }, style]}>
-    {color === C.cloud || color === C.white ? <PaperArt /> : null}
-    <View pointerEvents="none" accessibilityElementsHidden style={StyleSheet.absoluteFill}>
-      {[0, 1, 2, 3].map((corner) => <View key={corner} style={{ position: 'absolute', width: 7, height: 7, top: corner < 2 ? 6 : undefined, bottom: corner >= 2 ? 6 : undefined, left: corner === 0 || corner === 3 ? 6 : undefined, right: corner === 1 || corner === 2 ? 6 : undefined, borderLeftWidth: 1, borderTopWidth: 1, borderColor: tone === 'dark' ? C.gold : C.ink, opacity: 0.42, transform: [{ rotate: `${corner * 90}deg` }] }} />)}
-    </View>{children}
-  </View></ToneContext.Provider>;
+  return <ToneContext.Provider value={tone}><View style={[s.panel, { backgroundColor: color, borderColor: tone === 'dark' ? '#3976A2' : '#ECDCB9' }, style]}>{children}</View></ToneContext.Provider>;
 }
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function Btn({ label, onPress, color = C.orange, disabled, busy, small, icon }: {
@@ -70,16 +64,15 @@ export function Btn({ label, onPress, color = C.orange, disabled, busy, small, i
   useEffect(() => { if (off || !enabled) { scale.stopAnimation(); scale.setValue(1); } }, [off, enabled, scale]);
   const press = (toValue: number) => {
     if (!enabled || off) return;
-    Animated.spring(scale, { toValue, damping: 11, stiffness: 320, mass: 0.6, useNativeDriver: true }).start();
+    Animated.spring(scale, { toValue, damping: 14, stiffness: 320, mass: 0.5, useNativeDriver: true }).start();
   };
   return <AnimatedPressable accessibilityRole="button" accessibilityLabel={cleanText(label)} accessibilityState={{ disabled: off, busy: Boolean(busy) }}
-    disabled={off} onPress={onPress} onPressIn={() => { setPressed(true); press(0.94); }} onPressOut={() => { setPressed(false); press(1); }}
+    disabled={off} onPress={onPress} onPressIn={() => { setPressed(true); press(0.96); }} onPressOut={() => { setPressed(false); press(1); }}
     style={[s.btn, small && s.btnSmall, { backgroundColor: off ? C.fog : color, transform: [{ scale }], opacity: pressed && !off ? 0.87 : 1 }]}>
-    {!off && (color === C.cloud || color === C.white) ? <PaperArt /> : null}
     <View style={s.buttonContent}>{busy ? <ActivityIndicator size="small" color={fg} /> : icon}<Text style={[s.btnText, { color: fg }, small && { fontSize: 13 }]}>{cleanText(label)}</Text></View>
   </AnimatedPressable>;
 }
-export function Stat({ label, value, color = C.paper, icon }: { label: string; value: string | number; color?: string; icon?: ReactNode }) {
+export function Stat({ label, value, color = C.orange, icon }: { label: string; value: string | number; color?: string; icon?: ReactNode }) {
   const enabled = useMotionEnabled();
   const [pop] = useState(() => new Animated.Value(1));
   const previous = useRef(value);
@@ -92,7 +85,7 @@ export function Stat({ label, value, color = C.paper, icon }: { label: string; v
     return () => pop.stopAnimation();
   }, [value, enabled, pop]);
   const fg = toneFor(color) === 'light' ? C.ink : C.white;
-  return <View style={[s.stat, { backgroundColor: color }]}>{color === C.cloud || color === C.white ? <PaperArt /> : null}<View style={s.statTop}>{icon}<Animated.Text style={[s.statValue, { color: fg, transform: [{ scale: pop }] }]}>{typeof value === 'string' ? cleanText(value) : value}</Animated.Text></View><Text style={[s.statLabel, { color: fg }]}>{cleanText(label)}</Text></View>;
+  return <View style={[s.stat, { backgroundColor: color }]}><View style={s.statTop}>{icon}<Animated.Text style={[s.statValue, { color: fg, transform: [{ scale: pop }] }]}>{typeof value === 'string' ? cleanText(value) : value}</Animated.Text></View><Text style={[s.statLabel, { color: fg }]}>{cleanText(label)}</Text></View>;
 }
 export function Bar({ value, max, color = C.green, label }: { value: number; max: number; color?: string; label?: string }) {
   const tone = useTone();
@@ -104,7 +97,7 @@ export function Bar({ value, max, color = C.green, label }: { value: number; max
     animation.start(); return () => animation.stop();
   }, [pct, enabled, progress]);
   return <View style={{ gap: 8 }}>{label ? <Text style={[s.barLabel, { color: textColor(tone) }]}>{cleanText(label)}</Text> : null}
-    <View accessibilityRole="progressbar" accessibilityLabel={label ? cleanText(label) : undefined} accessibilityValue={{ min: 0, max: max > 0 ? max : 1, now: max > 0 ? Math.max(0, Math.min(value, max)) : 0 }} style={[s.barOuter, { backgroundColor: tone === 'dark' ? C.fog : '#D9C18E' }]}>
+    <View accessibilityRole="progressbar" accessibilityLabel={label ? cleanText(label) : undefined} accessibilityValue={{ min: 0, max: max > 0 ? max : 1, now: max > 0 ? Math.max(0, Math.min(value, max)) : 0 }} style={[s.barOuter, { backgroundColor: tone === 'dark' ? C.fog : '#DCDDD3' }]}>
       <Animated.View style={[s.barInner, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), backgroundColor: color }]} />
     </View></View>;
 }
@@ -118,14 +111,14 @@ export function Tag({ label, color = C.indigo }: { label: string; color?: string
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.navy }, padded: { padding: 20 }, content: { gap: 20, paddingBottom: 48 },
   title: { fontFamily: F.title, letterSpacing: 0.1 }, h: { fontFamily: F.ui, fontSize: 17, letterSpacing: -0.3 },
-  p: { fontFamily: F.body, fontSize: 14, lineHeight: 22 }, panel: { borderWidth: 2, borderRadius: 10, padding: 18, gap: 12, shadowColor: '#032A49', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.18, shadowRadius: 0 },
-  btn: { borderWidth: 2, borderColor: C.ink, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center', minHeight: 52, justifyContent: 'center', shadowColor: C.ink, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.38, shadowRadius: 0 },
-  btnSmall: { paddingVertical: 12, paddingHorizontal: 14, minHeight: 48, borderRadius: 7 },
+  p: { fontFamily: F.body, fontSize: 14, lineHeight: 22 }, panel: { borderWidth: 1, borderRadius: 18, padding: 18, gap: 12 },
+  btn: { borderRadius: 12, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center', minHeight: 52, justifyContent: 'center' },
+  btnSmall: { paddingVertical: 12, paddingHorizontal: 14, minHeight: 48, borderRadius: 10 },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, flexShrink: 1 },
   btnText: { fontFamily: F.ui, fontSize: 14, letterSpacing: 0.1, flexShrink: 1, textAlign: 'center' },
-  stat: { borderWidth: 1.5, borderColor: C.ink, borderRadius: 7, paddingVertical: 12, paddingHorizontal: 10, alignItems: 'center', minWidth: 72, gap: 3, shadowColor: C.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 0 },
+  stat: { borderRadius: 14, paddingVertical: 12, paddingHorizontal: 12, alignItems: 'center', minWidth: 72, gap: 3 },
   statTop: { flexDirection: 'row', alignItems: 'center', gap: 5 }, statValue: { fontFamily: F.ui, fontSize: 23, fontVariant: ['tabular-nums'], letterSpacing: -0.8 },
   statLabel: { fontFamily: F.bodyBold, fontSize: 9, letterSpacing: 1 }, barLabel: { fontFamily: F.bodyBold, fontSize: 11, letterSpacing: 0.3 },
-  barOuter: { height: 8, borderRadius: 3, overflow: 'hidden', borderWidth: 1, borderColor: '#25221C66' }, barInner: { height: '100%', borderRadius: 2 },
-  tag: { borderWidth: 1, borderColor: '#25221C77', borderRadius: 4, paddingHorizontal: 9, paddingVertical: 5, alignSelf: 'flex-start' }, tagText: { fontFamily: F.bodyBold, fontSize: 10, letterSpacing: 1 },
+  barOuter: { height: 6, borderRadius: 3, overflow: 'hidden' }, barInner: { height: '100%', borderRadius: 3 },
+  tag: { borderRadius: 6, paddingHorizontal: 9, paddingVertical: 5, alignSelf: 'flex-start' }, tagText: { fontFamily: F.bodyBold, fontSize: 10, letterSpacing: 1 },
 });
