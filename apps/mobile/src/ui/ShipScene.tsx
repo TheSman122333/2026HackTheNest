@@ -86,12 +86,7 @@ export function ShipScene({ sailing, personal = false, onBoard }: { sailing: Sai
       <View style={s.rule} />
       <Text style={s.pace}>{config.label}</Text>
     </View>
-    <View pointerEvents="none" style={s.farSea} />
-    <View pointerEvents="none" style={s.nearSea} />
 
-    <Animated.View pointerEvents="none" style={[s.foamField, { transform: [{ translateX: sea.interpolate({ inputRange: [0, 1], outputRange: [0, -120] }) }] }]}>
-      {Array.from({ length: 20 }, (_, i) => <View key={i} style={[s.foam, { left: (i % 10) * 60, top: Math.floor(i / 10) * 34 + (i % 3) * 6, width: 16 + (i % 3) * 12, opacity: 0.2 + level * 0.055 }]} />)}
-    </Animated.View>
 
     <View pointerEvents="none" style={s.wakePosition}>
       <Animated.View style={[s.wake, { opacity: 0.22 + level * 0.12, transform: [{ scaleX: bob.interpolate({ inputRange: [-1, 1], outputRange: [0.9, 1.12 + level * 0.09] }) }] }]} />
@@ -124,7 +119,8 @@ export function ShipScene({ sailing, personal = false, onBoard }: { sailing: Sai
   </View>;
 }
 
-// Frame only: the ship art, bob, wake, gusts and splash are unchanged. It spans the full width
+// Frame only: the ship art, bob, wake, gusts and splash are unchanged. No sea of its own:
+// the ship floats on the page's live ocean, so scrolling never shows a static cut-off. It spans the full width
 // so the ship sits on the open sea, with a parchment banner, caption plaque and stat tiles.
 const INK = '#25221C';
 const PAPER = '#F4D99C';
@@ -135,10 +131,6 @@ const s = StyleSheet.create({
   eyebrow: { fontFamily: F.bodyBold, fontSize: 11, letterSpacing: 1.6, color: INK },
   rule: { height: 2, backgroundColor: INK, opacity: 0.7, borderRadius: 1, marginVertical: 2 },
   pace: { fontFamily: F.title, fontSize: 32, lineHeight: 40, color: INK },
-  farSea: { position: 'absolute', top: 205, height: 180, left: -60, right: -60, borderTopLeftRadius: 170, borderTopRightRadius: 90, backgroundColor: '#2E9BD6', borderTopWidth: 3, borderColor: '#E9F8FF', transform: [{ rotate: '-3deg' }] },
-  nearSea: { position: 'absolute', top: 280, bottom: 0, left: -40, right: -40, borderTopLeftRadius: 120, borderTopRightRadius: 170, backgroundColor: '#0E70AE', borderTopWidth: 4, borderColor: '#FFFFFF', transform: [{ rotate: '3deg' }] },
-  foamField: { position: 'absolute', left: -80, width: 720, height: 105, top: 265 },
-  foam: { position: 'absolute', height: 3, borderRadius: 2, backgroundColor: '#FFFFFF' },
   shipTouch: { marginTop: 0, height: 251, width: 266, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
   ship: { width: 258, height: 258 },
   wakePosition: { position: 'absolute', top: 300, alignSelf: 'center', width: 260, height: 18 },
