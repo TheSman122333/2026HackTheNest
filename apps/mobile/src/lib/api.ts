@@ -3,21 +3,32 @@
  * Override with EXPO_PUBLIC_API_URL (e.g. the deployed URL).
  */
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
-const BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8787';
+// Web build: talk to the API on the same host that served the page (works over LAN/hotspot).
+const BASE =
+  process.env.EXPO_PUBLIC_API_URL ??
+  (Platform.OS === 'web' && globalThis.location ? `${globalThis.location.protocol}//${globalThis.location.hostname}:8787` : 'http://localhost:8787');
 const TOKEN_KEY = 'lv_token';
 
 let token: string | null = null;
 
+/** SecureStore on phones; the browser (iPhone Safari build) uses localStorage. */
+const storage = {
+  get: async (k: string) => (Platform.OS === 'web' ? globalThis.localStorage?.getItem(k) ?? null : SecureStore.getItemAsync(k)),
+  set: async (k: string, v: string) => (Platform.OS === 'web' ? globalThis.localStorage?.setItem(k, v) : SecureStore.setItemAsync(k, v)),
+  del: async (k: string) => (Platform.OS === 'web' ? globalThis.localStorage?.removeItem(k) : SecureStore.deleteItemAsync(k)),
+};
+
 export async function loadToken(): Promise<string | null> {
-  token ??= await SecureStore.getItemAsync(TOKEN_KEY);
+  token ??= await storage.get(TOKEN_KEY);
   return token;
 }
 
 export async function setToken(t: string | null) {
   token = t;
-  if (t) await SecureStore.setItemAsync(TOKEN_KEY, t);
-  else await SecureStore.deleteItemAsync(TOKEN_KEY);
+  if (t) await storage.set(TOKEN_KEY, t);
+  else await storage.del(TOKEN_KEY);
 }
 
 export class ApiError extends Error {

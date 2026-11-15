@@ -25,7 +25,15 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "The Last Voyage",
+      "shortName": "Last Voyage",
+      "themeColor": "#27187E",
+      "backgroundColor": "#27187E",
+      "display": "standalone",
+      "orientation": "portrait"
     },
     "plugins": [
       "expo-router",

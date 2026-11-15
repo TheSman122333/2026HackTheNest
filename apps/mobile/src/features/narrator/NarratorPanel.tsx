@@ -12,7 +12,7 @@ import {
 } from 'expo-audio';
 import { File } from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Btn, C, F, P, Panel, Row, Tag } from '@/components/kit';
 import { Sprite } from '@/components/sprites';
@@ -21,6 +21,8 @@ import { fetchAudio } from '@/lib/audio';
 import { useNarrator } from './useNarrator';
 
 const MAX_MS = 15_000;
+/** Browsers only allow the mic on https; the Safari build over LAN types instead. */
+const CAN_TALK = Platform.OS !== 'web';
 const title = `THE ${NARRATOR.name.toUpperCase()}`;
 
 export function NarratorPanel() {
@@ -139,6 +141,7 @@ export function NarratorPanel() {
         </View>
       ))}
 
+      {CAN_TALK ? (
       <Pressable
         onPressIn={startRecording}
         onPressOut={stopRecording}
@@ -147,6 +150,7 @@ export function NarratorPanel() {
       >
         <Text style={s.talkText}>{recording ? '● Recording… release to send' : '🎙️ Hold to talk'}</Text>
       </Pressable>
+      ) : null}
 
       <Row gap={8} style={{ flexWrap: 'nowrap' }}>
         <TextInput
