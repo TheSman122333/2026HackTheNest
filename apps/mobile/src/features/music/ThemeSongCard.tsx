@@ -7,6 +7,8 @@ import { Btn, C, F, P, Panel, Row, Tag } from '@/components/kit';
 import { Sprite } from '@/components/sprites';
 import { api } from '@/lib/api';
 import { fetchAudio } from '@/lib/audio';
+import { Float } from '@/ui/motion';
+import { cleanText } from '@/ui/text';
 
 type Theme = { status: 'none' | 'pending' | 'ready' | 'failed'; prompt: string | null; version: number; audio: string | null };
 
@@ -79,15 +81,15 @@ export function ThemeSongCard() {
   const st = theme?.status ?? 'none';
 
   return (
-    <Panel color={C.peri}>
-      <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-        <Row gap={8} style={{ flexShrink: 1, flexWrap: 'nowrap' }}>
-          <View style={[s.disc, playing && s.discOn]}>
-            <Sprite name="compass" size={36} />
-          </View>
+    <Panel>
+      <Row style={{ justifyContent: 'space-between' }}>
+        <Row gap={8} style={{ flex: 1, minWidth: 190, flexWrap: 'nowrap' }}>
+          <Float amplitude={playing ? 3 : 0} duration={1700} tilt={playing ? 7 : 0}>
+            <View style={[s.disc, playing && s.discOn]}><Sprite name="compass" size={36} /></View>
+          </Float>
           <View style={{ flexShrink: 1 }}>
-            <Text style={s.title}>YOUR THEME SONG</Text>
-            <P color={C.ink}>One of a kind, composed for you by AI.</P>
+            <Text style={s.title}>Your own sea shanty</Text>
+            <P color={C.dimDark}>A soundtrack for your voyage.</P>
           </View>
         </Row>
         {st === 'pending' ? <Tag label="COMPOSING…" color={C.orange} /> : null}
@@ -108,17 +110,17 @@ export function ThemeSongCard() {
 
       {theme?.prompt ? (
         <Text style={s.prompt} numberOfLines={3}>
-          🎼 {theme.prompt.replace(/^Original instrumental sea-adventure theme for a cozy cartoon pirate game, no vocals, no lyrics\. /, '')}
+          {cleanText(theme.prompt.replace(/^Original instrumental sea-adventure theme for a cozy cartoon pirate game, no vocals, no lyrics\. /, ''))}
         </Text>
       ) : null}
-      {err ? <P color={C.red}>⚠️ {err}</P> : null}
+      {err ? <P color={C.red}>{err}</P> : null}
     </Panel>
   );
 }
 
 const s = StyleSheet.create({
-  title: { fontFamily: F.title, fontSize: 24, letterSpacing: 1.5, color: C.ink },
-  disc: { width: 52, height: 52, borderRadius: 26, borderWidth: 3, borderColor: C.ink, backgroundColor: C.cloud, alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: F.title, fontSize: 26, color: C.ink },
+  disc: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, borderColor: '#D8D3C8', backgroundColor: C.cloud, alignItems: 'center', justifyContent: 'center' },
   discOn: { backgroundColor: C.gold },
   prompt: { fontFamily: F.body, fontSize: 12, color: C.navy, fontStyle: 'italic' },
 });

@@ -2,23 +2,17 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { C, P, Panel, Title } from '@/components/kit';
-import { ITEM_SPRITE, Sprite } from '@/components/sprites';
+import { C, P, Panel, Screen, Title } from '@/components/kit';
+import { ITEM_SPRITE, Sprite, type SpriteName } from '@/components/sprites';
 import { api } from '@/lib/api';
 import type { LogEntry } from '@/lib/types';
 
-const GLYPH: Record<string, string> = {
-  supplies: '📦',
-  timber: '🪵',
-  iron: '⛓️',
-  spice: '🌶️',
-  shard: '💎',
-  island: '🚩',
-  voyage: '⛵',
-  night: '🌙',
-  hp: '🌊',
+const EVENT_SPRITE: Record<string, SpriteName> = {
+  island: 't_flag',
+  voyage: 't_anchor',
+  night: 'q_sleep',
+  hp: 'fx_wave',
 };
 
 function ago(iso: string) {
@@ -49,13 +43,14 @@ export default function Log() {
   );
 
   return (
-    <SafeAreaView style={s.screen} edges={['top']}>
+    <Screen scroll={false} padded={false}>
       <ScrollView contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={C.cloud} />}>
-        <Title>SHIP&apos;S LOG</Title>
+        <Title>Ship&apos;s log</Title>
+        <P dim>Every small effort. Every new horizon.</P>
         {entries.length === 0 ? <P dim>Nothing yet. Log an activity or explore the island!</P> : null}
         {entries.map((e) => (
           <Panel key={e.id} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-            {ITEM_SPRITE[e.item] ? <Sprite name={ITEM_SPRITE[e.item]!} size={30} /> : <P>{GLYPH[e.item] ?? '•'}</P>}
+            <Sprite name={ITEM_SPRITE[e.item] ?? EVENT_SPRITE[e.item] ?? 'journal'} size={30} />
             <View style={{ flex: 1 }}>
               <P>{e.text}</P>
               <P dim>{ago(e.at)}</P>
@@ -63,11 +58,10 @@ export default function Log() {
           </Panel>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.navy },
-  content: { padding: 16, gap: 10, paddingBottom: 32 },
+  content: { padding: 20, gap: 14, paddingBottom: 32 },
 });

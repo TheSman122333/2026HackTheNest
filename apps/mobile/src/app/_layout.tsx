@@ -1,6 +1,3 @@
-import { Bangers_400Regular } from '@expo-google-fonts/bangers';
-import { Baloo2_700Bold, Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
-import { Nunito_600SemiBold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -8,18 +5,19 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { C } from '@/components/kit';
 import { useApplySurfaceRules } from '@/features/scroll/useScrollSentinel';
 import { useSession } from '@/state/session';
+import { MotionProvider } from '@/ui/motion';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Bangers_400Regular,
-    Baloo2_700Bold,
-    Baloo2_800ExtraBold,
-    Nunito_600SemiBold,
-    Nunito_800ExtraBold,
+    VoyageSerif: require('../../assets/fonts/VoyageSerif.ttf'),
+    VoyageSans: require('../../assets/fonts/VoyageSans.ttf'),
+    VoyageSansMedium: require('../../assets/fonts/VoyageSansMedium.ttf'),
+    VoyageSansBold: require('../../assets/fonts/VoyageSansBold.ttf'),
   });
   const ready = useSession((s) => s.ready);
   useApplySurfaceRules();
@@ -36,12 +34,14 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#27187E' } }}>
-        <Stack.Screen name="auth/callback" />
-        <Stack.Screen name="fight" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-        <Stack.Screen name="dev/scroll-lab" options={{ headerShown: true, title: 'Scroll Lab', headerStyle: { backgroundColor: '#1B1160' }, headerTintColor: '#F1F2F6' }} />
-      </Stack>
+      <MotionProvider>
+        <StatusBar style="light" />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.navy } }}>
+          <Stack.Screen name="auth/callback" />
+          <Stack.Screen name="fight" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+          <Stack.Screen name="dev/scroll-lab" options={{ headerShown: true, title: 'Scroll Lab', headerStyle: { backgroundColor: C.navy }, headerTintColor: C.cloud }} />
+        </Stack>
+      </MotionProvider>
     </GestureHandlerRootView>
   );
 }

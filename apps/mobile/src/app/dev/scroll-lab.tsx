@@ -3,11 +3,12 @@
  * Functional-first, deliberately plain (Codex may restyle later with src/ui components).
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import ScrollSentinel, { type DiscoveryEntry } from 'scroll-sentinel';
 
 import { EMPTY_STREAK, dailyMoves, stepsToNextMove } from '@last-voyage/game';
 
+import { Btn as ActionButton, C, F, Screen } from '@/components/kit';
 import { APP_LABEL, SURFACE_RULES } from '@/features/scroll/rules';
 import { useTodaySteps } from '@/features/steps/steps';
 import {
@@ -62,19 +63,20 @@ export default function ScrollLab() {
 
   if (!perms.supported) {
     return (
-      <View style={s.screen}>
+      <Screen>
         <Card title="Not supported here">
           <Text style={s.body}>
             Scroll tracking needs the Android development build (not Expo Go). iOS support will come
             through Apple Screen Time later.
           </Text>
         </Card>
-      </View>
+      </Screen>
     );
   }
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={s.content}>
+    <Screen scroll={false} padded={false}>
+    <ScrollView contentContainerStyle={s.content}>
       <Card title="Permissions">
         <Row label="Accessibility service" ok={perms.accessibility} />
         <Btn label="Open accessibility settings" onPress={() => setDisclosure(true)} />
@@ -188,6 +190,7 @@ export default function ScrollLab() {
         </View>
       </Modal>
     </ScrollView>
+    </Screen>
   );
 }
 
@@ -206,7 +209,7 @@ function Row({ label, ok }: { label: string; ok: boolean }) {
   return (
     <View style={s.row}>
       <Text style={s.body}>{label}</Text>
-      <Text style={[s.badge, { backgroundColor: ok ? '#43AA8B' : '#E63946' }]}>{ok ? 'ON' : 'OFF'}</Text>
+      <Text style={[s.badge, { backgroundColor: ok ? C.green : C.red }]}>{ok ? 'ON' : 'OFF'}</Text>
     </View>
   );
 }
@@ -221,45 +224,29 @@ function KV({ k, v }: { k: string; v: string }) {
 }
 
 function Btn({ label, onPress, danger }: { label: string; onPress: () => void; danger?: boolean }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [s.btn, danger && s.btnDanger, pressed && s.btnPressed]}
-    >
-      <Text style={[s.btnText, danger && { color: '#fff' }]}>{label}</Text>
-    </Pressable>
-  );
+  return <ActionButton label={label} onPress={onPress} color={danger ? C.red : C.gold} />;
 }
 
-const ink = '#141414';
+const ink = C.ink;
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFF6E3' },
-  content: { padding: 16, gap: 14, paddingBottom: 48 },
+  content: { padding: 20, gap: 16, paddingBottom: 48 },
   card: {
-    backgroundColor: '#fff',
-    borderWidth: 3,
-    borderColor: ink,
-    padding: 14,
-    gap: 8,
-    shadowColor: ink,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
+    backgroundColor: C.cloud,
+    borderWidth: 1,
+    borderColor: '#D8D3C8',
+    borderRadius: 14,
+    padding: 18,
+    gap: 12,
   },
-  cardTitle: { fontFamily: 'Baloo2_800ExtraBold', fontSize: 18, color: ink },
-  body: { fontFamily: 'Nunito_600SemiBold', fontSize: 14, color: ink, flexShrink: 1 },
-  dim: { fontFamily: 'Nunito_600SemiBold', fontSize: 13, color: '#666' },
+  cardTitle: { fontFamily: F.uiBold, fontSize: 17, color: ink },
+  body: { fontFamily: F.body, fontSize: 14, lineHeight: 21, color: ink, flexShrink: 1 },
+  dim: { fontFamily: F.body, fontSize: 13, lineHeight: 20, color: C.dimDark },
   mono: { fontFamily: 'monospace', fontSize: 11, color: ink },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  badge: { color: '#fff', fontFamily: 'Baloo2_800ExtraBold', paddingHorizontal: 8, borderWidth: 2, borderColor: ink },
+  badge: { color: C.ink, fontFamily: F.uiBold, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, fontSize: 11 },
   kvBlock: { borderTopWidth: 1, borderColor: '#ddd', paddingTop: 6 },
-  kvTitle: { fontFamily: 'Baloo2_700Bold', fontSize: 15, color: ink },
+  kvTitle: { fontFamily: F.uiBold, fontSize: 15, color: ink },
   disc: { borderTopWidth: 1, borderColor: '#eee', paddingVertical: 4 },
-  btn: { borderWidth: 3, borderColor: ink, backgroundColor: '#FFC72C', paddingVertical: 10, alignItems: 'center' },
-  btnDanger: { backgroundColor: '#E63946' },
-  btnPressed: { transform: [{ translateX: 2 }, { translateY: 2 }] },
-  btnText: { fontFamily: 'Baloo2_800ExtraBold', fontSize: 15, color: ink },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modal: { backgroundColor: '#FFF6E3', borderWidth: 3, borderColor: ink, padding: 18, gap: 10 },
+  modal: { backgroundColor: C.cloud, borderWidth: 1, borderColor: '#D8D3C8', borderRadius: 16, padding: 20, gap: 14 },
 });

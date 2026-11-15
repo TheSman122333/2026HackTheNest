@@ -9,13 +9,14 @@ import { avatarFor, Sprite } from '@/components/sprites';
 import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
+import { Float } from '@/ui/motion';
 
 const SKILL_LABEL: Record<Skill, string> = {
-  grit: '💪 Grit',
-  charm: '😎 Charm',
-  lore: '📚 Lore',
-  craft: '🔨 Craft',
-  seacraft: '🧭 Seacraft',
+  grit: 'Grit',
+  charm: 'Charm',
+  lore: 'Lore',
+  craft: 'Craft',
+  seacraft: 'Seacraft',
 };
 
 const ROLE: Record<Skill, string> = {
@@ -49,18 +50,18 @@ export default function Me() {
   return (
     <Screen>
       <Row gap={12} style={{ flexWrap: "nowrap" }}>
-        <Sprite name={avatarFor(u.id)} size={96} />
+        <Float amplitude={3} tilt={2}><Sprite name={avatarFor(u.id)} size={96} /></Float>
         <View style={{ flexShrink: 1 }}>
-          <Title>{u.name.toUpperCase()}</Title>
+          <Title>{u.name}</Title>
           <P dim>{ROLE[top]} of the {me.crew?.name}</P>
         </View>
       </Row>
 
       <Row gap={10}>
-        <Stat label="LEGEND" value={`⭐${u.legend}`} />
-        <Stat label="CALM DAYS" value={`🔥${st.calmDays}`} color={C.cloud} />
+        <Stat label="LEGEND" value={u.legend} icon={<Sprite name="t_star" size={20} />} />
+        <Stat label="CALM DAYS" value={st.calmDays} color={C.cloud} />
         <Stat label="BEST" value={st.best} color={C.cloud} />
-        <Stat label="SHIELDS" value={`🛡️${st.shields}/${STREAK.maxShields}`} color={C.cloud} />
+        <Stat label="SHIELDS" value={`${st.shields}/${STREAK.maxShields}`} color={C.cloud} />
       </Row>
 
       <ThemeSongCard />

@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#27187E",
+        "backgroundColor": "#0B1821",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -30,8 +30,8 @@
       "output": "single",
       "name": "The Last Voyage",
       "shortName": "Last Voyage",
-      "themeColor": "#27187E",
-      "backgroundColor": "#27187E",
+      "themeColor": "#0B1821",
+      "backgroundColor": "#0B1821",
       "display": "standalone",
       "orientation": "portrait"
     },
@@ -41,7 +41,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#27187E",
+          "backgroundColor": "#0B1821",
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
         }

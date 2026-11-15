@@ -3,13 +3,14 @@ import { useFocusEffect, router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Btn, C, F, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
 import { avatarFor, ITEM_SPRITE, MONTH_CARD, Sprite } from '@/components/sprites';
 import { ShipwrightPanel } from '@/features/ship/ShipwrightPanel';
 import { api } from '@/lib/api';
 import type { CrewRoster } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
+import { Float } from '@/ui/motion';
 
 const MONTH_EVENT = [
   'New Year',
@@ -54,12 +55,13 @@ export default function Ship() {
 
   return (
     <Screen>
-      <Title>{me.crew.name.toUpperCase()}</Title>
+      <P dim>ABOARD YOUR SHIP</P>
+      <Title>{me.crew.name}</Title>
 
-      <Panel color={C.sky} style={{ alignItems: 'center', gap: 4 }}>
-        <Sprite name={MONTH_CARD[month]!} size={150} />
-        <H color={C.ink}>This month: {MONTH_EVENT[month]}</H>
-        <P color={C.ink}>Ship art coming soon. Your crew sails at midnight.</P>
+      <Panel color={C.deep} style={{ alignItems: 'center', gap: 8, paddingVertical: 22 }}>
+        <Float amplitude={5} duration={4200} tilt={2}><Sprite name={MONTH_CARD[month]!} size={140} /></Float>
+        <H>The next shore awaits</H>
+        <P dim>{MONTH_EVENT[month]} · Your crew sails at midnight.</P>
       </Panel>
 
       <Row gap={10}>
@@ -73,18 +75,11 @@ export default function Ship() {
 
       <Panel>
         <H>Today&apos;s Moves</H>
-        <View style={s.math}>
-          <MathCell n={m.base} label="free" />
-          <Text style={s.op}>+</Text>
-          <MathCell n={m.fromSteps} label="steps" />
-          <Text style={s.op}>+</Text>
-          <MathCell n={m.fromActivities} label="quests" />
-          <Text style={s.op}>×</Text>
-          <MathCell n={m.multiplier} label="streak" />
-          <Text style={s.op}>=</Text>
-          <MathCell n={m.total} label="moves" hot />
-        </View>
-        <P dim>{m.spent} spent today</P>
+        <P dim>{m.base} free + {m.fromSteps} steps + {m.fromActivities} quests</P>
+        <Row>
+          <Tag label={`×${m.multiplier} STREAK`} color={C.gold} />
+          <P>{m.total} earned · {m.spent} spent</P>
+        </Row>
         <Row>
           <Btn small label="Explore island" icon={<Sprite name="map" size={22} />} onPress={() => router.navigate('/island')} />
           <Btn small label="Log a quest" icon={<Sprite name="journal" size={22} />} color={C.sky} onPress={() => router.navigate('/quests')} />
@@ -113,15 +108,16 @@ export default function Ship() {
         <H>Crew</H>
         {(roster?.members ?? []).map((mm) => (
           <Row key={mm.id} style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-            <Row gap={10} style={{ flexWrap: 'nowrap' }}>
+            <Row gap={10} style={{ flexWrap: 'nowrap', flex: 1 }}>
               <View style={[s.avatar, mm.id === me.user.id && { borderColor: C.orange }]}>
                 <Sprite name={avatarFor(mm.id)} size={44} />
               </View>
-              <P>{mm.name}</P>
+              <View style={{ flex: 1 }}><P>{mm.name}</P></View>
             </Row>
-            <P dim>
-              ⭐ {mm.legend} · 🔥 {mm.calmDays}
-            </P>
+            <View style={{ alignItems: 'flex-end' }}>
+              <P dim>{mm.legend} legend</P>
+              <P dim>{mm.calmDays} calm days</P>
+            </View>
           </Row>
         ))}
         <View style={s.invite}>
@@ -139,22 +135,8 @@ export default function Ship() {
   );
 }
 
-function MathCell({ n, label, hot }: { n: number; label: string; hot?: boolean }) {
-  return (
-    <View style={[s.cell, hot && { backgroundColor: C.orange }]}>
-      <Text style={s.cellN}>{n}</Text>
-      <Text style={s.cellL}>{label}</Text>
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
-  math: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 },
-  op: { fontFamily: F.ui, fontSize: 20, color: C.ink },
-  cell: { borderWidth: 2, borderColor: C.ink, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, alignItems: 'center', backgroundColor: C.white },
-  cellN: { fontFamily: F.ui, fontSize: 18, color: C.ink },
-  cellL: { fontFamily: F.bodyBold, fontSize: 10, color: C.dimDark },
-  avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: C.ink, backgroundColor: C.navy, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  invite: { borderTopWidth: 2, borderColor: C.ink, paddingTop: 8, alignItems: 'center' },
-  code: { fontFamily: F.title, fontSize: 40, letterSpacing: 6, color: C.navy },
+  avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, borderColor: '#D8D3C8', backgroundColor: C.navy, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  invite: { borderTopWidth: 1, borderColor: '#D8D3C8', paddingTop: 16, marginTop: 8, alignItems: 'center', gap: 8 },
+  code: { fontFamily: F.uiBold, fontSize: 28, letterSpacing: 6, color: C.navy },
 });

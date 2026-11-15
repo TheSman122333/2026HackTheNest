@@ -37,7 +37,7 @@ export default function Quests() {
       const g = r.grant;
       setToast(
         g.supplies || g.moves
-          ? `WHAM! ${ACTIVITIES[kind].label}: +${g.moves} Moves, +${g.supplies} Supplies${g.reduced ? ' (daily cap)' : ''}`
+          ? `${ACTIVITIES[kind].label}: +${g.moves} Moves, +${g.supplies} Supplies${g.reduced ? ' (daily cap)' : ''}`
           : `${ACTIVITIES[kind].label} logged. Daily cap reached, but it still counts!`,
       );
       useSession.getState().refresh();
@@ -50,7 +50,7 @@ export default function Quests() {
 
   return (
     <Screen>
-      <Title>QUESTS</Title>
+      <Title>Earn your next move</Title>
       <P>Do it in real life, then log it here. Every quest fills your sails.</P>
 
       <Row gap={10}>
@@ -72,15 +72,16 @@ export default function Quests() {
               <Btn
                 icon={<Sprite name={ACTIVITY_SPRITE[k]!} size={26} />}
                 label={`${ACTIVITIES[k].label}${counts[k] ? ` ×${counts[k]}` : ''}`}
-                color={counts[k] ? C.cloud : C.orange}
+                color={counts[k] ? C.gold : C.white}
                 onPress={() => log(k)}
                 busy={busy === k}
+                disabled={busy !== null}
                 small
               />
             </View>
           ))}
         </View>
-        <P dim>Honor system. Logging the same thing 3+ times a day gives almost nothing.</P>
+        <P dim>Everyday efforts count. Repeating an activity 3+ times gives reduced rewards.</P>
       </Panel>
 
       <Panel>
@@ -88,14 +89,14 @@ export default function Quests() {
         <Bar value={t.moves.fromSteps} max={REWARDS.movesFromStepsPerDay} color={C.sea} label={`${t.moves.fromSteps}/${REWARDS.movesFromStepsPerDay} step Moves`} />
         <P dim>{next === null ? 'Step Moves maxed for today!' : `${next} more steps to the next Move`}</P>
         {steps.supported && !steps.granted ? <Btn small label="Allow step access" onPress={steps.request} /> : null}
-        <Btn small label="↻ Sync now" color={C.sky} onPress={() => syncToday().catch(() => {})} />
+        <Btn small label="Sync now" color={C.sky} onPress={() => syncToday().catch(() => {})} />
       </Panel>
 
       <Panel>
-        <Row><Sprite name="fx_wave" size={28} /><H>Calm Seas (short-form budget)</H></Row>
+        <Row><Sprite name="fx_wave" size={28} /><H>Calm Seas</H></Row>
         {perms.supported && !perms.accessibility ? (
           <Panel color={C.red}>
-            <P>⚠️ Swipe tracker is OFF, so swipes aren&apos;t counted and minutes are your total time in TikTok, Instagram and YouTube.</P>
+            <P>Swipe tracker is off. Swipes aren&apos;t counted and minutes reflect your total time in TikTok, Instagram and YouTube.</P>
             <Btn small label="Turn tracker on" onPress={() => router.push('/dev/scroll-lab')} />
           </Panel>
         ) : null}
