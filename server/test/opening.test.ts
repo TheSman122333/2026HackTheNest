@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
 import { collections, type Collections } from '../src/db';
 import { OPENING_NARRATION } from '../src/opening';
+import { OPENING_PASSAGES } from '../src/voice-language';
 
 let mongod: MongoMemoryServer;
 let client: MongoClient;
@@ -18,6 +19,29 @@ beforeAll(async () => {
 afterAll(async () => { await client?.close(); await mongod?.stop(); });
 
 describe('opening cutscene narration', () => {
+  it('serves translated opening text before sign-in and keeps audio caches separate by language', async () => {
+    const calls: string[] = [];
+    const app = createApp({ c, jwtSecret: 'localized-opening-test', allowDevLogin: true,
+      env: { ELEVENLABS_API_KEY: 'test-key', ELEVENLABS_NARRATOR_VOICE_ID: 'localized-captain' },
+      fetchImpl: async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        calls.push(body.language_code);
+        expect(body.text).toBe(OPENING_PASSAGES[body.language_code as keyof typeof OPENING_PASSAGES]);
+        return new Response(new Uint8Array([calls.length, 2, 3]));
+      },
+    });
+    const spanish = await (await app.request('/opening/narration?language=es-MX')).json();
+    const french = await (await app.request('/opening/narration', { headers: { 'X-App-Language': 'fr' } })).json();
+    expect(spanish.text).toBe(OPENING_PASSAGES.es);
+    expect(french.text).toBe(OPENING_PASSAGES.fr);
+    expect(spanish.audioUrl).toContain('language=es&v=');
+    expect(french.audioUrl).toContain('language=fr&v=');
+    expect((await app.request(spanish.audioUrl)).status).toBe(200);
+    expect((await app.request(french.audioUrl)).status).toBe(200);
+    expect((await app.request(spanish.audioUrl)).status).toBe(200);
+    expect(calls).toEqual(['es', 'fr']);
+  });
+
   it('offers the supplied passage before sign-in and works without a speech provider', async () => {
     const app = createApp({ c, jwtSecret: 'opening-test', allowDevLogin: true, env: {}, fetchImpl: async () => { throw new Error('must not call a provider'); } });
     const response = await app.request('/opening/narration?text=untrusted');

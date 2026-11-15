@@ -9,11 +9,15 @@ import { ACTIVITY_SPRITE, Sprite } from '@/components/sprites';
 import { api, uuid } from '@/lib/api';
 import type { PersonalizedQuest, QuestBoard, QuestCompletion } from '@/lib/types';
 import { useSession } from '@/state/session';
+import { useLanguage } from '@/state/language';
+import { useT } from '@/features/language/i18n';
 
 type Action = 'complete' | 'skip';
 
 /** Only the old activity picker is replaced; all existing daily reward caps still apply. */
 export function PersonalizedQuests({ userId }: { userId: string }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const [board, setBoard] = useState<QuestBoard | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<{ id: string; action: Action } | null>(null);
@@ -72,14 +76,14 @@ export function PersonalizedQuests({ userId }: { userId: string }) {
         setBoard(result.board);
         useSession.getState().setMe({ today: result.today, ...(result.user ? { user: result.user } : {}) });
         const grant = result.grant;
-        setToast(`Quest complete: +${grant.moves} Moves, +${grant.supplies} Supplies${grant.reduced ? ' (daily reward cap)' : ''}.`);
+        setToast(tx('Quest complete: +{moves} Moves, +{supplies} Supplies{cap}.', { moves: grant.moves, supplies: grant.supplies, cap: grant.reduced ? tx(' (daily reward cap)') : '' }));
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         void useSession.getState().refresh();
       } else {
         const result = await api<{ board: QuestBoard }>('POST', `/quests/${encodeURIComponent(quest.id)}/skip`, { requestId });
         if (!current()) return;
         setBoard(result.board);
-        setToast(`A new quest is ready. ${result.board.skips.remaining} skips left this week.`);
+        setToast(tx('A new quest is ready. {count} skips left this week.', { count: result.board.skips.remaining }));
       }
       requestIds.current.delete(intent);
     } catch (e) {
@@ -93,12 +97,12 @@ export function PersonalizedQuests({ userId }: { userId: string }) {
 
   const resets = board ? new Date(board.skips.resetsAt) : null;
   const resetLabel = resets && Number.isFinite(resets.getTime())
-    ? resets.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'Monday';
+    ? resets.toLocaleDateString(language, { weekday: 'short', month: 'short', day: 'numeric' }) : tx('Monday');
   const complete = Boolean(board?.quests.length && board.quests.every((quest) => quest.status === 'completed'));
 
   return <Panel>
-    <Row style={{ justifyContent: 'space-between' }}><H>Your daily quests</H>{board ? <Tag label={`${board.skips.remaining}/5 SKIPS`} color={C.sky} /> : null}</Row>
-    <P dim>Three real-life adventures picked for your interests, time, and pace. Finish the activity before claiming it.</P>
+    <Row style={{ justifyContent: 'space-between' }}><H>Your daily quests</H>{board ? <Tag label={tx('{count}/5 SKIPS', { count: board.skips.remaining })} color={C.sky} /> : null}</Row>
+    <P dim>Real-life adventures picked for your interests, time, and pace. Finish the activity before claiming it.</P>
     {loading ? <Row><ActivityIndicator color={C.orange} /><P dim>Charting your quests...</P></Row> : null}
     {toast ? <Panel color={C.gold}><P>{toast}</P></Panel> : null}
     {error ? <Panel color={C.deep}><P color={C.red}>{error}</P><Btn small label="Refresh quests" color={C.sky} onPress={() => void load()} disabled={Boolean(busy)} /></Panel> : null}
@@ -108,11 +112,11 @@ export function PersonalizedQuests({ userId }: { userId: string }) {
       return <Panel key={quest.id} color={done ? C.cloud : C.white}>
         <Row gap={10} style={{ flexWrap: 'nowrap' }}>
           <Sprite name={ACTIVITY_SPRITE[quest.kind]!} size={34} />
-          <View style={{ flex: 1, gap: 5 }}><H>{quest.title}</H><P dim>{quest.minutes} min · {reward.label}{done ? ' · Completed' : ''}</P></View>
+          <View style={{ flex: 1, gap: 5 }}><H>{quest.title}</H><P dim>{tx('{minutes} min · {activity}{completed}', { minutes: quest.minutes, activity: tx(reward.label), completed: done ? ` · ${tx('Completed')}` : '' })}</P></View>
         </Row>
         <P>{quest.description}</P>
         {done ? <P dim>Logged for your crew. Well sailed.</P> : <>
-          <P dim>Up to {reward.moves} Moves · {reward.supplies} Supplies · daily caps apply</P>
+          <P dim>{tx('Up to {moves} Moves · {supplies} Supplies · daily caps apply', { moves: reward.moves, supplies: reward.supplies })}</P>
           <Row>
             <Btn small label="I did it" onPress={() => void act(quest, 'complete')} busy={busy?.id === quest.id && busy.action === 'complete'} disabled={loading || Boolean(busy)} />
             <Btn small label="Skip quest" color={C.sky} onPress={() => void act(quest, 'skip')} busy={busy?.id === quest.id && busy.action === 'skip'} disabled={loading || Boolean(busy) || !board.skips.remaining} />
@@ -122,7 +126,7 @@ export function PersonalizedQuests({ userId }: { userId: string }) {
     })}
     {complete ? <P>All of today&apos;s quests are complete. Fresh adventures arrive tomorrow.</P> : null}
     {board ? <>
-      <P dim>Five skips each week, shared across your daily quests. Resets {resetLabel} in your time zone.</P>
+      <P dim>{tx('Five skips each week, shared across your daily quests. Resets {date} in your time zone.', { date: resetLabel })}</P>
       <P dim>{board.quests.some((quest) => quest.source === 'fallback') ? 'Personalized suggestions are available while the AI quest writer is offline.' : 'Written with Gemini from your quest preferences.'}</P>
     </> : null}
     <Btn small label="Change preferences" color={C.sky} onPress={() => router.push('/preferences')} disabled={Boolean(busy)} />

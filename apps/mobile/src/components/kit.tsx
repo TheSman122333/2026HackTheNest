@@ -1,7 +1,9 @@
 /** Sunlit seas, warm sailcloth, and polished nautical details. */
-import { Children, createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { useT } from '@/features/language/i18n';
 import { OceanBackdrop, useMotionEnabled } from '@/ui/motion';
 import { cleanText } from '@/ui/text';
 
@@ -17,7 +19,6 @@ const ToneContext = createContext<Tone>('dark');
 const useTone = () => useContext(ToneContext);
 const textColor = (tone: Tone) => tone === 'dark' ? C.cloud : C.ink;
 const dimColor = (tone: Tone) => tone === 'dark' ? C.dimLight : C.dimDark;
-const copy = (children: ReactNode) => Children.map(children, (child) => typeof child === 'string' ? cleanText(child) : child);
 const toneFor = (bg: string): Tone => {
   const hex = bg.replace('#', '');
   if (hex.length !== 6) return 'light';
@@ -36,26 +37,27 @@ export function Screen({ children, scroll = true, padded = true }: { children: R
       : <View style={[{ flex: 1 }, padded && s.padded]}>{children}</View>}
   </SafeAreaView></ToneContext.Provider>;
 }
-export function Title({ children, size = 36, color }: { children: ReactNode; size?: number; color?: string }) {
+export function Title({ children, size = 36, color, translatable = true }: { children: ReactNode; size?: number; color?: string; translatable?: boolean }) {
   const tone = useTone();
-  return <Text accessibilityRole="header" style={[s.title, { fontSize: size, color: color ?? textColor(tone) }]}>{copy(children)}</Text>;
+  return <Text translatable={translatable} accessibilityRole="header" style={[s.title, { fontSize: size, color: color ?? textColor(tone) }]}>{children}</Text>;
 }
-export function H({ children, color }: { children: ReactNode; color?: string }) {
+export function H({ children, color, translatable = true }: { children: ReactNode; color?: string; translatable?: boolean }) {
   const tone = useTone();
-  return <Text accessibilityRole="header" style={[s.h, { color: color ?? textColor(tone) }]}>{copy(children)}</Text>;
+  return <Text translatable={translatable} accessibilityRole="header" style={[s.h, { color: color ?? textColor(tone) }]}>{children}</Text>;
 }
-export function P({ children, dim, center, color }: { children: ReactNode; dim?: boolean; center?: boolean; color?: string }) {
+export function P({ children, dim, center, color, translatable = true }: { children: ReactNode; dim?: boolean; center?: boolean; color?: string; translatable?: boolean }) {
   const tone = useTone();
-  return <Text style={[s.p, { color: color ?? (dim ? dimColor(tone) : textColor(tone)) }, center && { textAlign: 'center' }]}>{copy(children)}</Text>;
+  return <Text translatable={translatable} style={[s.p, { color: color ?? (dim ? dimColor(tone) : textColor(tone)) }, center && { textAlign: 'center' }]}>{children}</Text>;
 }
 export function Panel({ children, style, color = C.cloud }: { children: ReactNode; style?: ViewStyle; color?: string }) {
   const tone = toneFor(color);
   return <ToneContext.Provider value={tone}><View style={[s.panel, { backgroundColor: color, borderColor: tone === 'dark' ? '#3976A2' : '#ECDCB9' }, style]}>{children}</View></ToneContext.Provider>;
 }
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-export function Btn({ label, onPress, color = C.orange, disabled, busy, small, icon }: {
-  label: string; onPress: () => void; color?: string; disabled?: boolean; busy?: boolean; small?: boolean; icon?: ReactNode;
+export function Btn({ label, onPress, color = C.orange, disabled, busy, small, icon, translatable = true }: {
+  label: string; onPress: () => void; color?: string; disabled?: boolean; busy?: boolean; small?: boolean; icon?: ReactNode; translatable?: boolean;
 }) {
+  const t = useT();
   const off = Boolean(disabled || busy);
   const enabled = useMotionEnabled();
   const [scale] = useState(() => new Animated.Value(1));
@@ -66,10 +68,10 @@ export function Btn({ label, onPress, color = C.orange, disabled, busy, small, i
     if (!enabled || off) return;
     Animated.spring(scale, { toValue, damping: 14, stiffness: 320, mass: 0.5, useNativeDriver: true }).start();
   };
-  return <AnimatedPressable accessibilityRole="button" accessibilityLabel={cleanText(label)} accessibilityState={{ disabled: off, busy: Boolean(busy) }}
+  return <AnimatedPressable accessibilityRole="button" accessibilityLabel={translatable ? t(label) : cleanText(label)} accessibilityState={{ disabled: off, busy: Boolean(busy) }}
     disabled={off} onPress={onPress} onPressIn={() => { setPressed(true); press(0.96); }} onPressOut={() => { setPressed(false); press(1); }}
     style={[s.btn, small && s.btnSmall, { backgroundColor: off ? C.fog : color, transform: [{ scale }], opacity: pressed && !off ? 0.87 : 1 }]}>
-    <View style={s.buttonContent}>{busy ? <ActivityIndicator size="small" color={fg} /> : icon}<Text style={[s.btnText, { color: fg }, small && { fontSize: 13 }]}>{cleanText(label)}</Text></View>
+    <View style={s.buttonContent}>{busy ? <ActivityIndicator size="small" color={fg} /> : icon}<Text translatable={translatable} style={[s.btnText, { color: fg }, small && { fontSize: 13 }]}>{cleanText(label)}</Text></View>
   </AnimatedPressable>;
 }
 export function Stat({ label, value, color = C.orange, icon }: { label: string; value: string | number; color?: string; icon?: ReactNode }) {
@@ -88,6 +90,7 @@ export function Stat({ label, value, color = C.orange, icon }: { label: string; 
   return <View style={[s.stat, { backgroundColor: color }]}><View style={s.statTop}>{icon}<Animated.Text style={[s.statValue, { color: fg, transform: [{ scale: pop }] }]}>{typeof value === 'string' ? cleanText(value) : value}</Animated.Text></View><Text style={[s.statLabel, { color: fg }]}>{cleanText(label)}</Text></View>;
 }
 export function Bar({ value, max, color = C.green, label }: { value: number; max: number; color?: string; label?: string }) {
+  const t = useT();
   const tone = useTone();
   const enabled = useMotionEnabled();
   const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
@@ -97,16 +100,16 @@ export function Bar({ value, max, color = C.green, label }: { value: number; max
     animation.start(); return () => animation.stop();
   }, [pct, enabled, progress]);
   return <View style={{ gap: 8 }}>{label ? <Text style={[s.barLabel, { color: textColor(tone) }]}>{cleanText(label)}</Text> : null}
-    <View accessibilityRole="progressbar" accessibilityLabel={label ? cleanText(label) : undefined} accessibilityValue={{ min: 0, max: max > 0 ? max : 1, now: max > 0 ? Math.max(0, Math.min(value, max)) : 0 }} style={[s.barOuter, { backgroundColor: tone === 'dark' ? C.fog : '#DCDDD3' }]}>
+    <View accessibilityRole="progressbar" accessibilityLabel={label ? t(label) : undefined} accessibilityValue={{ min: 0, max: max > 0 ? max : 1, now: max > 0 ? Math.max(0, Math.min(value, max)) : 0 }} style={[s.barOuter, { backgroundColor: tone === 'dark' ? C.fog : '#DCDDD3' }]}>
       <Animated.View style={[s.barInner, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), backgroundColor: color }]} />
     </View></View>;
 }
 export function Row({ children, gap = 8, style }: { children: ReactNode; gap?: number; style?: ViewStyle }) {
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap, flexWrap: 'wrap' }, style]}>{children}</View>;
 }
-export function Tag({ label, color = C.indigo }: { label: string; color?: string }) {
+export function Tag({ label, color = C.indigo, translatable = true }: { label: string; color?: string; translatable?: boolean }) {
   const fg = toneFor(color) === 'light' ? C.ink : C.white;
-  return <View style={[s.tag, { backgroundColor: color }]}><Text style={[s.tagText, { color: fg }]}>{cleanText(label)}</Text></View>;
+  return <View style={[s.tag, { backgroundColor: color }]}><Text translatable={translatable} style={[s.tagText, { color: fg }]}>{cleanText(label)}</Text></View>;
 }
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.navy }, padded: { padding: 20 }, content: { gap: 20, paddingBottom: 48 },

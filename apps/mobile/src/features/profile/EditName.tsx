@@ -1,6 +1,8 @@
 /** Your name on the Me screen, with a pencil to change it in place. */
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable, LocalizedTextInput as TextInput } from '@/features/language/LocalizedControls';
 
 import { Btn, C, F, P, Row, Title } from '@/components/kit';
 import { api } from '@/lib/api';
@@ -32,7 +34,7 @@ export function EditName() {
   if (!editing) {
     return (
       <Row gap={8} style={{ flexWrap: 'nowrap' }}>
-        <View style={{ flexShrink: 1 }}><Title>{name}</Title></View>
+        <View style={{ flexShrink: 1 }}><Title translatable={false}>{name}</Title></View>
         <Pressable accessibilityRole="button" accessibilityLabel="Edit your name" hitSlop={10} onPress={() => { setDraft(name); setEditing(true); }} style={s.pencil}>
           <Text style={s.pencilText}>✎</Text>
         </Pressable>

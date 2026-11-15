@@ -8,3 +8,4 @@ export * from './hex';
 export * from './island';
 export * from './combat';
 export * from './shipwright';
+export * from './language';

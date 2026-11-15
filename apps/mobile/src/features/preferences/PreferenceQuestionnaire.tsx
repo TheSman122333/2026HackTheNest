@@ -1,12 +1,15 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 import { ACTIVITIES, ACTIVITY_KINDS, type ActivityKind } from '@last-voyage/game';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState, type ElementRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Bar, Btn, C, F, H, P, Panel, Row, Screen, Tag, Title } from '@/components/kit';
 import { api } from '@/lib/api';
 import type { User, VoyagePreferences } from '@/lib/types';
 import { useSession } from '@/state/session';
+import { useT } from '@/features/language/i18n';
 
 type PreferencesInput = Omit<VoyagePreferences, 'completedAt'>;
 type Draft = {
@@ -23,7 +26,7 @@ type Draft = {
 const QUESTIONS = [
   ['What do you enjoy?', 'Pick all the things you would like to do more often.'],
   ['What would you like more of?', 'Choose one or more goals for your real-life adventure.'],
-  ['How much time fits your day?', 'Your three daily quests will share this time. Small efforts still help your crew.'],
+  ['How much time fits your day?', 'Your daily quests will share this time. Small efforts still help your crew.'],
   ['What pace feels right?', 'Choose a starting point. You can change it whenever you like.'],
   ['Where do you like to spend time?', 'Your quests can fit the spaces you enjoy.'],
   ['Who do you like to adventure with?', 'Solo time and time together both count.'],
@@ -67,6 +70,7 @@ function completeDraft(draft: Draft): PreferencesInput | null {
 }
 
 export function PreferenceQuestionnaire({ user }: { user: User }) {
+  const tx = useT();
   const [draft, setDraft] = useState<Draft>(() => initialDraft(user.preferences));
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -135,14 +139,14 @@ export function PreferenceQuestionnaire({ user }: { user: User }) {
       </Row>
       <View style={{ gap: 8 }}><Title size={32}>Make the voyage yours</Title><P dim>Your choices help Gemini suggest real-life quests that fit your day. You can change these answers later in Me.</P></View>
       {editing ? <P dim>Changes guide tomorrow&apos;s quests and any replacements you request today.</P> : null}
-      <Bar value={step + 1} max={QUESTIONS.length} color={C.sky} label={`Question ${step + 1} of ${QUESTIONS.length}`} />
+      <Bar value={step + 1} max={QUESTIONS.length} color={C.sky} label={tx('Question {number} of {total}', { number: step + 1, total: QUESTIONS.length })} />
       <Panel>
         <View accessibilityLiveRegion="polite" style={{ gap: 6 }}><H>{question}</H><P dim>{hint}</P></View>
-        <View accessibilityRole={step === 0 || step === 1 || step === 7 ? undefined : 'radiogroup'} accessibilityLabel={question} style={{ gap: 9 }}>
+        <View accessibilityRole={step === 0 || step === 1 || step === 7 ? undefined : 'radiogroup'} accessibilityLabel={tx(question)} style={{ gap: 9 }}>
           {step === 0 ? ACTIVITY_KINDS.map((kind) => <Choice key={kind} multiple label={ACTIVITIES[kind].label} selected={draft.interests.includes(kind)} disabled={busy} onPress={() => toggleInterest(kind)} />) : null}
           {step === 1 ? GOALS.map((goal) => <Choice key={goal.value} multiple label={goal.label} detail={goal.detail} selected={draft.goals.includes(goal.value)} disabled={busy}
             onPress={() => select('goals', draft.goals.includes(goal.value) ? draft.goals.filter((value) => value !== goal.value) : [...draft.goals, goal.value])} />) : null}
-          {step === 2 ? ([5, 15, 30, 60] as const).map((minutes) => <Choice key={minutes} label={`${minutes} minutes`} selected={draft.dailyMinutes === minutes} disabled={busy} onPress={() => select('dailyMinutes', minutes)} />) : null}
+          {step === 2 ? ([5, 15, 30, 60] as const).map((minutes) => <Choice key={minutes} label={tx('{minutes} minutes', { minutes })} selected={draft.dailyMinutes === minutes} disabled={busy} onPress={() => select('dailyMinutes', minutes)} />) : null}
           {step === 3 ? ([['gentle', 'Easy does it', 'A gentle nudge with small, simple tasks.'], ['balanced', 'A steady breeze', 'A comfortable mix of easy wins and a little challenge.'], ['challenging', 'Ready for a challenge', 'A bit more effort, within the time you have.']] as const).map(([value, label, detail]) =>
             <Choice key={value} label={label} detail={detail} selected={draft.pace === value} disabled={busy} onPress={() => select('pace', value)} />) : null}
           {step === 4 ? ([['indoors', 'Mostly indoors'], ['outdoors', 'Mostly outdoors'], ['either', 'A bit of both']] as const).map(([value, label]) =>
@@ -167,7 +171,7 @@ export function PreferenceQuestionnaire({ user }: { user: User }) {
           ? <Btn label={editing ? 'Save preferences' : 'Find my quests'} disabled={!completeDraft(draft)} busy={busy} onPress={save} />
           : <Btn label="Continue" disabled={!ready || busy} onPress={() => move(1)} />}</View>
       </Row>
-      <P dim center>Only these activity preferences are shared with Gemini for quest suggestions. Your face photo stays on your device.</P>
+      <P dim center>Only these activity preferences are shared with Gemini for quest suggestions. Your face photo is never sent to AI.</P>
     </ScrollView>
   </Screen>;
 }
@@ -175,7 +179,8 @@ export function PreferenceQuestionnaire({ user }: { user: User }) {
 function Choice({ label, detail, selected, disabled, multiple, onPress }: {
   label: string; detail?: string; selected: boolean; disabled?: boolean; multiple?: boolean; onPress: () => void;
 }) {
-  return <Pressable accessibilityRole={multiple ? 'checkbox' : 'radio'} accessibilityLabel={detail ? `${label}. ${detail}` : label}
+  const tx = useT();
+  return <Pressable accessibilityRole={multiple ? 'checkbox' : 'radio'} accessibilityLabel={detail ? `${tx(label)}. ${tx(detail)}` : tx(label)}
     accessibilityState={{ checked: selected, disabled: Boolean(disabled) }} disabled={disabled} onPress={onPress}
     style={({ pressed }) => [s.choice, selected && s.chosen, disabled && !selected && s.disabled, pressed && !disabled && { opacity: 0.76 }]}>
     <View style={[s.indicator, multiple ? { borderRadius: 5 } : { borderRadius: 20 }, selected && s.indicatorChosen]}><View style={[s.mark, !selected && { opacity: 0 }]} /></View>

@@ -1,10 +1,15 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 import { useState } from 'react';
 import { dayKeyInTz } from '@last-voyage/game';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Btn, C, F, H, P, Panel, Row } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
+import { useT } from '@/features/language/i18n';
+import { formatLogText } from '@/features/language/logText';
+import { useLanguage } from '@/state/language';
 import type { ShipDeck, ShipMember, ShipMetrics } from '@/lib/shipTypes';
 import { cleanText } from '@/ui/text';
 
@@ -16,8 +21,11 @@ const METRICS: { key: keyof ShipMetrics; label: string }[] = [
 ];
 
 export function MemberRecord({ member, month, onClose }: { member: ShipMember; month: ShipDeck['month']; onClose: () => void }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const [period, setPeriod] = useState<'monthly' | 'overall'>('monthly');
   const stats = member[period];
+  const monthLabel = new Date(`${month.key}-15T12:00:00Z`).toLocaleDateString(language, { month: 'long', year: 'numeric', timeZone: month.timeZone });
   const history = period === 'monthly' ? member.history.filter((entry) => dayKeyInTz(new Date(entry.at), month.timeZone).slice(0, 7) === month.key) : member.history;
   return <Modal transparent visible animationType="slide" onRequestClose={onClose}>
     <View style={s.scrim}>
@@ -25,7 +33,7 @@ export function MemberRecord({ member, month, onClose }: { member: ShipMember; m
       <SafeAreaView edges={['bottom', 'left', 'right']} style={s.sheet}>
         <View style={s.handle} />
         <View style={s.sheetHead}>
-          <View style={s.identity}><PlayerAvatar userId={member.id} avatarId={member.avatarId} size={60} /><View style={{ flex: 1, gap: 3 }}><Text style={s.name}>{cleanText(member.name)}</Text><Text style={s.legend}>{member.legend.toLocaleString()} Honor · Crew contributor</Text></View></View>
+          <View style={s.identity}><PlayerAvatar userId={member.id} avatarId={member.avatarId} size={60} /><View style={{ flex: 1, gap: 3 }}><Text translatable={false} style={s.name}>{cleanText(member.name)}</Text><Text style={s.legend}>{tx('{legend} Honor · Crew contributor', { legend: member.legend.toLocaleString(language) })}</Text></View></View>
           <Btn small label="Close" color={C.indigo} onPress={onClose} />
         </View>
         <View style={s.period}>
@@ -33,10 +41,10 @@ export function MemberRecord({ member, month, onClose }: { member: ShipMember; m
           <Period label="All time" selected={period === 'overall'} onPress={() => setPeriod('overall')} />
         </View>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.record}>
-          <Text style={s.eyebrow}>{period === 'monthly' ? `${month.label} CONTRIBUTIONS` : 'THE WHOLE VOYAGE'}</Text>
+          <Text style={s.eyebrow}>{period === 'monthly' ? tx('{month} CONTRIBUTIONS', { month: monthLabel }) : 'THE WHOLE VOYAGE'}</Text>
           <View style={s.metrics}>
             {METRICS.map((metric) => <View key={metric.key} style={s.metric}>
-              <Text style={s.metricN}>{stats[metric.key].toLocaleString()}</Text>
+              <Text style={s.metricN}>{stats[metric.key].toLocaleString(language)}</Text>
               <Text style={s.metricLabel}>{metric.label}</Text>
             </View>)}
           </View>
@@ -44,8 +52,8 @@ export function MemberRecord({ member, month, onClose }: { member: ShipMember; m
           {member.damageNote ? <P dim>{member.damageNote}</P> : null}
           <H>Recent contribution log</H>
           {history.length ? history.map((entry) => <View key={entry.id} style={s.entry}>
-            <P>{entry.text}</P>
-            <Text style={s.entryDate}>{new Date(entry.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: month.timeZone })}</Text>
+            <P translatable={false}>{formatLogText(entry, tx, language)}</P>
+            <Text style={s.entryDate}>{new Date(entry.at).toLocaleDateString(language, { month: 'short', day: 'numeric', year: 'numeric', timeZone: month.timeZone })}</Text>
           </View>) : <Panel color={C.deep}><P>No recorded contributions in this period yet. Every little effort helps the crew.</P></Panel>}
           <Row><P dim>Showing recorded history for this crew.</P></Row>
         </ScrollView>

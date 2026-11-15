@@ -1,9 +1,10 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
 /**
  * Scroll Lab: debug screen for tuning short-form detection on a real device.
  * Functional-first, deliberately plain (Codex may restyle later with src/ui components).
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import ScrollSentinel, { type DiscoveryEntry } from 'scroll-sentinel';
 
 import { EMPTY_STREAK, dailyMoves, stepsToNextMove } from '@last-voyage/game';

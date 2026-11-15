@@ -23,8 +23,8 @@ beforeAll(async () => {
 }, 120_000);
 afterAll(async () => { await client?.close(); await mongod?.stop(); });
 // These tests use the Android rules (3 quests, quest-Move cap 6) unless a platform is given.
-const call = async (app: ReturnType<typeof createApp>, method: string, path: string, token?: string, body?: unknown, platform = 'android') => {
-  const response = await app.request(path, { method, headers: { 'content-type': 'application/json', 'x-lv-platform': platform, ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+const call = async (app: ReturnType<typeof createApp>, method: string, path: string, token?: string, body?: unknown, platform = 'android', language = 'en') => {
+  const response = await app.request(path, { method, headers: { 'content-type': 'application/json', 'X-App-Language': language, 'x-lv-platform': platform, ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
   return { status: response.status, json: await response.json() as any };
 };
 const login = async (app: ReturnType<typeof createApp>, name: string, tz = 'UTC') => (await call(app, 'POST', '/auth/dev', undefined, { name, tz })).json;
@@ -36,6 +36,31 @@ const setup = () => {
 const action = (app: ReturnType<typeof createApp>, token: string, questId: string, type: 'skip' | 'complete', requestId = randomUUID()) => call(app, 'POST', `/quests/${questId}/${type}`, token, { requestId });
 
 describe('voyage preferences and personalized quests', () => {
+  it('changes quest copy without replacing quests, resetting completion, or issuing new rewards', async () => {
+    let translations = 0;
+    const app = createApp({ c, jwtSecret: 'translated-quest-test', allowDevLogin: true, now: () => new Date('2026-11-15T12:00:00Z'),
+      env: { NODE_ENV: 'test', OPENAI_API_KEY: 'test-key', OPENAI_MODEL: 'test-model' },
+      fetchImpl: async (_url, init) => {
+        translations++;
+        const input = JSON.parse(String(init?.body));
+        expect(input.messages[0].content).toContain('OUTPUT LANGUAGE: French');
+        const quests = JSON.parse(input.messages[1].content) as { title: string; description: string }[];
+        return Response.json({ choices: [{ message: { content: JSON.stringify({ quests: quests.map((quest) => ({ title: `FR ${quest.title}`, description: `FR ${quest.description}` })) }) } }] });
+      },
+    });
+    const user = await login(app, 'Translated quests');
+    await call(app, 'PUT', '/me/preferences', user.token, prefs);
+    const original = (await call(app, 'GET', '/quests', user.token)).json;
+    const french = (await call(app, 'GET', '/quests', user.token, undefined, 'android', 'fr')).json;
+    expect(french.quests.map((quest: any) => quest.id)).toEqual(original.quests.map((quest: any) => quest.id));
+    expect(french.quests[0].title).toBe(`FR ${original.quests[0].title}`);
+    const completed = await call(app, 'POST', `/quests/${original.quests[0].id}/complete`, user.token, { requestId: randomUUID() }, 'android', 'fr');
+    expect(completed.json.board.quests[0]).toMatchObject({ id: original.quests[0].id, status: 'completed', title: french.quests[0].title });
+    const englishAgain = (await call(app, 'GET', '/quests', user.token)).json;
+    expect(englishAgain.quests[0]).toMatchObject({ id: original.quests[0].id, status: 'completed', title: original.quests[0].title });
+    expect(translations).toBe(1);
+  });
+
   it('gives iPhone/web players 2 extra quests and a higher quest-Move cap', async () => {
     const { app } = setup();
     const a = await login(app, 'Web sailor');

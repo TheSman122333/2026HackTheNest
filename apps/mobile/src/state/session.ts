@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { signInWithSsojet } from '@/features/auth/ssojet';
 import { api, devLogin, loadToken, setToken } from '@/lib/api';
 import type { Me } from '@/lib/types';
+import { useAvatarPhoto } from './avatarPhoto';
 
 type Session = {
   ready: boolean;
@@ -59,6 +60,7 @@ export const useSession = create<Session>((set, get) => ({
   },
 
   login: async (name) => {
+    useAvatarPhoto.getState().invalidate();
     const revision = ++identityRevision;
     await devLogin(name);
     const token = await loadToken();
@@ -68,6 +70,7 @@ export const useSession = create<Session>((set, get) => ({
   },
 
   ssoLogin: async () => {
+    useAvatarPhoto.getState().invalidate();
     const revision = ++identityRevision;
     const ok = await signInWithSsojet();
     if (!ok || revision !== identityRevision) return false;
@@ -79,6 +82,7 @@ export const useSession = create<Session>((set, get) => ({
   },
 
   logout: async () => {
+    useAvatarPhoto.getState().invalidate();
     const revision = ++identityRevision;
     await setToken(null);
     if (revision === identityRevision) set({ token: null, me: null });

@@ -10,8 +10,10 @@ import { Btn, C, P, Panel, Screen } from '@/components/kit';
 import { completeSsojet } from '@/features/auth/ssojet';
 import { loadToken } from '@/lib/api';
 import { useSession } from '@/state/session';
+import { useT } from '@/features/language/i18n';
 
 export default function AuthCallback() {
+  const tx = useT();
   const params = useLocalSearchParams<{ code?: string; state?: string; error?: string }>();
   const [err, setErr] = useState<string | null>(null);
 
@@ -37,7 +39,7 @@ export default function AuthCallback() {
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
         {err ? (
           <Panel color={C.red}>
-            <P>Couldn&apos;t board: {err}</P>
+            <P>{tx('Couldn’t board: {error}', { error: err })}</P>
             <Btn small label="Back to sign in" color={C.cloud} onPress={() => router.replace('/welcome')} />
           </Panel>
         ) : (

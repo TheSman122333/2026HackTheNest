@@ -1,7 +1,8 @@
+import { LocalizedTextInput as TextInput } from '@/features/language/LocalizedControls';
 /** Find a crew: start one (get an invite code) or join a friend's. */
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Title } from '@/components/kit';
 import { Sprite } from '@/components/sprites';

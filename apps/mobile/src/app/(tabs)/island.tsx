@@ -1,7 +1,8 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
 /** The island: tap a highlighted hex to walk there (costs Moves). Reach the center to fight. */
 import { useFocusEffect, router } from 'expo-router';
 import { useCallback } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Bar, Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
 import { BOSS_SPRITE, ITEM_SPRITE, Sprite } from '@/components/sprites';
@@ -10,6 +11,7 @@ import { useNarrator } from '@/features/narrator/useNarrator';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
+import { useT } from '@/features/language/i18n';
 
 export const THEME_NAME: Record<string, string> = {
   tropical: 'Palmshade Isle',
@@ -19,6 +21,7 @@ export const THEME_NAME: Record<string, string> = {
 };
 
 export default function IslandScreen() {
+  const tx = useT();
   const { view, busy, error, feed, load, move } = useIsland();
   const meId = useSession((s) => s.me?.user.id ?? '');
 
@@ -50,14 +53,14 @@ export default function IslandScreen() {
     <Screen>
       <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
         <View style={{ flex: 1, gap: 5 }}>
-          <Text style={s.eyebrow}>EXPEDITION {String(view.island.index + 1).padStart(2, '0')}</Text>
+          <Text style={s.eyebrow}>{tx('EXPEDITION {number}', { number: String(view.island.index + 1).padStart(2, '0') })}</Text>
           <Title size={30}>{THEME_NAME[theme] ?? 'Unknown Isle'}</Title>
-          <Text style={s.subtitle}>{theme} waters · your crew&apos;s frontier</Text>
+          <Text style={s.subtitle}>{tx('{theme} waters · your crew’s frontier', { theme: tx(theme.charAt(0).toUpperCase() + theme.slice(1)) })}</Text>
         </View>
         <Stat label="MOVES" value={view.movesRemaining} icon={<Sprite name="boots" size={22} />} />
       </Row>
 
-      <Bar value={ex.hp} max={ex.maxHp} color={ko ? C.red : C.green} label={`Your vitality  ${ex.hp} / ${ex.maxHp}`} />
+      <Bar value={ex.hp} max={ex.maxHp} color={ko ? C.red : C.green} label={tx('Your vitality {hp} / {max}', { hp: ex.hp, max: ex.maxHp })} />
 
       {view.island.conquered ? (
         <Panel color={C.deep} style={{ borderColor: C.green }}>
@@ -65,7 +68,7 @@ export default function IslandScreen() {
             <Float amplitude={2} tilt={3}><Sprite name="t_flag" size={36} /></Float>
             <H color={C.green}>Island conquered</H>
           </Row>
-          <P dim>Your crew defeated {view.boss.name}. Your next horizon awaits at nightfall.</P>
+          <P dim>{tx('Your crew defeated {boss}. Your next horizon awaits at nightfall.', { boss: view.boss.name })}</P>
         </Panel>
       ) : view.canFight ? (
         <Panel color={C.deep} style={{ borderColor: C.red }}>
@@ -98,14 +101,14 @@ export default function IslandScreen() {
 
       {bag.length ? (
         <Panel>
-          <Row style={{ justifyContent: 'space-between' }}><H>Field inventory</H><Tag label={`${bag.length} ITEMS`} color={C.deep} /></Row>
+          <Row style={{ justifyContent: 'space-between' }}><H>Field inventory</H><Tag label={tx('{count} ITEMS', { count: bag.length })} color={C.deep} /></Row>
           <Row gap={12}>
             {bag.map(([item, n]) => {
               const sp = ITEM_SPRITE[item];
               return (
                 <Row key={item} gap={6} style={s.inventoryItem}>
                   <Sprite name={sp ?? 'chest'} size={28} />
-                  <Text style={s.itemLabel}>{item} <Text style={{ color: C.dimDark }}>×{n}</Text></Text>
+                  <Text style={s.itemLabel}>{tx(item.charAt(0).toUpperCase() + item.slice(1))} <Text style={{ color: C.dimDark }}>×{n}</Text></Text>
                 </Row>
               );
             })}

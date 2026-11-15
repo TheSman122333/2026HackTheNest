@@ -1,7 +1,8 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
 /** Home: the crew's ship. Today's Moves at a glance, crew roster, stores, and demo controls. */
 import { useFocusEffect, router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { AppState, StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Stat, Tag, Title } from '@/components/kit';
 import { ITEM_SPRITE, Sprite } from '@/components/sprites';
@@ -13,8 +14,10 @@ import type { CrewRoster } from '@/lib/types';
 import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
 import { ShipScene } from '@/ui/ShipScene';
+import { useT } from '@/features/language/i18n';
 
 export default function Ship() {
+  const tx = useT();
   const me = useSession((s) => s.me);
   const refresh = useSession((s) => s.refresh);
   const advanceNight = useIsland((s) => s.advanceNight);
@@ -57,7 +60,7 @@ export default function Ship() {
   return (
     <Screen>
       <P dim>ABOARD YOUR SHIP</P>
-      <Title>{me.crew.name}</Title>
+      <Title translatable={false}>{me.crew.name}</Title>
 
       <ShipScene sailing={sailing} personal={!crewSailing} onBoard={() => router.push('/deck')} />
       <P dim>Walk, finish quests, and live a little. Every sailor helps fill these sails.</P>
@@ -75,10 +78,10 @@ export default function Ship() {
 
       <Panel>
         <H>Today&apos;s Moves</H>
-        <P dim>{m.base} free + {m.fromSteps} steps + {m.fromActivities} quests</P>
+        <P dim>{tx('{base} free + {steps} steps + {activities} quests', { base: m.base, steps: m.fromSteps, activities: m.fromActivities })}</P>
         <Row>
-          {TRACKING ? <Tag label={`×${m.multiplier} STREAK`} color={C.gold} /> : null}
-          <P>{m.total} earned · {m.spent} spent</P>
+          {TRACKING ? <Tag label={tx('×{multiplier} STREAK', { multiplier: m.multiplier })} color={C.gold} /> : null}
+          <P>{tx('{earned} earned · {spent} spent', { earned: m.total, spent: m.spent })}</P>
         </Row>
         <Row>
           <Btn small label="Explore island" icon={<Sprite name="map" size={22} />} onPress={() => router.navigate('/island')} />
@@ -95,7 +98,7 @@ export default function Ship() {
               <Row key={k} gap={4}>
                 {sp ? <Sprite name={sp} size={28} /> : null}
                 <P>
-                  {k} {v}
+                  {tx(k.charAt(0).toUpperCase() + k.slice(1))} {v}
                 </P>
               </Row>
             );
@@ -112,17 +115,17 @@ export default function Ship() {
               <View style={[s.avatar, mm.id === me.user.id && { borderColor: C.orange }]}>
                 <PlayerAvatar userId={mm.id} avatarId={mm.avatarId} size={44} />
               </View>
-              <View style={{ flex: 1 }}><P>{mm.name}</P>{mm.title ? <P dim>{mm.title}</P> : null}</View>
+              <View style={{ flex: 1 }}><P translatable={false}>{mm.name}</P>{mm.title ? <P translatable={false} dim>{mm.title}</P> : null}</View>
             </Row>
             <View style={{ alignItems: 'flex-end' }}>
-              <P dim>{mm.legend} honor</P>
-              <P dim>{mm.calmDays} calm days</P>
+              <P dim>{tx('{count} Honor', { count: mm.legend })}</P>
+              <P dim>{tx('{count} calm days', { count: mm.calmDays })}</P>
             </View>
           </Row>
         ))}
         <View style={s.invite}>
           <P>Invite friends with code</P>
-          <Text style={s.code}>{me.crew.inviteCode}</Text>
+          <Text translatable={false} style={s.code}>{me.crew.inviteCode}</Text>
           <Btn label="Invite with QR code" color={C.sky} onPress={() => router.push('/invite')} />
         </View>
       </Panel>

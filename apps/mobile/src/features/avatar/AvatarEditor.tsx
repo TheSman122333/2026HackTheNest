@@ -1,6 +1,8 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Title } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
@@ -12,7 +14,7 @@ import { useSession } from '@/state/session';
 
 import { choosePhoto, isSupported, takePhoto } from '../../../modules/avatar-camera';
 import { AVATARS, type AvatarId } from './catalog';
-import { releasePhoto, releaseTemporaryPhoto } from './photoStorage';
+import { encodePhoto, releasePhoto, releaseTemporaryPhoto } from './photoStorage';
 
 const PREVIEW_SIZE = 198;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -24,7 +26,7 @@ function fit(photo: FacePhoto): FacePhoto {
 }
 const samePhoto = (a: FacePhoto | null, b: FacePhoto | null) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Only avatarId is sent to the game API. Camera bytes and face fitting remain local. */
+/** Saving syncs the outfit and portrait to the account; photos never go to AI. */
 export function AvatarEditor({ user, onboarding = false }: { user: User; onboarding?: boolean }) {
   const fallback = avatarFor(user.id) as AvatarId;
   const [selected, setSelected] = useState<AvatarId>(() => AVATARS.find((avatar) => avatar.id === user.avatarId)?.id ?? fallback);
@@ -107,8 +109,10 @@ export function AvatarEditor({ user, onboarding = false }: { user: User; onboard
         wroteLocal = true;
       }
       if (useSession.getState().me?.user.id !== user.id) throw new Error('Your signed-in pirate changed. Open the editor again.');
-      // The previous local file is retained until the API choice also succeeds.
-      await api<{ avatarId: AvatarId }>('PUT', '/me/avatar', { avatarId: selected });
+      const photo = prepared ? { base64: await encodePhoto(prepared), width: prepared.width, height: prepared.height,
+        zoom: prepared.zoom, offsetX: prepared.offsetX, offsetY: prepared.offsetY } : null;
+      if (useSession.getState().me?.user.id !== user.id) throw new Error('Your signed-in pirate changed. Open the editor again.');
+      await api<{ avatarId: AvatarId }>('PUT', '/me/avatar', { avatarId: selected, ...(photo || changed ? { photo } : {}) });
       const me = useSession.getState().me;
       if (me?.user.id === user.id) useSession.getState().setMe({ user: { ...me.user, avatarId: selected } });
       await releasePhoto(user.id, previous, prepared?.uri);
@@ -146,7 +150,7 @@ export function AvatarEditor({ user, onboarding = false }: { user: User; onboard
     <Panel color={C.deep} style={{ alignItems: 'center', paddingVertical: 24 }}>
       {loading ? <ActivityIndicator color={C.gold} size="large" /> : <PlayerAvatar userId={user.id} avatarId={selected} photo={photo} size={PREVIEW_SIZE} label="Your pirate preview" />}
       <H>{AVATARS.find((avatar) => avatar.id === selected)?.label ?? 'Your pirate'}</H>
-      <P dim center>{photo ? 'Your photo stays on this device.' : 'The drawn face is used until you add a photo.'}</P>
+      <P dim center>{photo ? 'Save to sync this portrait with your account.' : 'The drawn face is used until you add a photo.'}</P>
     </Panel>
 
     {error ? <Panel color={C.deep} style={{ borderColor: C.red }}><P color={C.red}>{error}</P></Panel> : null}
@@ -165,7 +169,7 @@ export function AvatarEditor({ user, onboarding = false }: { user: User; onboard
 
     <Panel>
       <H>Make it your face</H>
-      <P dim>Take a centered portrait or choose a photo. Photos are never uploaded to the game server or sent to AI.</P>
+      <P dim>Take a centered portrait or choose a photo. Saving stores it with your account on our server. Photos are never sent to AI.</P>
       <Row>
         <Btn small label={photo ? 'Retake photo' : 'Take a photo'} onPress={() => capture('camera')} disabled={!supported || off} busy={picking} />
         <Btn small label="Choose photo" color={C.sky} onPress={() => capture('library')} disabled={!supported || off} />
@@ -188,7 +192,7 @@ export function AvatarEditor({ user, onboarding = false }: { user: User; onboard
       </> : null}
     </Panel>
     <Btn label={onboarding ? 'Continue with this pirate' : 'Save pirate'} onPress={save} busy={saving} disabled={loading || picking} />
-    <P dim center>Avatar choice follows your account. The face photo is private to this device.</P>
+    <P dim center>Your avatar and photo follow your account. Remove the photo and save to delete the server copy.</P>
   </Screen>;
 }
 

@@ -4,6 +4,7 @@
  */
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { getRequestLanguage } from '@/features/language/requestLanguage';
 
 // Web build: talk to the API on the same host that served the page (works over LAN/hotspot).
 const BASE =
@@ -41,11 +42,12 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown, options?: { signal?: AbortSignal }): Promise<T> {
+  const language = getRequestLanguage();
   const t = await loadToken();
   const res = await fetch(`${BASE}${path}`, {
     method,
     // Platform decides the quest rules: Android tracks steps/scrolling, iPhone/web get extra quests.
-    headers: { 'content-type': 'application/json', 'x-lv-platform': Platform.OS === 'android' ? 'android' : Platform.OS === 'ios' ? 'ios' : 'web', ...(t ? { authorization: `Bearer ${t}` } : {}) },
+    headers: { 'content-type': 'application/json', 'X-App-Language': language, 'x-lv-platform': Platform.OS === 'android' ? 'android' : Platform.OS === 'ios' ? 'ios' : 'web', ...(t ? { authorization: `Bearer ${t}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: options?.signal,
   });

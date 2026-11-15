@@ -1,6 +1,8 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 /** A small "?" that opens a short explanation. Tap anywhere to close. */
 import { useState, type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
 
 import { C, F, H, P } from '@/components/kit';
 

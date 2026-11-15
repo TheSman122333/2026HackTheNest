@@ -14,7 +14,8 @@ import { SignJWT, jwtVerify } from 'jose';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 
-import { AVATAR_IDS, type Collections, type UserDoc } from './db';
+import type { Collections, UserDoc } from './db';
+import { registerAvatar } from './avatar';
 import { awardActivity, reconcileActivityReceipts } from './activities';
 import { createIsland, registerIsland, resumeVoyage } from './island';
 import { ledger, spendMoves, todayMoves } from './moves';
@@ -22,6 +23,7 @@ import { registerLegend } from './legend';
 import { registerTitles } from './titles';
 import { registerMusic } from './music';
 import { registerOpening } from './opening';
+import { registerLocalizationRoutes } from './localization';
 import { registerQuests } from './quests';
 import { registerSoundtrack } from './soundtrack';
 import { registerShip, shipWindMultiplier } from './ship';
@@ -198,7 +200,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     const token = h.startsWith('Bearer ') ? h.slice(7) : '';
     try {
       const { payload } = await jwtVerify(token, key);
-      const user = await c.users.findOne({ _id: new ObjectId(payload.sub) });
+      const user = await c.users.findOne({ _id: new ObjectId(payload.sub) }, { projection: { profilePhoto: 0 } });
       if (!user) throw new Error('no user');
       const platform = ctx.req.header('x-lv-platform');
       if ((platform === 'android' || platform === 'ios' || platform === 'web') && user.platform !== platform) {
@@ -238,13 +240,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     return ctx.json({ limits });
   });
 
-  app.put('/me/avatar', async (ctx) => {
-    const user = ctx.get('user');
-    // This route accepts an outfit ID only; images and local photo paths are never uploaded.
-    const { avatarId } = await body(ctx, z.object({ avatarId: z.enum(AVATAR_IDS) }).strict());
-    await c.users.updateOne({ _id: user._id }, { $set: { avatarId } });
-    return ctx.json({ avatarId });
-  });
+  registerAvatar(app, c);
 
   // ---------- crews ----------
   const publicCrew = (cr: { _id: ObjectId; name: string; inviteCode: string; memberIds: ObjectId[]; stores: Record<string, number> }) => ({
@@ -415,6 +411,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   registerIsland(app, c, { env, fetchImpl });
   registerMusic(app, c, { env, fetchImpl });
   registerOpening(app, c, { env, fetchImpl });
+  registerLocalizationRoutes(app, env, fetchImpl);
   registerShip(app, c);
   registerLegend(app, c, env);
   registerTitles(app, c);

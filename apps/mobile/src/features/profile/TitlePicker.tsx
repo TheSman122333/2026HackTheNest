@@ -3,11 +3,15 @@
  * at Honor milestones, and the top tier lets you write your own (checked on the server).
  */
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable, LocalizedTextInput as TextInput } from '@/features/language/LocalizedControls';
 
 import { Btn, C, F, H, P } from '@/components/kit';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
+import { useT } from '@/features/language/i18n';
+import { useLanguage } from '@/state/language';
 
 type Titles = {
   current: string | null;
@@ -29,6 +33,8 @@ function TitleOption({ label, note, active, locked, loading, disabled, onPress }
 }
 
 export function TitlePicker({ role }: { role: string }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const me = useSession((s) => s.me);
   const refresh = useSession((s) => s.refresh);
   const [open, setOpen] = useState(false);
@@ -37,7 +43,7 @@ export function TitlePicker({ role }: { role: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   if (!me) return null;
-  const shown = me.user.title ?? role;
+  const displayTitle = me.user.title ?? tx(role);
 
   const show = async () => {
     setOpen(true);
@@ -61,25 +67,25 @@ export function TitlePicker({ role }: { role: string }) {
 
   return (
     <>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Your title is ${shown}. Change title`} onPress={show} hitSlop={6} style={s.trigger}>
-        <P dim>{shown} of the {me.crew?.name} ▾</P>
+      <Pressable accessibilityRole="button" accessibilityLabel={tx('Your title is {title}. Change title', { title: displayTitle })} onPress={show} hitSlop={6} style={s.trigger}>
+        <P dim translatable={false}>{tx('{title} of the {crew}', { title: displayTitle, crew: me.crew?.name ?? '' })} ▾</P>
       </Pressable>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={s.scrim} onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Close titles">
           <Pressable style={s.card} onPress={() => {}}>
             <H color={C.ink}>Choose your title</H>
-            <P color={C.ink}>Shown as “title of the {me.crew?.name}”. Earn Honor to unlock more.</P>
+            <P color={C.ink} translatable={false}>{tx('Shown as “title of the {crew}”. Earn Honor to unlock more.', { crew: me.crew?.name ?? '' })}</P>
             {!titles && !error ? <ActivityIndicator color={C.navy} /> : null}
             {titles ? (
               <ScrollView style={{ maxHeight: 380 }} contentContainerStyle={{ gap: 8 }}>
                 <TitleOption label={role} note="Your skill role (default)" active={!me.user.title} loading={busy === 'role'} disabled={!!busy} onPress={() => choose({ title: null }, 'role')} />
                 {titles.ladder.map((t) => (
-                  <TitleOption key={t.title} loading={busy === t.title} disabled={!!busy} label={t.title} note={t.unlocked ? `Unlocked at ${t.honor} Honor` : `Unlocks at ${t.honor} Honor`}
+                  <TitleOption key={t.title} loading={busy === t.title} disabled={!!busy} label={t.title} note={tx(t.unlocked ? 'Unlocked at {count} Honor' : 'Unlocks at {count} Honor', { count: t.honor.toLocaleString(language) })}
                     locked={!t.unlocked} active={me.user.title === t.title} onPress={() => choose({ title: t.title }, t.title)} />
                 ))}
                 <View style={[s.option, { flexDirection: 'column', alignItems: 'stretch', gap: 8 }, !titles.custom.unlocked && { opacity: 0.5 }]}>
                   <Text style={s.optionTitle}>{titles.custom.unlocked ? '' : '🔒 '}Your own title</Text>
-                  <Text style={s.optionNote}>{titles.custom.unlocked ? 'Up to 24 letters. Keep it friendly and original.' : `Unlocks at ${titles.custom.honor} Honor`}</Text>
+                  <Text style={s.optionNote}>{titles.custom.unlocked ? 'Up to 24 letters. Keep it friendly and original.' : tx('Unlocks at {count} Honor', { count: titles.custom.honor.toLocaleString(language) })}</Text>
                   {titles.custom.unlocked ? (
                     <>
                       <TextInput value={custom} onChangeText={setCustom} maxLength={24} placeholder="e.g. Tide Whisperer" placeholderTextColor={C.dimDark}

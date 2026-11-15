@@ -1,3 +1,5 @@
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable, LocalizedTextInput as TextInput } from '@/features/language/LocalizedControls';
 /**
  * Narrator panel: plays spoken replies, hold-to-talk (foreground only, max 15 s, recording is
  * deleted right after upload), a typed fallback, and the Game Master world-event button.
@@ -12,7 +14,7 @@ import {
 } from 'expo-audio';
 import { File } from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, P, Panel, Row, Tag } from '@/components/kit';
 import { Sprite } from '@/components/sprites';
@@ -54,6 +56,7 @@ export function NarratorPanel() {
       .catch((e: unknown) => console.warn('[audio] narrator playback failed', e));
     return () => {
       alive = false;
+      player.pause();
     };
   }, [audioPath, audioNonce, player]);
 
@@ -126,7 +129,7 @@ export function NarratorPanel() {
 
       {lines.slice(0, 4).map((l, i) => (
         <View key={l.id} style={[s.bubble, l.who === 'you' ? s.you : l.who === 'world' ? s.world : s.narr, i > 0 && { opacity: 0.75 }]}>
-          <Text style={s.bubbleText}>
+          <Text translatable={false} style={s.bubbleText}>
             {cleanText(l.text)}
           </Text>
           {l.sources?.length ? (

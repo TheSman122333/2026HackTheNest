@@ -8,6 +8,7 @@ import { useDeviceSync } from '@/features/sync/deviceSync';
 import { usePendingInvite } from '@/features/invites/pending';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
+import { useT } from '@/features/language/i18n';
 
 const icon = (name: SpriteName) =>
   function TabIcon({ focused }: { focused: boolean }) {
@@ -20,6 +21,7 @@ const icon = (name: SpriteName) =>
   };
 
 export default function TabsLayout() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const { token, me } = useSession();
   const invite = usePendingInvite((state) => state.code);
@@ -40,11 +42,11 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: F.bodyBold, fontSize: 10, letterSpacing: 0.5, marginTop: 3 },
       }}
     >
-      <Tabs.Screen name="ship" options={{ title: 'Ship', tabBarIcon: icon('t_anchor') }} />
-      <Tabs.Screen name="quests" options={{ title: 'Quests', tabBarIcon: icon('t_star') }} />
-      <Tabs.Screen name="island" options={{ title: 'Island', tabBarIcon: icon('t_flag') }} />
-      <Tabs.Screen name="log" options={{ title: 'Log', tabBarIcon: icon('t_book') }} />
-      <Tabs.Screen name="me" options={{ title: 'Me', tabBarIcon: icon('t_heart') }} />
+      <Tabs.Screen name="ship" options={{ title: t('Ship'), tabBarIcon: icon('t_anchor') }} />
+      <Tabs.Screen name="quests" options={{ title: t('Quests'), tabBarIcon: icon('t_star') }} />
+      <Tabs.Screen name="island" options={{ title: t('Island'), tabBarIcon: icon('t_flag') }} />
+      <Tabs.Screen name="log" options={{ title: t('Log'), tabBarIcon: icon('t_book') }} />
+      <Tabs.Screen name="me" options={{ title: t('Me'), tabBarIcon: icon('t_heart') }} />
     </Tabs>
   );
 }

@@ -4,16 +4,21 @@
  */
 import { REWARDS, stepsToNextMove } from '@last-voyage/game';
 import { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { LocalizedTextInput as TextInput } from '@/features/language/LocalizedControls';
 
 import { Bar, Btn, C, F, H, P, Panel, Row } from '@/components/kit';
 import { Sprite } from '@/components/sprites';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
+import { useT } from '@/features/language/i18n';
+import { useLanguage } from '@/state/language';
 
 const CAP = REWARDS.movesFromSelfReportedStepsPerDay;
 
 export function StepsCheckIn() {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const today = useSession((s) => s.me?.today);
   const refresh = useSession((s) => s.refresh);
   const [draft, setDraft] = useState('');
@@ -40,9 +45,9 @@ export function StepsCheckIn() {
 
   return (
     <Panel>
-      <Row><Sprite name="fx_footsteps" size={28} /><H>Steps: {today.steps.toLocaleString()}</H></Row>
-      <Bar value={today.moves.fromSteps} max={CAP} color={C.sea} label={`${today.moves.fromSteps}/${CAP} step Moves`} />
-      <P dim>Open your phone&apos;s Health app and enter today&apos;s step count. Every 1,000 steps is a Move, up to {CAP} a day.{next === null ? ' Maxed for today!' : ''}</P>
+      <Row><Sprite name="fx_footsteps" size={28} /><H>{tx('Steps: {count}', { count: today.steps.toLocaleString(language) })}</H></Row>
+      <Bar value={today.moves.fromSteps} max={CAP} color={C.sea} label={tx('{count}/{max} step Moves', { count: today.moves.fromSteps, max: CAP })} />
+      <P dim>{tx('Open your phone’s Health app and enter today’s step count. Every 1,000 steps is a Move, up to {cap} a day.', { cap: CAP })}{next === null ? tx(' Maxed for today!') : ''}</P>
       <Row style={{ flexWrap: 'nowrap' }}>
         <TextInput
           value={draft}

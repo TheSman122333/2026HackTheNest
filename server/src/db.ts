@@ -19,8 +19,10 @@ export type AvatarId = (typeof AVATAR_IDS)[number];
 export type UserDoc = {
   _id: ObjectId;
   name: string;
-  /** An approved outfit only. Face photos stay on the player's device. */
+  /** Approved illustrated outfit. Portrait bytes are private and excluded from publicUser. */
   avatarId?: AvatarId;
+  profilePhoto?: { bytes: Binary; width: number; height: number; zoom: number; offsetX: number; offsetY: number; updatedAt: Date };
+  profilePhotoUpdatedAt?: Date;
   /** Last platform the app reported. Android tracks steps + scrolling; iPhone/web get extra quests instead. */
   platform?: 'android' | 'ios' | 'web';
   /** Chosen title (an unlocked rung or a sanitized custom title). Unset = skill role. */

@@ -11,8 +11,12 @@ import { useSentinelPermissions } from '@/features/scroll/useScrollSentinel';
 import { useTodaySteps } from '@/features/steps/steps';
 import { syncToday } from '@/features/sync/deviceSync';
 import { useSession } from '@/state/session';
+import { useLanguage } from '@/state/language';
+import { useT } from '@/features/language/i18n';
 
 export default function Quests() {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const me = useSession((s) => s.me);
   const steps = useTodaySteps();
   const perms = useSentinelPermissions();
@@ -32,15 +36,15 @@ export default function Quests() {
         <Stat label="SUPPLIES TODAY" value={`${suppliesToday}/${REWARDS.suppliesPerDay}`} color={C.cloud} icon={<Sprite name="coin" size={22} />} />
       </Row>
 
-      <PersonalizedQuests key={me.user.id} userId={me.user.id} />
+      <PersonalizedQuests key={`${me.user.id}:${language}`} userId={me.user.id} />
 
       {TRACKING ? null : <StepsCheckIn />}
 
       {TRACKING ? (<>
       <Panel>
-        <Row><Sprite name="fx_footsteps" size={28} /><H>Steps: {t.steps.toLocaleString()}</H></Row>
-        <Bar value={t.moves.fromSteps} max={REWARDS.movesFromStepsPerDay} color={C.sea} label={`${t.moves.fromSteps}/${REWARDS.movesFromStepsPerDay} step Moves`} />
-        <P dim>{next === null ? 'Step Moves maxed for today!' : `${next} more steps to the next Move`}</P>
+        <Row><Sprite name="fx_footsteps" size={28} /><H>{tx('Steps: {count}', { count: t.steps.toLocaleString(language) })}</H></Row>
+        <Bar value={t.moves.fromSteps} max={REWARDS.movesFromStepsPerDay} color={C.sea} label={tx('{count}/{max} step Moves', { count: t.moves.fromSteps, max: REWARDS.movesFromStepsPerDay })} />
+        <P dim>{next === null ? 'Step Moves maxed for today!' : tx('{count} more steps to the next Move', { count: next })}</P>
         {steps.supported && !steps.granted ? <Btn small label="Allow step access" onPress={steps.request} /> : null}
         <Btn small label="Sync now" color={C.sky} onPress={() => syncToday().catch(() => {})} />
       </Panel>
@@ -53,8 +57,8 @@ export default function Quests() {
             <Btn small label="Turn tracker on" onPress={() => router.push('/dev/scroll-lab')} />
           </Panel>
         ) : null}
-        <Bar value={t.screen.swipes} max={limits.swipes} color={t.screen.swipes > limits.swipes ? C.red : C.jungle} label={`Swipes ${t.screen.swipes}/${limits.swipes}`} />
-        <Bar value={t.screen.minutes} max={limits.minutes} color={t.screen.minutes > limits.minutes ? C.red : C.jungle} label={`Minutes ${t.screen.minutes}/${limits.minutes}`} />
+        <Bar value={t.screen.swipes} max={limits.swipes} color={t.screen.swipes > limits.swipes ? C.red : C.jungle} label={tx('Swipes {count}/{max}', { count: t.screen.swipes, max: limits.swipes })} />
+        <Bar value={t.screen.minutes} max={limits.minutes} color={t.screen.minutes > limits.minutes ? C.red : C.jungle} label={tx('Minutes {count}/{max}', { count: t.screen.minutes, max: limits.minutes })} />
         <P dim>
           {!t.screen.tracked
             ? 'Tracking is off. Turn it on in Me → Scroll Lab to earn streak bonuses.'

@@ -11,7 +11,7 @@ const ownedPrefix = (userId: string) => `${directory(userId).uri.replace(/\/+$/,
 export function validPhoto(value: unknown): value is FacePhoto {
   if (!value || typeof value !== 'object') return false;
   const p = value as Partial<FacePhoto>;
-  return typeof p.uri === 'string' && p.uri.startsWith('file://') &&
+  return typeof p.uri === 'string' && (p.uri.startsWith('file://') || /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.uri)) &&
     typeof p.width === 'number' && p.width > 0 && Number.isFinite(p.width) &&
     typeof p.height === 'number' && p.height > 0 && Number.isFinite(p.height) &&
     typeof p.zoom === 'number' && p.zoom >= 1 && p.zoom <= 4 &&
@@ -37,7 +37,8 @@ export async function writePhoto(userId: string, photo: FacePhoto | null): Promi
   let copied: File | null = null;
   if (!photo.uri.startsWith(ownedPrefix(userId))) {
     copied = new File(folder, `face-${uuid()}.jpg`);
-    await new File(photo.uri).copy(copied);
+    if (photo.uri.startsWith('data:image/jpeg;base64,')) copied.write(photo.uri.split(',')[1], { encoding: 'base64' });
+    else await new File(photo.uri).copy(copied);
     owned = { ...photo, uri: copied.uri };
   }
   try {
@@ -64,4 +65,8 @@ export async function releaseTemporaryPhoto(photo: Pick<FacePhoto, 'uri'> | null
     if (!file.uri.startsWith(prefix) || !/^photo-[0-9a-f-]+\.jpg$/i.test(file.uri.slice(prefix.length))) return;
     if (file.exists) file.delete();
   } catch { /* A missing or already reclaimed draft requires no further work. */ }
+}
+
+export async function encodePhoto(photo: FacePhoto) {
+  return photo.uri.startsWith('data:image/jpeg;base64,') ? photo.uri.split(',')[1] : new File(photo.uri).base64();
 }

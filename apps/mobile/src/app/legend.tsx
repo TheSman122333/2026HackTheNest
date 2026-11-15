@@ -1,12 +1,16 @@
-/** Honor leaderboard: your crew, all pirates, and all ships; the one Lodestar and the demo "End the Year". */
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable, LocalizedTextInput as TextInput } from '@/features/language/LocalizedControls';
+/** Honor leaderboard: pirates and ships, plus the password-protected, one-time Lodestar ceremony. */
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Btn, C, F, P, Panel, Row, Screen, Tag, Title } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { Sprite } from '@/components/sprites';
 import { HONOR_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
+import { useT } from '@/features/language/i18n';
+import { useLanguage } from '@/state/language';
 import { api } from '@/lib/api';
 import type { LegendBoard, LegendRow, ShipRow } from '@/lib/types';
 
@@ -18,6 +22,8 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function HonorScreen() {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   const [board, setBoard] = useState<LegendBoard | null>(null);
   const [tab, setTab] = useState<Tab>('ships');
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +60,7 @@ export default function HonorScreen() {
       <View style={{ gap: 4 }}>
         <Text style={s.eyebrow}>THE RACE FOR THE LODESTAR</Text>
         <Title>Honor</Title>
-        <P dim>{HONOR_SUMMARY} A ship&apos;s Honor is its whole crew&apos;s. Only one ship in all the Tidewake ever claims the Lodestar.</P>
+        <P dim>{tx(HONOR_SUMMARY)} {tx("A ship's Honor is its whole crew's. Only one ship in all the Tidewake ever claims the Lodestar.")}</P>
       </View>
 
       {me ? (
@@ -81,15 +87,15 @@ export default function HonorScreen() {
           {tab === 'ships'
             ? (board.ships.length ? board.ships.map((sh) => <ShipRowView key={sh.id} row={sh} />) : <P dim>No ships have set sail yet.</P>)
             : (tab === 'crew' ? board.crew : board.global).map((r) => <PirateRowView key={r.id} row={r} showCrew={tab === 'global'} />)}
-          {tab === 'global' && me && me.globalRank > board.global.length ? <P dim>You are #{me.globalRank} of {me.players}. Keep living, keep climbing.</P> : null}
-          {tab === 'ships' && me?.shipRank && me.shipRank > board.ships.length ? <P dim>Your ship is #{me.shipRank} of {me.shipCount}.</P> : null}
+          {tab === 'global' && me && me.globalRank > board.global.length ? <P dim>{tx('You are #{rank} of {players}. Keep living, keep climbing.', { rank: me.globalRank.toLocaleString(language), players: me.players.toLocaleString(language) })}</P> : null}
+          {tab === 'ships' && me?.shipRank && me.shipRank > board.ships.length ? <P dim>{tx('Your ship is #{rank} of {ships}.', { rank: me.shipRank.toLocaleString(language), ships: me.shipCount.toLocaleString(language) })}</P> : null}
         </Panel>
       ) : null}
 
       {holder ? (
         <Panel color={C.navy}>
-          <Text style={s.eyebrow}>THE LODESTAR · CLAIMED {board!.lodestar!.year}</Text>
-          <P>👑 {holder.isYours ? 'Your ship' : `The ${holder.crewName}`} claimed the one Lodestar with {holder.honor} Honor.</P>
+          <Text style={s.eyebrow}>{tx('THE LODESTAR · CLAIMED {year}', { year: board!.lodestar!.year.toLocaleString(language, { useGrouping: false }) })}</Text>
+          <P translatable={false}>👑 {tx(holder.isYours ? 'Your ship claimed the one Lodestar with {honor} Honor.' : 'The {crew} claimed the one Lodestar with {honor} Honor.', { crew: holder.crewName, honor: holder.honor.toLocaleString(language) })}</P>
           <Btn small label="Replay the ceremony" color={C.indigo} onPress={() => router.push('/lodestar')} />
         </Panel>
       ) : (
@@ -106,39 +112,45 @@ export default function HonorScreen() {
 }
 
 function RankCard({ label, rank, of, value }: { label: string; rank?: number | null; of?: number; value?: number }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   return (
     <View style={s.card}>
-      <Text style={s.cardN}>{value !== undefined ? value : rank ? `#${rank}` : '—'}</Text>
-      {of ? <Text style={s.cardOf}>of {of}</Text> : null}
+      <Text style={s.cardN}>{value !== undefined ? value.toLocaleString(language) : rank ? `#${rank.toLocaleString(language)}` : '—'}</Text>
+      {of ? <Text style={s.cardOf}>{tx('of {count}', { count: of.toLocaleString(language) })}</Text> : null}
       <Text style={s.cardL}>{label}</Text>
     </View>
   );
 }
 
 function ShipRowView({ row }: { row: ShipRow }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   return (
     <View style={[s.row, row.isYours && s.rowYou]}>
-      <Text style={[s.rank, row.rank <= 3 && { color: C.gold }]}>{row.rank}</Text>
+      <Text style={[s.rank, row.rank <= 3 && { color: C.gold }]}>{row.rank.toLocaleString(language)}</Text>
       <View style={s.shipBadge}><Sprite name="t_anchor" size={26} /></View>
       <View style={{ flex: 1 }}>
-        <Text style={s.name} numberOfLines={1}>{row.lodestar ? '👑 ' : ''}{row.name}{row.isYours ? ' (yours)' : ''}</Text>
-        <Text style={s.crew}>{row.sailors} {row.sailors === 1 ? 'sailor' : 'sailors'}</Text>
+        <Text translatable={false} style={s.name} numberOfLines={1}>{row.lodestar ? '👑 ' : ''}{row.name}{row.isYours ? tx(' (yours)') : ''}</Text>
+        <Text style={s.crew}>{tx(row.sailors === 1 ? '{count} sailor' : '{count} sailors', { count: row.sailors.toLocaleString(language) })}</Text>
       </View>
-      <Tag label={`${row.honor} HONOR`} color={row.isYours ? C.gold : C.indigo} />
+      <Tag label={tx('{count} HONOR', { count: row.honor.toLocaleString(language) })} color={row.isYours ? C.gold : C.indigo} />
     </View>
   );
 }
 
 function PirateRowView({ row, showCrew }: { row: LegendRow; showCrew: boolean }) {
+  const tx = useT();
+  const language = useLanguage((state) => state.language);
   return (
     <View style={[s.row, row.isYou && s.rowYou]}>
-      <Text style={[s.rank, row.rank <= 3 && { color: C.gold }]}>{row.rank}</Text>
+      <Text style={[s.rank, row.rank <= 3 && { color: C.gold }]}>{row.rank.toLocaleString(language)}</Text>
       <PlayerAvatar userId={row.id} avatarId={row.avatarId} size={40} />
       <View style={{ flex: 1 }}>
-        <Text style={s.name} numberOfLines={1}>{row.lodestar ? '👑 ' : ''}{row.name}{row.isYou ? ' (you)' : ''}</Text>
-        {showCrew && row.crewName ? <Text style={s.crew} numberOfLines={1}>{row.crewName}</Text> : null}
+        <Text translatable={false} style={s.name} numberOfLines={1}>{row.lodestar ? '👑 ' : ''}{row.name}{row.isYou ? tx(' (you)') : ''}</Text>
+        {showCrew && row.crewName ? <Text translatable={false} style={s.crew} numberOfLines={1}>{row.crewName}</Text> : null}
       </View>
-      <Tag label={`${row.legend} HONOR`} color={row.isYou ? C.gold : C.indigo} />
+      <Tag label={tx('{count} HONOR', { count: row.legend.toLocaleString(language) })} color={row.isYou ? C.gold : C.indigo} />
     </View>
   );
 }

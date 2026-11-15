@@ -8,8 +8,10 @@ import { inviteCode, usePendingInvite } from '@/features/invites/pending';
 import { api } from '@/lib/api';
 import type { Crew } from '@/lib/types';
 import { useSession } from '@/state/session';
+import { useT } from '@/features/language/i18n';
 
 export default function JoinScreen() {
+  const tx = useT();
   const params = useLocalSearchParams<{ code?: string | string[] }>();
   const raw = Array.isArray(params.code) ? params.code[0] : params.code;
   const incoming = inviteCode(raw);
@@ -90,7 +92,7 @@ export default function JoinScreen() {
 
   return <Screen>
     <Title>A place on the crew</Title>
-    <Panel><H>Invite code: {activeCode}</H><P>One ship. One island. A voyage you earn together.</P></Panel>
+    <Panel><H translatable={false}>{tx('Invite code: {code}', { code: activeCode })}</H><P>One ship. One island. A voyage you earn together.</P></Panel>
     {error ? <Panel color={C.deep}><P>{error}</P></Panel> : null}
     {rememberFailed ? <Btn label="Retry saving invitation" onPress={retryRemember} /> : null}
     {!token || !me ? <>
@@ -104,7 +106,7 @@ export default function JoinScreen() {
       <Btn label="Set my quest preferences" onPress={() => router.replace('/preferences')} disabled={rememberFailed} />
     </> : me.crew ? <>
       <H>{me.crew.inviteCode === activeCode ? 'You are already aboard' : 'You already have a crew'}</H>
-      <P>{me.crew.inviteCode === activeCode ? `You are sailing with ${me.crew.name}.` : `You are sailing with ${me.crew.name}. This invitation will not move you out of your current crew.`}</P>
+      <P translatable={false}>{tx(me.crew.inviteCode === activeCode ? 'You are sailing with {crew}.' : 'You are sailing with {crew}. This invitation will not move you out of your current crew.', { crew: me.crew.name })}</P>
       <Btn label="Return to my ship" onPress={leave} disabled={joining} />
     </> : <>
       <P>Ready to join your friend&apos;s crew? Confirm below to come aboard.</P>

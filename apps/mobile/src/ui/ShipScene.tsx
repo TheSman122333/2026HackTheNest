@@ -2,7 +2,9 @@ import { speedFor, type ShipSpeed } from '@last-voyage/game';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { LocalizedText as Text } from '@/features/language/LocalizedText';
+import { LocalizedPressable as Pressable } from '@/features/language/LocalizedControls';
 
 import { F } from '@/components/kit';
 import { useMotionEnabled } from '@/ui/motion';

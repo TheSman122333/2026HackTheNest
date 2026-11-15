@@ -198,7 +198,7 @@ describe('backend integrations', () => {
 
   it('uses Exa sources and applies only an allowlisted item to a revealed empty tile once', async () => {
     let providerCalls = 0;
-    const fetchImpl: typeof fetch = async (input) => {
+    const fetchImpl: typeof fetch = async (input, init) => {
       providerCalls++;
       const url = String(input);
       if (url === 'https://api.exa.ai/search') {
@@ -207,6 +207,9 @@ describe('backend integrations', () => {
         });
       }
       if (url === 'https://api.openai.com/v1/chat/completions') {
+        if (JSON.parse(String(init?.body)).response_format?.json_schema?.name === 'localized_narration') {
+          return Response.json({ choices: [{ message: { content: JSON.stringify({ text: 'Une crique abritée révèle un tonique à l’équipage.' }) } }] });
+        }
         return Response.json({
           choices: [{
             message: {
@@ -267,6 +270,36 @@ describe('backend integrations', () => {
     expect(retry.json.event.id).toBe(result.json.event.id);
     expect(providerCalls).toBe(2);
     expect(await c.ledger.countDocuments({ eventId: result.json.event.id })).toBe(1);
+    const translated = await app.request('/island/gm-event', { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'X-App-Language': 'fr' }, body: JSON.stringify({ requestId: '1a779bfb-fab3-41bd-960a-4331f06611c1', trigger: 'daily_briefing' }) });
+    const localized = await translated.json();
+    expect(localized.event.narration).toBe('Une crique abritée révèle un tonique à l’équipage.');
+    expect(localized.event.id).toBe(result.json.event.id);
+    expect((await c.gmEvents.findOne({ eventKey: result.json.event.id }))!.event.narration).toBe(result.json.event.narration);
+    expect(await c.ledger.countDocuments({ eventId: result.json.event.id })).toBe(1);
+  });
+
+  it('uses the selected speech language and treats unpunctuated localized questions as read-only', async () => {
+    const app = createApp({ c, jwtSecret: 'selected-voice-language', allowDevLogin: true,
+      env: { OPENAI_API_KEY: 'test-brain', OPENAI_MODEL: 'test-model', ELEVENLABS_API_KEY: 'test-speech' },
+      fetchImpl: async (url, init) => {
+        const body = JSON.parse(String(init?.body));
+        if (String(url).includes('/text-to-speech/')) {
+          expect(body.language_code).toBe('es');
+          expect(body.model_id).toBe('eleven_flash_v2_5');
+          expect(body.text).toBe('Puedes acercarte al guardián.');
+          return new Response(new Uint8Array([1, 2, 3]));
+        }
+        expect(body.messages[0].content).toContain('OUTPUT LANGUAGE: Spanish');
+        return Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'Puedes acercarte al guardián.', action: 'strike' }) } }] });
+      },
+    });
+    const { token } = await login(app, 'Language Sailor');
+    await call(app, 'POST', '/crews', token, { name: 'Many Tongues' });
+    const before = await call(app, 'GET', '/island', token);
+    const response = await app.request('/island/voice-turn', { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'X-App-Language': 'es-MX' }, body: JSON.stringify({ requestId: 'a8ff9966-07da-49f8-aa82-90c70968f1d5', mode: 'command', text: 'cómo ataco' }) });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ language: 'es', intent: { type: 'question' }, result: null, reply: 'Puedes acercarte al guardián.', audioError: null });
+    expect((await call(app, 'GET', '/island', token)).json.movesRemaining).toBe(before.json.movesRemaining);
   });
 
   it('answers text turns and routes explicit combat voice intents through game rules', async () => {
