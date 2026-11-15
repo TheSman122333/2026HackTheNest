@@ -48,7 +48,7 @@ export function themePrompt(user: Pick<UserDoc, '_id' | 'skills' | 'streak'>, is
     'Original instrumental sea-adventure theme for a cozy cartoon pirate game, no vocals, no lyrics.',
     `Lead sound: ${SKILL_SOUND[top]}.`,
     island ? `Flavour: ${ISLAND_SOUND[island]}.` : '',
-    `Mood: ${mood}. ${TEMPOS[h % TEMPOS.length]}, in ${KEYS[(h >> 3) % KEYS.length]}.`,
+    `Mood: ${mood}. Tempo: ${TEMPOS[h % TEMPOS.length]}, in ${KEYS[(h >>> 3) % KEYS.length]}.`,
     'Catchy short motif that loops cleanly. Family friendly.',
   ]
     .filter(Boolean)

@@ -32,6 +32,7 @@ describe('theme songs', () => {
     expect(p1).toContain('music box');
     expect(p1).toContain('triumphant');
     expect(p1).toContain('no vocals');
+    for (let v = 1; v < 40; v++) expect(themePrompt(user, null, v)).not.toContain('undefined');
     expect(themePrompt(user, 'spooky', 1)).toBe(p1);
   });
 
