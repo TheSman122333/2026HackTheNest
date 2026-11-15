@@ -12,6 +12,7 @@
  * Public config (not secrets): EXPO_PUBLIC_SSOJET_ISSUER, EXPO_PUBLIC_SSOJET_CLIENT_ID.
  */
 import * as AuthSession from 'expo-auth-session';
+import * as Crypto from 'expo-crypto';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
@@ -45,12 +46,24 @@ function redirectUri(): string {
  * that started it. Only ever to our fixed APP_URL, never to an address taken from the request.
  */
 export async function relayWebCallback(search: string): Promise<boolean> {
-  if (Platform.OS !== 'web' || !APP_URL) return false;
-  const target = new URL(APP_URL);
-  if (globalThis.location.origin === target.origin) return false;
+  if (Platform.OS !== 'web') return false;
   if (await storage.get(PENDING_KEY)) return false; // sign-in started on this origin: finish it here
-  globalThis.location.replace(`${target.origin}/auth/callback${search}`);
+  // The state ends with "~<n>": index of the site that started sign-in, in a FIXED list.
+  const state = new URLSearchParams(search).get('state') ?? '';
+  const index = Number(state.split('~')[1]);
+  const target = Number.isInteger(index) ? SITES[index] : APP_URL;
+  if (!target) return false;
+  const origin = new URL(target).origin;
+  if (globalThis.location.origin === origin) return false;
+  globalThis.location.replace(`${origin}/auth/callback${search}`);
   return true;
+}
+
+/** Our own sites a web sign-in may return to (never taken from the request). */
+const SITES = ['https://lastvoyageplease.work', 'https://play.lastvoyageplease.work', 'https://last-voyage-kohl.vercel.app'];
+function siteTag(): string {
+  const i = SITES.findIndex((s) => Platform.OS === 'web' && new URL(s).origin === globalThis.location?.origin);
+  return i >= 0 ? `~${i}` : '';
 }
 
 type Pending = { state: string; verifier: string; redirectUri: string; at: number };
@@ -75,6 +88,8 @@ export async function signInWithSsojet(): Promise<boolean> {
     scopes: ['openid', 'profile', 'email'],
     responseType: AuthSession.ResponseType.Code,
     usePKCE: true,
+    // Random state, tagged with which of our sites started sign-in (for the callback relay).
+    state: `${Crypto.randomUUID().replace(/-/g, "")}${siteTag()}`,
   });
   const authUrl = await request.makeAuthUrlAsync(discovery);
   const pending: Pending = { state: request.state, verifier: request.codeVerifier!, redirectUri: redirectUri(), at: Date.now() };

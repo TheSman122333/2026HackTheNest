@@ -52,9 +52,8 @@ writeFileSync(
       version: 3,
       routes: [
         { src: '^/api(/.*)?$', dest: '/api' },
-        // lastvoyageplease.work: the landing page at /, every other path forwards to the game.
+        // lastvoyageplease.work: the landing page at /; every other path is the game (also on play.).
         { src: '^/$', has: [{ type: 'host', value: 'lastvoyageplease.work' }], dest: '/_landing/index.html' },
-        { src: '^/(?!_landing/|favicon\\.ico$)(.+)$', has: [{ type: 'host', value: 'lastvoyageplease.work' }], status: 308, headers: { Location: 'https://play.lastvoyageplease.work/$1' } },
         { handle: 'filesystem' },
         { src: '/(.*)', dest: '/index.html' },
       ],
