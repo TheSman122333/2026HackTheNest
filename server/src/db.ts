@@ -34,6 +34,9 @@ export type CrewDoc = {
   memberIds: ObjectId[];
   /** supplies + materials (timber, iron, spice, shard) */
   stores: Record<string, number>;
+  upgrades?: { helm?: number; sails?: number };
+  /** Purchases live with the atomic resource debit; the Log is a recoverable projection. */
+  upgradeLog?: { id: string; key: 'helm' | 'sails'; level: number; cost: number; userId: string; at: Date }[];
   createdAt: Date;
 };
 

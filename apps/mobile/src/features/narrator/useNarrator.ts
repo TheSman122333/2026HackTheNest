@@ -8,6 +8,8 @@ import { useIsland } from '@/state/island';
 import { useSession } from '@/state/session';
 import { cleanText } from '@/ui/text';
 
+import { heardLine, loadVisited, normalizeNarration, onceScene, rememberNarration } from './narrationHistory';
+
 export type NarrationScene = 'arrival' | 'ship' | 'island' | 'quests' | 'log' | 'me' | 'activity' | 'move' | 'fight' | 'night';
 export type NarratorLine = { id: string; who: 'narrator' | 'you' | 'world'; text: string; sources?: GmEvent['event']['sources'] };
 export type NarrationClip = { id: string; text: string; audioPath: string | null; scene: NarrationScene };
@@ -25,6 +27,10 @@ type NarratorState = {
   current: NarrationClip | null;
   queue: Job[];
   muted: boolean;
+  scope: string | null;
+  hydrated: boolean;
+  visited: string[];
+  hydrate: (scope: string) => Promise<void>;
   reset: () => void;
   narrate: (scene: NarrationScene, detail?: string) => void;
   playNext: () => Promise<void>;
@@ -42,7 +48,7 @@ function localStory(scene: NarrationScene, detail?: string) {
   if (detail) return cleanText(detail);
   switch (scene) {
     case 'arrival': return `Welcome aboard, ${me?.user.name ?? 'sailor'}. ${me?.crew?.name ?? 'Your crew'} has another horizon to chase, and you have ${moves} Moves to begin the tale.`;
-    case 'ship': return `Hear those sails, sailor? Your crew turns walks, quests, and calm days into wind. Tap the ship and give the rigging a little cheer.`;
+    case 'ship': return `Hear those sails, sailor? Your crew turns walks, quests, and calm days into wind. Tap the ship to meet your crew and chart what comes next.`;
     case 'island': return v?.island.conquered ? 'Your crew has claimed this shore. Rest your boots; a fresh horizon waits at nightfall.' : v?.explorer.hp === 0 ? 'The sea brought you back to shore. Rest today, sailor; tomorrow you return at full strength.' : `Land ahead. You have ${moves} Moves to chart the brass-marked paths${v ? `, while ${v.boss.name} guards the heart of the island` : ''}.`;
     case 'quests': return `A fine voyage begins ashore. You have logged ${me?.today.activities.length ?? 0} activities and walked ${(me?.today.steps ?? 0).toLocaleString()} steps today. Finish something in real life, then claim it here.`;
     case 'log': return `Open the ship's log, sailor. Every discovery and shared supply writes another line in your crew's story.`;
@@ -54,6 +60,9 @@ function localStory(scene: NarrationScene, detail?: string) {
 }
 
 let generation = 0;
+let hydration: Promise<void> | null = null;
+let hydrationScope: string | null = null;
+const memoryLines = new Set<string>();
 export const useNarrator = create<NarratorState>((set, get) => {
   const request = async (body: Record<string, unknown>, kind: 'briefing' | 'command') => {
     const version = generation;
@@ -83,13 +92,47 @@ export const useNarrator = create<NarratorState>((set, get) => {
       clearTimeout(deadline);
     }
   };
+  const publish = async (clip: NarrationClip, version: number, markScene: boolean) => {
+    const scope = get().scope;
+    if (!scope || version !== generation) return;
+    const key = normalizeNarration(clip.text);
+    const heard = memoryLines.has(key) || await heardLine(scope, clip.text);
+    if (version !== generation || scope !== get().scope) return;
+    const visited = markScene && onceScene(clip.scene) ? [...new Set([...get().visited, clip.scene])] : get().visited;
+    memoryLines.add(key);
+    set({ visited });
+    await rememberNarration(scope, clip.text, visited);
+    if (version !== generation) return;
+    set({ busy: null, ...(heard ? {} : { current: clip }) });
+  };
   return {
+    scope: null, hydrated: false, visited: [],
+    hydrate: async (scope) => {
+      if (get().scope === scope && get().hydrated) return;
+      if (hydration && hydrationScope === scope) return hydration;
+      generation++;
+      const version = generation;
+      memoryLines.clear();
+      set({ scope, hydrated: false, visited: [], current: null, queue: [], busy: null, conversationId: null });
+      hydrationScope = scope;
+      hydration = loadVisited(scope).then((visited) => {
+        if (generation === version) set({ visited, hydrated: true });
+      }).finally(() => { if (hydrationScope === scope) { hydration = null; hydrationScope = null; } });
+      return hydration;
+    },
     lines: [], busy: null, error: null, conversationId: null, briefed: false, audioPath: null, audioNonce: 0,
     current: null, queue: [], muted: false,
-    reset: () => { generation++; set({ lines: [], busy: null, error: null, conversationId: null, briefed: false, audioPath: null, audioNonce: 0, current: null, queue: [] }); },
+    reset: () => { generation++; memoryLines.clear(); hydration = null; hydrationScope = null; set({ scope: null, hydrated: false, visited: [], lines: [], busy: null, error: null, conversationId: null, briefed: false, audioPath: null, audioNonce: 0, current: null, queue: [] }); },
     toggleMute: () => set({ muted: !get().muted }),
     narrate: (scene, detail) => {
-      if (!useSession.getState().me?.crew) return;
+      const me = useSession.getState().me;
+      if (!me?.crew) return;
+      const scope = `lv_narrator_v3_${me.user.id}_${me.crew.id}`;
+      if (get().scope !== scope || !get().hydrated) {
+        void get().hydrate(scope).then(() => { if (get().scope === scope && get().hydrated) get().narrate(scene, detail); });
+        return;
+      }
+      if (!detail && onceScene(scene) && get().visited.includes(scene)) return;
       if (!detail && get().current?.scene === scene) return;
       const pending = get().queue;
       if (pending.some((job) => job.scene === scene && job.detail === detail)) return;
@@ -98,14 +141,15 @@ export const useNarrator = create<NarratorState>((set, get) => {
       set({ queue: [...queue, { id: uuid(), scene, detail: detail?.slice(0, 400) }].slice(-5) });
     },
     playNext: async () => {
-      if (get().current || get().busy || !get().queue.length) return;
+      if (!get().hydrated || get().current || get().busy || !get().queue.length) return;
       const version = generation;
       const [job, ...rest] = get().queue;
       set({ queue: rest });
+      if (!job!.detail && onceScene(job!.scene) && get().visited.includes(job!.scene)) return;
       const result = await request({ mode: 'narration', scene: job!.scene, ...(job!.detail ? { detail: job!.detail } : {}) }, 'briefing');
       if (version !== generation) return;
       if (isVisit(job!.scene) && get().queue.some((next) => isVisit(next.scene))) { set({ busy: null }); return; }
-      set({ busy: null, current: { id: job!.id, scene: job!.scene, text: result ? cleanText(result.reply) : localStory(job!.scene, job!.detail), audioPath: result?.audio?.url ?? null } });
+      await publish({ id: job!.id, scene: job!.scene, text: result ? cleanText(result.reply) : localStory(job!.scene, job!.detail), audioPath: result?.audio?.url ?? null }, version, !job!.detail);
     },
     complete: (id) => { if (get().current?.id === id) set({ current: null }); },
     briefing: async () => { get().narrate('island'); },
@@ -113,7 +157,8 @@ export const useNarrator = create<NarratorState>((set, get) => {
       if (get().busy || get().current) return;
       const version = generation;
       const result = await request({ mode: 'command', ...input }, 'command');
-      if (version === generation) set({ busy: null, ...(result ? { current: { id: result.requestId, scene: 'island', text: cleanText(result.reply), audioPath: result.audio?.url ?? null } } : {}) });
+      if (result && version === generation) await publish({ id: result.requestId, scene: 'island', text: cleanText(result.reply), audioPath: result.audio?.url ?? null }, version, false);
+      else if (version === generation) set({ busy: null });
     },
     worldEvent: async () => {
       if (get().busy) return;

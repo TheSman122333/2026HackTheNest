@@ -20,6 +20,8 @@ import type { Collections, UserDoc } from './db';
 import { createIsland, registerIsland, resumeVoyage } from './island';
 import { ledger, spendMoves, todayMoves } from './moves';
 import { registerMusic } from './music';
+import { registerOpening } from './opening';
+import { registerShip, shipWindMultiplier } from './ship';
 import { exchangeSsojetCode, SsojetAuthenticationError, SsojetRequestError, SsojetUnavailableError } from './ssojet';
 
 type Env = { Variables: { user: UserDoc } };
@@ -345,7 +347,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
       members: members.map((m, i) => ({ id: m._id.toHexString(), name: m.name, legend: m.legend, skills: m.skills, calmDays: days[i]!.streak.calmDays })),
       sailing: {
         totalMoves,
-        averageMoves: members.length ? totalMoves / members.length : 0,
+        averageMoves: members.length ? totalMoves / members.length * shipWindMultiplier(crew) : 0,
         activities: days.reduce((total, day) => total + day.activities.length, 0),
         steps: days.reduce((total, day) => total + day.steps, 0),
         activeMembers: days.filter((day) => day.steps > 0 || day.activities.length > 0).length,
@@ -356,6 +358,8 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
 
   registerIsland(app, c, { env, fetchImpl });
   registerMusic(app, c, { env, fetchImpl });
+  registerOpening(app, c, { env, fetchImpl });
+  registerShip(app, c);
 
   app.onError((err, ctx) => {
     if (err instanceof HTTPException) return ctx.json({ error: err.message }, err.status);

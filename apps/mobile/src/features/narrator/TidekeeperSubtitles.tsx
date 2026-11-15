@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F } from '@/components/kit';
 import { fetchAudio, releaseAudio } from '@/lib/audio';
 import { useSession } from '@/state/session';
+import { useOpening } from '@/state/opening';
 import { useDeviceMotionEnabled } from '@/ui/motion';
 
 import { useNarrator, type NarrationClip, type NarrationScene } from './useNarrator';
@@ -18,7 +19,8 @@ export function TidekeeperSubtitles() {
   const pathname = usePathname();
   const userId = useSession((s) => s.me?.user.id);
   const crewId = useSession((s) => s.me?.crew?.id);
-  const { current, queue, busy, playNext, reset, narrate } = useNarrator();
+  const { current, queue, busy, playNext, reset, narrate, hydrate, hydrated } = useNarrator();
+  const opening = useOpening((s) => s.visible);
   const [foreground, setForeground] = useState(AppState.currentState !== 'background' && AppState.currentState !== 'inactive');
   const previous = useRef<string | null>(null);
   const identity = useRef<string | null>(null);
@@ -29,7 +31,7 @@ export function TidekeeperSubtitles() {
       setForeground(state === 'active');
       if (state !== 'active') { awayAt ??= Date.now(); return; }
       if (awayAt !== null && Date.now() - awayAt > 60_000 && useSession.getState().me?.crew) {
-        void useSession.getState().refresh().then((me) => { if (me?.crew) useNarrator.getState().narrate('arrival'); });
+        void useSession.getState().refresh();
       }
       awayAt = null;
     });
@@ -40,23 +42,23 @@ export function TidekeeperSubtitles() {
     const key = userId && crewId ? `${userId}:${crewId}` : null;
     if (identity.current !== key) {
       identity.current = key;
-      previous.current = pathname;
+      previous.current = null;
       reset();
-      if (key) narrate('arrival');
+      if (key) void hydrate(`lv_narrator_v3_${userId}_${crewId}`);
       return;
     }
-    if (!key || previous.current === pathname) return;
+    if (!key || opening || !hydrated || previous.current === pathname) return;
     previous.current = pathname;
     const scene = SCENES[pathname.split('/').filter(Boolean).pop() ?? ''];
     if (scene) narrate(scene);
-  }, [userId, crewId, pathname, reset, narrate]);
+  }, [userId, crewId, pathname, opening, hydrated, reset, narrate, hydrate]);
 
   useEffect(() => {
-    if (foreground && crewId && !current && !busy && queue.length) void playNext();
-  }, [foreground, crewId, current, busy, queue, playNext]);
+    if (!opening && hydrated && foreground && crewId && !current && !busy && queue.length) void playNext();
+  }, [opening, hydrated, foreground, crewId, current, busy, queue, playNext]);
 
-  if (!userId || !crewId || !current) return null;
-  return <SubtitlePlayback key={current.id} clip={current} foreground={foreground} tabbed={pathname !== '/fight'} />;
+  if (opening || !userId || !crewId || !current) return null;
+  return <SubtitlePlayback key={current.id} clip={current} foreground={foreground} tabbed={['ship', 'quests', 'island', 'log', 'me'].includes(pathname.split('/').pop() ?? '')} />;
 }
 
 function SubtitlePlayback({ clip, foreground, tabbed }: { clip: NarrationClip; foreground: boolean; tabbed: boolean }) {

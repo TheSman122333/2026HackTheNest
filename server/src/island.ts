@@ -257,6 +257,8 @@ export function registerIsland(
     }
     await c.islands.updateOne({ _id: isle._id }, { $set: set });
     await saveExplorer(c, user, isle, ex);
+    const damage = result.events.filter((event) => event.type === 'hit').reduce((total, event) => total + event.damage, 0);
+    if (damage > 0) await ledger(c, { crewId: isle.crewId, userId: user._id, item: 'boss_damage', delta: damage, reason: 'fight:damage', text: `${user.name} dealt ${damage} damage to ${isle.fight.boss.name}.` });
     return { events: result.events, view: await view(user) };
   };
 

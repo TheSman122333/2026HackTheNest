@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { C } from '@/components/kit';
 import { TidekeeperSubtitles } from '@/features/narrator/TidekeeperSubtitles';
+import { OpeningVoyage } from '@/features/opening/OpeningVoyage';
 import { useApplySurfaceRules } from '@/features/scroll/useScrollSentinel';
 import { useSession } from '@/state/session';
 import { MotionProvider } from '@/ui/motion';
@@ -42,9 +43,11 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.navy } }}>
             <Stack.Screen name="auth/callback" />
             <Stack.Screen name="fight" options={{ presentation: 'card', animation: 'fade' }} />
+            <Stack.Screen name="deck" options={{ presentation: 'card', animation: 'fade' }} />
             <Stack.Screen name="dev/scroll-lab" options={{ headerShown: true, title: 'Scroll Lab', headerStyle: { backgroundColor: C.navy }, headerTintColor: C.cloud }} />
           </Stack>
           <TidekeeperSubtitles />
+          <OpeningVoyage />
         </View>
       </MotionProvider>
     </GestureHandlerRootView>

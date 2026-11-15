@@ -60,7 +60,7 @@ export default function Ship() {
       <P dim>ABOARD YOUR SHIP</P>
       <Title>{me.crew.name}</Title>
 
-      <ShipScene sailing={sailing} personal={!crewSailing} />
+      <ShipScene sailing={sailing} personal={!crewSailing} onBoard={() => router.push('/deck')} />
       <P dim>Walk, finish quests, and live a little. Every sailor helps fill these sails.</P>
 
       <Row gap={10}>
