@@ -18,7 +18,7 @@ REAL LIFE ──► MOVES ──► ISLAND (explore + loot) ──► BOSS FIGHT
 - **Morning:** the Tidekeeper (the narrator) tells you what happened while you were away.
 
 ## 3. Moves: earned from real life ✅
-Everything you do in real life turns into **Moves** (plus Supplies, XP and Legend). Moves are what you spend on islands and in boss fights.
+Everything you do in real life turns into **Moves** (plus Supplies, XP and Honor). Moves are what you spend on islands and in boss fights.
 
 ### 3a. Logging activities ✅ (honor system with hard caps)
 | Activity | Supplies | Moves | Skill XP (+5 each) |
@@ -33,12 +33,17 @@ Everything you do in real life turns into **Moves** (plus Supplies, XP and Legen
 | Chores | 2 | 1 | Craft |
 | Journal | 1 | 0 | Lore |
 
-- **Daily caps:** 10 Supplies, 6 Moves from activities, 2 Legend from activities.
+- **Daily caps:** 10 Supplies, 6 Moves from activities, 2 Honor from activities.
 - **Spam guard:** the 3rd and later logs of the same activity in one day give only 1 Supply and 0 Moves.
-- Each log gives +1 Legend, up to the cap.
+- Each log gives +1 Honor, up to the cap.
 
 ### 3b. Steps ✅ (Android Health Connect)
 - **1 Move per 1,000 steps**, max **10 Moves a day** from steps.
+
+### 3b-2. iPhone and web ✅ (no step or scroll tracking there)
+- **Typed-in steps:** enter today's steps from the Health app (honor system). 1 Move per 1,000 steps, max **6** a day.
+- **2 extra daily quests** (5 instead of 3) and a quest-Move cap of **10** instead of 6.
+- The app tells the server its platform; Android keeps automatic steps (max 10) and Calm Seas streaks.
 
 ### 3c. Free Moves ✅
 - Everyone gets **2 base Moves a day**, so nobody is ever fully locked out.
@@ -56,7 +61,7 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 | **Shore Leave** | A day where you **didn't open** TikTok, Instagram or YouTube at all | **+25% Moves the next day** (stacks with Calm Seas) |
 | **Streak Shield** | Earned every **7** calm days (hold **max 2**) | A stormy day uses a shield instead of breaking the streak |
 
-- **Never punishing:** breaking a streak only resets the bonus. You never lose Moves, Supplies, items or Legend.
+- **Never punishing:** breaking a streak only resets the bonus. You never lose Moves, Supplies, items or Honor.
 - **Days without data** (tracking off, phone dead) **pause** the streak and never break it.
 - Days close at local midnight in your time zone. The server folds finished days into the streak automatically.
 
@@ -78,14 +83,14 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 
 ## 7. The Crew 🟡
 - ✅ Create a crew, or join with a **6-letter invite code** or a QR invite.
-- ✅ **Leave a crew** to join another (Me screen): type the crew's name to confirm. You keep your Legend, skills and pirate; the crew keeps its stores and island.
+- ✅ **Leave a crew** to join another (Me screen): type the crew's name to confirm. You keep your Honor, skills and pirate; the crew keeps its stores and island.
 - ✅ **Shared Supplies:** every activity's Supplies also go to the crew store.
 - ✅ **Log feed:** every reward is recorded, so the crew sees who did what.
 - ⬜ **Heading vote:** the crew votes on the next island before midnight. The ship sails at midnight.
 - ⬜ **Rival crews:** game-run crews racing you to islands.
 
 ## 8. Islands: the hex board ✅
-- Generated from a seed. The board is a hex disk of radius 5 (91 hexes): an outer **sea ring**, a **landing beach**, and the **boss lair at the center**.
+- Generated from a seed. The board is a hex disk of radius 15 (721 hexes; you drag the chart around): an outer **sea ring**, a **landing beach**, and the **boss lair at the center**.
 - **4 themes:** tropical, spooky, winter, volcanic. Each has its own terrain mix and boss.
 - **Tap to move:** you can tap any revealed hex or the fog edge next to it. The cheapest path is taken and its cost paid in Moves.
 - **Fog of war:** clears 1 hex around you as you walk.
@@ -144,24 +149,21 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
   - **Brace:** halves the counterattack.
 - **Enrage:** below 30% HP (Magma Scorpion: 25%) the boss deals +50% damage.
 - **KO** = washed overboard until tomorrow. Next day everyone returns at full HP; the boss doesn't heal.
-- **Win:** the island is conquered for the crew. Damage dealt is credited per player (feeds Legend ⬜).
+- **Win:** the island is conquered for the crew. Damage dealt is credited per player (feeds Honor ⬜).
 
-## 10. Legend and the Lodestar 🟡 (activities, boss fights, leaderboard and End the Year ✅)
-- **Legend** is your personal score for the year and **can never be taken away**.
+## 10. Honor and the Lodestar 🟡 (activities, boss fights, leaderboards and End the Year ✅)
+- **Honor** is each pirate's score and **can never be taken away**. (Stored as `legend` in the database.)
+- **A ship's Honor** is the total of its crew's Honor.
 - **Sources:**
-  - activities (max 2/day) ✅
-  - boss damage and the finishing blow
-  - conquering islands
-  - first discovery of an island
-  - streak milestones
-  - helping crew upgrades
-  - all multiplied by your crew's rank
-- **The Lodestar:** at year end, the top Legend player across all crews claims the fallen star:
-  - a crown on their pirate
-  - the legendary ship form for their whole crew
-  - the Hall of Legends
-  - **naming an island in next year's sea**
-- **Demo:** an "End the Year" button plays the ceremony.
+  - activities: +1 each, max 2/day ✅
+  - boss fights: +3 for everyone who dealt damage, +5 more for the finishing blow ✅
+  - later: conquering islands, first discovery of an island, streak milestones, crew upgrades
+- **Leaderboards ✅:** ships, your crew, and all pirates (Me → Honor leaderboard, with a "?" help popup).
+- **The Lodestar ✅:** there is **only one in the whole game**. "End the Year" awards it to the **ship with the most Honor**, once; after that it stays claimed and the button replays the ceremony. The holder gets:
+  - a crown next to every member
+  - the legendary ship form for the crew ⬜
+  - **naming an island in next year's sea** ⬜
+- **Later:** custom titles ("___ of the <crew>") unlock at Honor milestones. No spending.
 
 ## 11. Monthly islands ⬜ (live events)
 Jan New Year · Feb Black History Month · Mar Women's History Month · Apr Spring · May Mental Health Awareness · Jun Pride · Jul Summer · Aug Back to School · Sep Self-Care · Oct Spooky · Nov Remembrance · Dec Winter Holidays.
@@ -188,7 +190,7 @@ Jan New Year · Feb Black History Month · Mar Women's History Month · Apr Spri
 | **Sea** (chart + heading vote) → **Island board** → **Boss fight** | ⬜ (engine ✅) |
 | **Quests** (log activities, steps, scroll limits, Calendar) | ⬜ (server ✅) |
 | **Log** (feed of everything that happened) | ⬜ (server ✅) |
-| **Me** (pirate, traits, streaks, Legend) | ⬜ |
+| **Me** (pirate, traits, streaks, Honor) | ⬜ |
 | Demo buttons: Advance Night, End the Year | ⬜ |
 
 ## 14. Tech

@@ -4,7 +4,7 @@ type LedgerText = Readonly<{ text: string; item: string; delta: number; reason: 
 export type LogTranslator = (source: string, params?: TranslationParams) => string;
 
 const ITEM_LABELS: Readonly<Record<string, string>> = {
-  supplies: 'Supplies', moves: 'Moves', legend: 'Legend', timber: 'Timber', iron: 'Iron',
+  supplies: 'Supplies', moves: 'Moves', legend: 'Honor', timber: 'Timber', iron: 'Iron',
   spice: 'Spice', shard: 'Shard', clue: 'Clue', cutlass: 'Cutlass', cannon: 'Cannon',
   tonic: 'Tonic', chest: 'Mystery chest', boss_damage: 'Boss damage',
 };
@@ -57,6 +57,9 @@ export function formatLogText(entry: LedgerText, tx: LogTranslator, language = '
     if (text.endsWith(suffix) && text.length > suffix.length) return tx('{name} left the crew to sail with another. Fair winds!', { name: text.slice(0, -suffix.length) });
   }
   if (reason === 'season:lodestar') {
+    const ship = text.match(/^The (.+) claimed the Lodestar with (\d+) Honor! The only one in all the Tidewake\.$/);
+    if (ship) return tx('The {crew} claimed the Lodestar with {honor} Honor! The only one in all the Tidewake.', { crew: ship[1]!, honor: number(Number(ship[2])) });
+    // Older seasons awarded a pirate; preserve those recorded facts instead of changing the winner.
     const match = text.match(/^(.+) claimed the Lodestar with (\d+) Legend! The year's voyage is complete\.$/);
     if (match) return tx('{name} claimed the Lodestar with {legend} Legend! The year\'s voyage is complete.', { name: match[1]!, legend: number(Number(match[2])) });
   }

@@ -68,7 +68,8 @@ export type Explorer = {
 };
 
 export const ISLAND = {
-  defaultRadius: 5,
+  /** 721 hexes (was 5 = 91, ~8x): a big island you scroll around for weeks. */
+  defaultRadius: 15,
   itemChance: 0.3,
   revealRadius: 1,
   hazardDamage: 5,

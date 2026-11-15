@@ -102,7 +102,7 @@ export function PersonalizedQuests({ userId }: { userId: string }) {
 
   return <Panel>
     <Row style={{ justifyContent: 'space-between' }}><H>Your daily quests</H>{board ? <Tag label={tx('{count}/5 SKIPS', { count: board.skips.remaining })} color={C.sky} /> : null}</Row>
-    <P dim>Three real-life adventures picked for your interests, time, and pace. Finish the activity before claiming it.</P>
+    <P dim>Real-life adventures picked for your interests, time, and pace. Finish the activity before claiming it.</P>
     {loading ? <Row><ActivityIndicator color={C.orange} /><P dim>Charting your quests...</P></Row> : null}
     {toast ? <Panel color={C.gold}><P>{toast}</P></Panel> : null}
     {error ? <Panel color={C.deep}><P color={C.red}>{error}</P><Btn small label="Refresh quests" color={C.sky} onPress={() => void load()} disabled={Boolean(busy)} /></Panel> : null}
@@ -124,7 +124,7 @@ export function PersonalizedQuests({ userId }: { userId: string }) {
         </>}
       </Panel>;
     })}
-    {complete ? <P>All three quests are complete. Fresh adventures arrive tomorrow.</P> : null}
+    {complete ? <P>All of today&apos;s quests are complete. Fresh adventures arrive tomorrow.</P> : null}
     {board ? <>
       <P dim>{tx('Five skips each week, shared across your daily quests. Resets {date} in your time zone.', { date: resetLabel })}</P>
       <P dim>{board.quests.some((quest) => quest.source === 'fallback') ? 'Personalized suggestions are available while the AI quest writer is offline.' : 'Written with Gemini from your quest preferences.'}</P>

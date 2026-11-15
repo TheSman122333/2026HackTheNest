@@ -20,6 +20,7 @@ import { awardActivity, reconcileActivityReceipts } from './activities';
 import { createIsland, registerIsland, resumeVoyage } from './island';
 import { ledger, spendMoves, todayMoves } from './moves';
 import { registerLegend } from './legend';
+import { registerTitles } from './titles';
 import { registerMusic } from './music';
 import { registerOpening } from './opening';
 import { registerLocalizationRoutes } from './localization';
@@ -78,6 +79,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     skills: u.skills,
     supplies: u.supplies,
     legend: u.legend,
+    title: u.title ?? null,
     limits: u.limits,
   });
 
@@ -200,6 +202,11 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
       const { payload } = await jwtVerify(token, key);
       const user = await c.users.findOne({ _id: new ObjectId(payload.sub) }, { projection: { profilePhoto: 0 } });
       if (!user) throw new Error('no user');
+      const platform = ctx.req.header('x-lv-platform');
+      if ((platform === 'android' || platform === 'ios' || platform === 'web') && user.platform !== platform) {
+        await c.users.updateOne({ _id: user._id }, { $set: { platform } });
+        user.platform = platform;
+      }
       ctx.set('user', user);
     } catch {
       throw new HTTPException(401, { message: 'unauthorized' });
@@ -216,6 +223,14 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
       todayMoves(c, user),
     ]);
     return ctx.json({ user: publicUser(user), crew: crew && publicCrew(crew), today });
+  });
+
+  /** Change your display name (crewmates and the leaderboard see it). */
+  app.put('/me/name', async (ctx) => {
+    const user = ctx.get('user');
+    const { name } = await body(ctx, z.object({ name: z.string().transform((s) => s.trim().replace(/\s+/g, ' ')).pipe(z.string().min(1).max(32)) }));
+    await c.users.updateOne({ _id: user._id }, { $set: { name } });
+    return ctx.json({ user: publicUser({ ...user, name }) });
   });
 
   app.put('/me/limits', async (ctx) => {
@@ -322,6 +337,24 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     return ctx.json({ today: await todayMoves(c, user, now) });
   });
 
+  /**
+   * iPhone/web can't read step counters, so players type in today's steps from their Health
+   * app (honor system, worth up to 6 Moves). Android counts steps automatically instead.
+   */
+  app.put('/moves/steps', async (ctx) => {
+    const user = ctx.get('user');
+    if (user.platform === 'android') throw new HTTPException(409, { message: 'Steps are counted automatically on Android.' });
+    const { steps } = await body(ctx, z.object({ steps: z.number().int().min(0).max(100_000) }));
+    const now = new Date();
+    const day = dayKeyInTz(now, user.tz);
+    await c.dayLogs.updateOne(
+      { userId: user._id, day },
+      { $set: { steps, updatedAt: now }, $setOnInsert: { movesSpent: 0, screen: { swipes: 0, minutes: 0, opens: 0, tracked: false } } },
+      { upsert: true },
+    );
+    return ctx.json({ today: await todayMoves(c, user, now) });
+  });
+
   /** Island board spends Moves. Atomic: fails if not enough left. */
   app.post('/moves/spend', async (ctx) => {
     const user = ctx.get('user');
@@ -363,7 +396,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     const totalMoves = days.reduce((total, day) => total + day.moves.total, 0);
     return ctx.json({
       crew: crew && publicCrew(crew),
-      members: members.map((m, i) => ({ id: m._id.toHexString(), name: m.name, avatarId: m.avatarId ?? null, legend: m.legend, skills: m.skills, calmDays: days[i]!.streak.calmDays })),
+      members: members.map((m, i) => ({ id: m._id.toHexString(), name: m.name, avatarId: m.avatarId ?? null, title: m.title ?? null, legend: m.legend, skills: m.skills, calmDays: days[i]!.streak.calmDays })),
       sailing: {
         totalMoves,
         averageMoves: members.length ? totalMoves / members.length * shipWindMultiplier(crew) : 0,
@@ -380,7 +413,8 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   registerOpening(app, c, { env, fetchImpl });
   registerLocalizationRoutes(app, env, fetchImpl);
   registerShip(app, c);
-  registerLegend(app, c);
+  registerLegend(app, c, env);
+  registerTitles(app, c);
   registerQuests(app, c, { env, fetchImpl, now });
   registerSoundtrack(app, c, { env, fetchImpl });
 

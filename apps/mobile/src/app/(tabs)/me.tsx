@@ -1,17 +1,19 @@
-/** Your pirate: skills, Legend, streaks, scroll limits, tracking setup. */
+/** Your pirate: skills, Honor, streaks, scroll limits, tracking setup. */
 import { SKILLS, STREAK, type Skill } from '@last-voyage/game';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
+import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat } from '@/components/kit';
 import { TRACKING } from '@/lib/platform';
 import { Sprite } from '@/components/sprites';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { ThemeSongCard } from '@/features/music/ThemeSongCard';
 import { SoundSettings } from '@/features/audio/SoundSettings';
 import { LeaveCrew } from '@/features/crew/LeaveCrew';
-import { LEGEND_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
+import { EditName } from '@/features/profile/EditName';
+import { TitlePicker } from '@/features/profile/TitlePicker';
+import { HONOR_SUMMARY, LegendHelp } from '@/features/legend/LegendHelp';
 import { api } from '@/lib/api';
 import { useSession } from '@/state/session';
 import { Float } from '@/ui/motion';
@@ -60,8 +62,8 @@ export default function Me() {
       <Row gap={12} style={{ flexWrap: "nowrap" }}>
         <Float amplitude={3} tilt={2}><PlayerAvatar userId={u.id} avatarId={u.avatarId} size={96} /></Float>
         <View style={{ flexShrink: 1 }}>
-          <Title translatable={false}>{u.name}</Title>
-          <P translatable={false} dim>{tx('{role} of the {crew}', { role: tx(ROLE[top]), crew: me.crew?.name ?? '' })}</P>
+          <EditName />
+          <TitlePicker role={ROLE[top]} />
         </View>
       </Row>
 
@@ -70,11 +72,11 @@ export default function Me() {
 
       <Panel color={C.deep}>
         <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-          <Row gap={8} style={{ flexWrap: 'nowrap' }}><Sprite name="t_star" size={26} /><H>{tx('{count} Legend', { count: u.legend })}</H></Row>
+          <Row gap={8} style={{ flexWrap: 'nowrap' }}><Sprite name="t_star" size={26} /><H>{tx('{count} Honor', { count: u.legend })}</H></Row>
           <LegendHelp />
         </Row>
-        <P dim>{LEGEND_SUMMARY} Earn it from real-life activities and boss fights. The top pirate across every crew claims the Lodestar at year end.</P>
-        <Btn small label="Legend leaderboard" color={C.gold} onPress={() => router.push('/legend')} />
+        <P dim translatable={false}>{tx(HONOR_SUMMARY)} {tx('Earn it from real-life activities and boss fights. Your crew’s Honor together is your ship’s, and the top ship claims the one Lodestar.')}</P>
+        <Btn small label="Honor leaderboard" color={C.gold} onPress={() => router.push('/legend')} />
       </Panel>
 
       <Row gap={10}>

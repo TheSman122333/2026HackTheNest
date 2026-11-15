@@ -771,7 +771,8 @@ export function registerIsland(
       await ledger(c, { crewId, userId: null, item: 'voyage', delta: 1, reason: 'night:sail', text: `The ship sailed through the night and reached a ${next.island.theme} island!` });
       return ctx.json({ sailed: true, ...(await view(user)) });
     }
-    let island = spawnChaos(isle.island, rng, 3).island;
+    // 3 items a night on the old radius-5 island; scale with size so big islands stay lively.
+    let island = spawnChaos(isle.island, rng, Math.max(3, Math.round(isle.island.radius * 0.6))).island;
     let text = 'Night fell. Strange items washed ashore.';
     const roll = rng();
     if (roll < 0.2) {

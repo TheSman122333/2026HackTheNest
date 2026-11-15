@@ -43,12 +43,16 @@ export const REWARDS = {
   /** Honor-system caps (per local day) */
   suppliesPerDay: 10,
   movesFromActivitiesPerDay: 6,
+  /** iPhone/web can't track steps or scrolling, so they get 2 extra daily quests and room for their Moves. */
+  movesFromActivitiesPerDayUntracked: 10,
   legendFromActivitiesPerDay: 2,
   /** The Nth+ log of the same kind in a day only gives 1 Supply and no Moves */
   diminishAfterSameKind: 2,
   /** Steps → Island Moves */
   stepsPerMove: 1000,
   movesFromStepsPerDay: 10,
+  /** iPhone/web type in today's steps from their Health app (honor system): smaller cap. */
+  movesFromSelfReportedStepsPerDay: 6,
   /** Base Moves everyone gets daily so nobody is ever fully locked out */
   baseMovesPerDay: 2,
 } as const;

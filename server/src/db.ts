@@ -23,6 +23,10 @@ export type UserDoc = {
   avatarId?: AvatarId;
   profilePhoto?: { bytes: Binary; width: number; height: number; zoom: number; offsetX: number; offsetY: number; updatedAt: Date };
   profilePhotoUpdatedAt?: Date;
+  /** Last platform the app reported. Android tracks steps + scrolling; iPhone/web get extra quests instead. */
+  platform?: 'android' | 'ios' | 'web';
+  /** Chosen title (an unlocked rung or a sanitized custom title). Unset = skill role. */
+  title?: string;
   preferences?: VoyagePreferences;
   activityRevision?: number;
   /** Atomic award receipts; activity/crew/ledger records are recoverable projections. */
@@ -179,11 +183,22 @@ export type MediaDoc = {
   expiresAt?: Date;
 };
 
-/** One Lodestar ceremony ("End the Year"). The demo can run it more than once. */
+/**
+ * The Lodestar: there is only ONE in the whole game. "End the Year" awards it once, to the ship
+ * (crew) with the most Honor (members' Honor summed). `key: 'lodestar'` is unique, so it can't be
+ * awarded twice. Honor is stored in each user's `legend` field.
+ */
 export type SeasonDoc = {
   _id: ObjectId;
+  key?: 'lodestar';
   year: number;
-  winner: { userId: ObjectId; name: string; avatarId: string | null; legend: number; crewId: ObjectId | null; crewName: string | null } | null;
+  winner: {
+    crewId: ObjectId;
+    crewName: string;
+    honor: number;
+    members: { userId: ObjectId; name: string; avatarId: string | null; honor: number }[];
+  } | null;
+  ships: number;
   players: number;
   endedBy: ObjectId;
   at: Date;
@@ -232,6 +247,7 @@ export async function ensureIndexes(c: Collections) {
     c.questWeeks.createIndex({ userId: 1 }),
     c.users.createIndex({ legend: -1, createdAt: 1 }),
     c.seasons.createIndex({ at: -1 }),
+    c.seasons.createIndex({ key: 1 }, { unique: true, sparse: true }),
     c.dayLogs.createIndex({ userId: 1, day: 1 }, { unique: true }),
     c.ledger.createIndex({ crewId: 1, at: -1 }),
     c.ledger.createIndex({ userId: 1, at: -1 }),

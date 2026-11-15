@@ -26,7 +26,7 @@ type Draft = {
 const QUESTIONS = [
   ['What do you enjoy?', 'Pick all the things you would like to do more often.'],
   ['What would you like more of?', 'Choose one or more goals for your real-life adventure.'],
-  ['How much time fits your day?', 'Your three daily quests will share this time. Small efforts still help your crew.'],
+  ['How much time fits your day?', 'Your daily quests will share this time. Small efforts still help your crew.'],
   ['What pace feels right?', 'Choose a starting point. You can change it whenever you like.'],
   ['Where do you like to spend time?', 'Your quests can fit the spaces you enjoy.'],
   ['Who do you like to adventure with?', 'Solo time and time together both count.'],

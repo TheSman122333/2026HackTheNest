@@ -28,7 +28,7 @@ function walk(directory) {
   }
 }
 walk(resolve('apps/mobile/src'));
-for (const file of ['packages/game/src/activities.ts', 'packages/game/src/island.ts', 'packages/game/src/combat.ts', 'packages/game/src/config.ts', 'packages/game/src/shipwright.ts', 'server/src/quests.ts', 'server/src/ship.ts', 'apps/mobile/src/features/language/logText.ts']) {
+for (const file of ['packages/game/src/activities.ts', 'packages/game/src/island.ts', 'packages/game/src/combat.ts', 'packages/game/src/config.ts', 'packages/game/src/shipwright.ts', 'server/src/quests.ts', 'server/src/ship.ts', 'server/src/titles.ts', 'apps/mobile/src/features/language/logText.ts']) {
   const parsed = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
   function visit(node) { if (ts.isStringLiteral(node) && /[ A-Z]/.test(node.text)) add(node.text); ts.forEachChild(node, visit); }
   visit(parsed);

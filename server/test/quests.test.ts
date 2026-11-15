@@ -22,8 +22,9 @@ beforeAll(async () => {
   await ensureIndexes(c);
 }, 120_000);
 afterAll(async () => { await client?.close(); await mongod?.stop(); });
-const call = async (app: ReturnType<typeof createApp>, method: string, path: string, token?: string, body?: unknown, language = 'en') => {
-  const response = await app.request(path, { method, headers: { 'content-type': 'application/json', 'X-App-Language': language, ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+// These tests use the Android rules (3 quests, quest-Move cap 6) unless a platform is given.
+const call = async (app: ReturnType<typeof createApp>, method: string, path: string, token?: string, body?: unknown, platform = 'android', language = 'en') => {
+  const response = await app.request(path, { method, headers: { 'content-type': 'application/json', 'X-App-Language': language, 'x-lv-platform': platform, ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
   return { status: response.status, json: await response.json() as any };
 };
 const login = async (app: ReturnType<typeof createApp>, name: string, tz = 'UTC') => (await call(app, 'POST', '/auth/dev', undefined, { name, tz })).json;
@@ -50,14 +51,25 @@ describe('voyage preferences and personalized quests', () => {
     const user = await login(app, 'Translated quests');
     await call(app, 'PUT', '/me/preferences', user.token, prefs);
     const original = (await call(app, 'GET', '/quests', user.token)).json;
-    const french = (await call(app, 'GET', '/quests', user.token, undefined, 'fr')).json;
+    const french = (await call(app, 'GET', '/quests', user.token, undefined, 'android', 'fr')).json;
     expect(french.quests.map((quest: any) => quest.id)).toEqual(original.quests.map((quest: any) => quest.id));
     expect(french.quests[0].title).toBe(`FR ${original.quests[0].title}`);
-    const completed = await call(app, 'POST', `/quests/${original.quests[0].id}/complete`, user.token, { requestId: randomUUID() }, 'fr');
+    const completed = await call(app, 'POST', `/quests/${original.quests[0].id}/complete`, user.token, { requestId: randomUUID() }, 'android', 'fr');
     expect(completed.json.board.quests[0]).toMatchObject({ id: original.quests[0].id, status: 'completed', title: french.quests[0].title });
     const englishAgain = (await call(app, 'GET', '/quests', user.token)).json;
     expect(englishAgain.quests[0]).toMatchObject({ id: original.quests[0].id, status: 'completed', title: original.quests[0].title });
     expect(translations).toBe(1);
+  });
+
+  it('gives iPhone/web players 2 extra quests and a higher quest-Move cap', async () => {
+    const { app } = setup();
+    const a = await login(app, 'Web sailor');
+    await call(app, 'PUT', '/me/preferences', a.token, { ...prefs, dailyMinutes: 30 }, 'web');
+    expect((await call(app, 'GET', '/quests', a.token, undefined, 'web')).json.quests).toHaveLength(5);
+    for (let i = 0; i < 8; i++) await call(app, 'POST', '/activities', a.token, { kind: (['read', 'hobby', 'friends', 'chores'] as const)[i % 4] }, 'web');
+    const me = (await call(app, 'GET', '/me', a.token, undefined, 'web')).json;
+    expect(me.today.moves.fromActivities).toBeGreaterThan(6);
+    expect(me.today.moves.fromActivities).toBeLessThanOrEqual(10);
   });
 
   it('requires auth, validates the profile, isolates accounts, and never accepts photos', async () => {

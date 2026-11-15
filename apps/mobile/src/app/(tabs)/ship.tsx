@@ -78,7 +78,7 @@ export default function Ship() {
 
       <Panel>
         <H>Today&apos;s Moves</H>
-        <P dim>{TRACKING ? tx('{base} free + {steps} steps + {activities} quests', { base: m.base, steps: m.fromSteps, activities: m.fromActivities }) : tx('{base} free + {activities} quests', { base: m.base, activities: m.fromActivities })}</P>
+        <P dim>{tx('{base} free + {steps} steps + {activities} quests', { base: m.base, steps: m.fromSteps, activities: m.fromActivities })}</P>
         <Row>
           {TRACKING ? <Tag label={tx('×{multiplier} STREAK', { multiplier: m.multiplier })} color={C.gold} /> : null}
           <P>{tx('{earned} earned · {spent} spent', { earned: m.total, spent: m.spent })}</P>
@@ -115,10 +115,10 @@ export default function Ship() {
               <View style={[s.avatar, mm.id === me.user.id && { borderColor: C.orange }]}>
                 <PlayerAvatar userId={mm.id} avatarId={mm.avatarId} size={44} />
               </View>
-              <View style={{ flex: 1 }}><P translatable={false}>{mm.name}</P></View>
+              <View style={{ flex: 1 }}><P translatable={false}>{mm.name}</P>{mm.title ? <P translatable={false} dim>{mm.title}</P> : null}</View>
             </Row>
             <View style={{ alignItems: 'flex-end' }}>
-              <P dim>{tx('{count} Legend', { count: mm.legend })}</P>
+              <P dim>{tx('{count} Honor', { count: mm.legend })}</P>
               <P dim>{tx('{count} calm days', { count: mm.calmDays })}</P>
             </View>
           </Row>

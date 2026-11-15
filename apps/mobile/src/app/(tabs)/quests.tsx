@@ -6,6 +6,7 @@ import { Bar, Btn, C, H, P, Panel, Row, Screen, Stat, Title } from '@/components
 import { TRACKING } from '@/lib/platform';
 import { Sprite } from '@/components/sprites';
 import { PersonalizedQuests } from '@/features/quests/PersonalizedQuests';
+import { StepsCheckIn } from '@/features/steps/StepsCheckIn';
 import { useSentinelPermissions } from '@/features/scroll/useScrollSentinel';
 import { useTodaySteps } from '@/features/steps/steps';
 import { syncToday } from '@/features/sync/deviceSync';
@@ -36,6 +37,8 @@ export default function Quests() {
       </Row>
 
       <PersonalizedQuests key={`${me.user.id}:${language}`} userId={me.user.id} />
+
+      {TRACKING ? null : <StepsCheckIn />}
 
       {TRACKING ? (<>
       <Panel>

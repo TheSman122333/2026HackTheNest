@@ -56,6 +56,8 @@ export type User = {
   skills: Record<Skill, number>;
   supplies: number;
   legend: number;
+  /** Chosen title; null = skill role. */
+  title?: string | null;
   limits: ScreenLimits;
 };
 
@@ -80,7 +82,7 @@ export type Me = { user: User; crew: Crew | null; today: Today };
 
 export type CrewRoster = {
   crew: Crew | null;
-  members: { id: string; name: string; avatarId?: AvatarId | null; legend: number; skills: Record<Skill, number>; calmDays: number }[];
+  members: { id: string; name: string; avatarId?: AvatarId | null; title?: string | null; legend: number; skills: Record<Skill, number>; calmDays: number }[];
   sailing?: { totalMoves: number; averageMoves: number; activities: number; steps: number; activeMembers: number; members: number } | null;
 };
 
@@ -135,14 +137,20 @@ export type GmEvent = {
 /** Scheduled check on an island visit: not one of the crew's 3 event days this week. */
 export type GmCheck = GmEvent | { requestId: string; status: 'not_today' };
 
+/** Honor (stored as `legend`): each pirate's score; a ship's Honor is its crew's total. */
 export type LegendRow = { id: string; name: string; avatarId: AvatarId | null; legend: number; rank: number; crewName: string | null; isYou: boolean; lodestar: boolean };
+export type ShipRow = { id: string; name: string; honor: number; sailors: number; rank: number; isYours: boolean; lodestar: boolean };
 export type LodestarSeason = {
-  id: string; year: number; players: number; at: string;
-  winner: { id: string; name: string; avatarId: AvatarId | null; legend: number; crewName: string | null; isYou: boolean } | null;
+  id: string; year: number; ships: number; players: number; at: string;
+  winner: {
+    crewId: string; crewName: string; honor: number; isYours: boolean;
+    members: { id: string; name: string; avatarId: AvatarId | null; honor: number; isYou: boolean }[];
+  } | null;
 };
 export type LegendBoard = {
-  me: { legend: number; globalRank: number; players: number; crewRank: number | null; crewSize: number };
+  me: { legend: number; globalRank: number; players: number; crewRank: number | null; crewSize: number; shipRank: number | null; shipHonor: number; shipCount: number };
   crew: LegendRow[];
   global: LegendRow[];
+  ships: ShipRow[];
   lodestar: LodestarSeason | null;
 };

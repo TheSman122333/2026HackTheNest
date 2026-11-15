@@ -3,7 +3,7 @@
  * Pure: turns today's numbers into a status report and the best next tips. Never scolds.
  */
 import { REWARDS } from './config';
-import { stepsToNextMove, type MovesBreakdown } from './moves';
+import { stepsCapFor, stepsToNextMove, type MovesBreakdown } from './moves';
 import type { ScreenDay, ScreenLimits, StreakState } from './streaks';
 
 export type ShipSpeed = 'becalmed' | 'slow' | 'steady' | 'swift' | 'flying';
@@ -17,6 +17,8 @@ export type ShipwrightInput = {
   /** false on iPhone/web: no steps or scroll tracking, so no tips about them */
   tracking?: boolean;
 };
+
+export const activityCapFor = (tracking: boolean) => tracking ? REWARDS.movesFromActivitiesPerDay : REWARDS.movesFromActivitiesPerDayUntracked;
 
 export type ShipwrightReport = { speed: ShipSpeed; knots: number; headline: string; tips: string[] };
 
@@ -41,10 +43,10 @@ export function shipwrightReport(i: ShipwrightInput): ShipwrightReport {
   const tips: string[] = [];
 
   const tracking = i.tracking ?? true;
-  const nextStep = stepsToNextMove(i.steps);
-  if (tracking && nextStep !== null) tips.push(`${nextStep.toLocaleString('en-US')} more steps and I'll find you another Move.`);
+  const nextStep = stepsToNextMove(i.steps, stepsCapFor(tracking));
+  if (nextStep !== null) tips.push(tracking ? `${nextStep.toLocaleString('en-US')} more steps and I'll find you another Move.` : `Walked today? Enter your steps on the Quests tab: every 1,000 is a Move (up to 6).`);
 
-  const questRoom = REWARDS.movesFromActivitiesPerDay - i.moves.fromActivities;
+  const questRoom = activityCapFor(tracking) - i.moves.fromActivities;
   if (questRoom > 0) tips.push(`Log a quest in real life: up to ${questRoom} more Moves from quests today.`);
 
   if (!tracking) {

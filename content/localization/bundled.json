@@ -1,5 +1,8 @@
 {
-  "en": {},
+  "en": {
+    "Honor": "Honor",
+    "Honor leaderboard": "Honor leaderboard"
+  },
   "es": {
     "Choose your language": "Elige tu idioma",
     "Language": "Idioma",
@@ -100,7 +103,9 @@
     "BOARDING PASS": "TARJETA DE EMBARQUE",
     "DEPARTS": "SALIDA",
     "DESTINATION": "DESTINO",
-    "SEAT": "ASIENTO"
+    "SEAT": "ASIENTO",
+    "Honor": "Honor",
+    "Honor leaderboard": "Clasificación de honor"
   },
   "fr": {
     "Choose your language": "Choisissez votre langue",
@@ -202,7 +207,9 @@
     "BOARDING PASS": "CARTE D’EMBARQUEMENT",
     "DEPARTS": "DÉPART",
     "DESTINATION": "DESTINATION",
-    "SEAT": "PLACE"
+    "SEAT": "PLACE",
+    "Honor": "Honneur",
+    "Honor leaderboard": "Classement d’honneur"
   },
   "de": {
     "Choose your language": "Wähle deine Sprache",
@@ -304,7 +311,9 @@
     "BOARDING PASS": "BORDKARTE",
     "DEPARTS": "ABFAHRT",
     "DESTINATION": "ZIEL",
-    "SEAT": "SITZ"
+    "SEAT": "SITZ",
+    "Honor": "Ehre",
+    "Honor leaderboard": "Ehrenrangliste"
   },
   "it": {
     "Choose your language": "Scegli la tua lingua",
@@ -406,7 +415,9 @@
     "BOARDING PASS": "CARTA D’IMBARCO",
     "DEPARTS": "PARTENZA",
     "DESTINATION": "DESTINAZIONE",
-    "SEAT": "POSTO"
+    "SEAT": "POSTO",
+    "Honor": "Onore",
+    "Honor leaderboard": "Classifica dell’onore"
   },
   "pt": {
     "Choose your language": "Escolha seu idioma",
@@ -508,7 +519,9 @@
     "BOARDING PASS": "CARTÃO DE EMBARQUE",
     "DEPARTS": "PARTIDA",
     "DESTINATION": "DESTINO",
-    "SEAT": "ASSENTO"
+    "SEAT": "ASSENTO",
+    "Honor": "Honra",
+    "Honor leaderboard": "Classificação de honra"
   },
   "nl": {
     "Choose your language": "Kies je taal",
@@ -610,7 +623,9 @@
     "BOARDING PASS": "INSTAPKAART",
     "DEPARTS": "VERTREK",
     "DESTINATION": "BESTEMMING",
-    "SEAT": "STOEL"
+    "SEAT": "STOEL",
+    "Honor": "Eer",
+    "Honor leaderboard": "Eerranglijst"
   },
   "pl": {
     "Choose your language": "Wybierz język",
@@ -712,7 +727,9 @@
     "BOARDING PASS": "KARTA POKŁADOWA",
     "DEPARTS": "ODPŁYNIĘCIE",
     "DESTINATION": "CEL",
-    "SEAT": "MIEJSCE"
+    "SEAT": "MIEJSCE",
+    "Honor": "Honor",
+    "Honor leaderboard": "Ranking honoru"
   },
   "ru": {
     "Choose your language": "Выберите язык",
@@ -814,7 +831,9 @@
     "BOARDING PASS": "ПОСАДОЧНЫЙ ТАЛОН",
     "DEPARTS": "ОТПРАВЛЕНИЕ",
     "DESTINATION": "ПУНКТ НАЗНАЧЕНИЯ",
-    "SEAT": "МЕСТО"
+    "SEAT": "МЕСТО",
+    "Honor": "Честь",
+    "Honor leaderboard": "Таблица почёта"
   },
   "uk": {
     "Choose your language": "Оберіть мову",
@@ -916,7 +935,9 @@
     "BOARDING PASS": "ПОСАДКОВИЙ ТАЛОН",
     "DEPARTS": "ВІДПРАВЛЕННЯ",
     "DESTINATION": "МІСЦЕ ПРИЗНАЧЕННЯ",
-    "SEAT": "МІСЦЕ"
+    "SEAT": "МІСЦЕ",
+    "Honor": "Честь",
+    "Honor leaderboard": "Рейтинг честі"
   },
   "cs": {
     "Choose your language": "Vyberte jazyk",
@@ -1018,7 +1039,9 @@
     "BOARDING PASS": "PALUBNÍ LÍSTEK",
     "DEPARTS": "ODPLUTÍ",
     "DESTINATION": "CÍL",
-    "SEAT": "MÍSTO"
+    "SEAT": "MÍSTO",
+    "Honor": "Čest",
+    "Honor leaderboard": "Žebříček cti"
   },
   "sk": {
     "Choose your language": "Vyberte jazyk",
@@ -1120,7 +1143,9 @@
     "BOARDING PASS": "PALUBNÝ LÍSTOK",
     "DEPARTS": "ODPLÁVANIE",
     "DESTINATION": "CIEĽ",
-    "SEAT": "MIESTO"
+    "SEAT": "MIESTO",
+    "Honor": "Česť",
+    "Honor leaderboard": "Rebríček cti"
   },
   "ro": {
     "Choose your language": "Alege limba",
@@ -1222,7 +1247,9 @@
     "BOARDING PASS": "CARTE DE ÎMBARCARE",
     "DEPARTS": "PLECARE",
     "DESTINATION": "DESTINAȚIE",
-    "SEAT": "LOC"
+    "SEAT": "LOC",
+    "Honor": "Onoare",
+    "Honor leaderboard": "Clasament de onoare"
   },
   "bg": {
     "Choose your language": "Изберете език",
@@ -1324,7 +1351,9 @@
     "BOARDING PASS": "БОРДНА КАРТА",
     "DEPARTS": "ОТПЛАВАНЕ",
     "DESTINATION": "ДЕСТИНАЦИЯ",
-    "SEAT": "МЯСТО"
+    "SEAT": "МЯСТО",
+    "Honor": "Чест",
+    "Honor leaderboard": "Класация по чест"
   },
   "hr": {
     "Choose your language": "Odaberite jezik",
@@ -1426,7 +1455,9 @@
     "BOARDING PASS": "UKRCAJNA PROPUSNICA",
     "DEPARTS": "POLAZAK",
     "DESTINATION": "ODREDIŠTE",
-    "SEAT": "SJEDALO"
+    "SEAT": "SJEDALO",
+    "Honor": "Čast",
+    "Honor leaderboard": "Ljestvica časti"
   },
   "el": {
     "Choose your language": "Επιλέξτε γλώσσα",
@@ -1528,7 +1559,9 @@
     "BOARDING PASS": "ΚΑΡΤΑ ΕΠΙΒΙΒΑΣΗΣ",
     "DEPARTS": "ΑΝΑΧΩΡΗΣΗ",
     "DESTINATION": "ΠΡΟΟΡΙΣΜΟΣ",
-    "SEAT": "ΘΕΣΗ"
+    "SEAT": "ΘΕΣΗ",
+    "Honor": "Τιμή",
+    "Honor leaderboard": "Κατάταξη τιμής"
   },
   "sv": {
     "Choose your language": "Välj språk",
@@ -1630,7 +1663,9 @@
     "BOARDING PASS": "BOARDINGKORT",
     "DEPARTS": "AVGÅNG",
     "DESTINATION": "DESTINATION",
-    "SEAT": "PLATS"
+    "SEAT": "PLATS",
+    "Honor": "Ära",
+    "Honor leaderboard": "Ärans topplista"
   },
   "da": {
     "Choose your language": "Vælg dit sprog",
@@ -1732,7 +1767,9 @@
     "BOARDING PASS": "BOARDINGKORT",
     "DEPARTS": "AFGANG",
     "DESTINATION": "DESTINATION",
-    "SEAT": "SÆDE"
+    "SEAT": "SÆDE",
+    "Honor": "Ære",
+    "Honor leaderboard": "Rangliste for ære"
   },
   "fi": {
     "Choose your language": "Valitse kielesi",
@@ -1834,7 +1871,9 @@
     "BOARDING PASS": "TARKASTUSKORTTI",
     "DEPARTS": "LÄHTÖ",
     "DESTINATION": "MÄÄRÄNPÄÄ",
-    "SEAT": "PAIKKA"
+    "SEAT": "PAIKKA",
+    "Honor": "Kunnia",
+    "Honor leaderboard": "Kunnian tulostaulu"
   },
   "no": {
     "Choose your language": "Velg språk",
@@ -1936,7 +1975,9 @@
     "BOARDING PASS": "BOARDINGKORT",
     "DEPARTS": "AVGANG",
     "DESTINATION": "REISEMÅL",
-    "SEAT": "SETE"
+    "SEAT": "SETE",
+    "Honor": "Ære",
+    "Honor leaderboard": "Æresrangering"
   },
   "hu": {
     "Choose your language": "Válassz nyelvet",
@@ -2038,7 +2079,9 @@
     "BOARDING PASS": "BESZÁLLÓKÁRTYA",
     "DEPARTS": "INDULÁS",
     "DESTINATION": "ÚTI CÉL",
-    "SEAT": "HELY"
+    "SEAT": "HELY",
+    "Honor": "Becsület",
+    "Honor leaderboard": "Becsületranglista"
   },
   "tr": {
     "Choose your language": "Dilini seç",
@@ -2140,7 +2183,9 @@
     "BOARDING PASS": "BİNİŞ KARTI",
     "DEPARTS": "KALKIŞ",
     "DESTINATION": "VARIŞ YERİ",
-    "SEAT": "KOLTUK"
+    "SEAT": "KOLTUK",
+    "Honor": "Onur",
+    "Honor leaderboard": "Onur sıralaması"
   },
   "ar": {
     "Choose your language": "اختر لغتك",
@@ -2242,7 +2287,9 @@
     "BOARDING PASS": "بطاقة صعود",
     "DEPARTS": "المغادرة",
     "DESTINATION": "الوجهة",
-    "SEAT": "المقعد"
+    "SEAT": "المقعد",
+    "Honor": "شرف",
+    "Honor leaderboard": "لوحة صدارة الشرف"
   },
   "hi": {
     "Choose your language": "अपनी भाषा चुनें",
@@ -2344,7 +2391,9 @@
     "BOARDING PASS": "बोर्डिंग पास",
     "DEPARTS": "प्रस्थान",
     "DESTINATION": "मंज़िल",
-    "SEAT": "सीट"
+    "SEAT": "सीट",
+    "Honor": "सम्मान",
+    "Honor leaderboard": "सम्मान की रैंकिंग"
   },
   "ta": {
     "Choose your language": "உங்கள் மொழியைத் தேர்ந்தெடுங்கள்",
@@ -2446,7 +2495,9 @@
     "BOARDING PASS": "பயண அனுமதிச் சீட்டு",
     "DEPARTS": "புறப்பாடு",
     "DESTINATION": "சேருமிடம்",
-    "SEAT": "இருக்கை"
+    "SEAT": "இருக்கை",
+    "Honor": "கௌரவம்",
+    "Honor leaderboard": "கௌரவத் தரவரிசை"
   },
   "zh": {
     "Choose your language": "选择语言",
@@ -2548,7 +2599,9 @@
     "BOARDING PASS": "登船牌",
     "DEPARTS": "出发地",
     "DESTINATION": "目的地",
-    "SEAT": "座位"
+    "SEAT": "座位",
+    "Honor": "荣誉",
+    "Honor leaderboard": "荣誉排行榜"
   },
   "ja": {
     "Choose your language": "言語を選んでください",
@@ -2650,7 +2703,9 @@
     "BOARDING PASS": "乗船券",
     "DEPARTS": "出発地",
     "DESTINATION": "目的地",
-    "SEAT": "座席"
+    "SEAT": "座席",
+    "Honor": "名誉",
+    "Honor leaderboard": "名誉ランキング"
   },
   "ko": {
     "Choose your language": "언어를 선택하세요",
@@ -2752,7 +2807,9 @@
     "BOARDING PASS": "승선권",
     "DEPARTS": "출발지",
     "DESTINATION": "목적지",
-    "SEAT": "좌석"
+    "SEAT": "좌석",
+    "Honor": "명예",
+    "Honor leaderboard": "명예 순위표"
   },
   "id": {
     "Choose your language": "Pilih bahasa Anda",
@@ -2854,7 +2911,9 @@
     "BOARDING PASS": "KARTU NAIK KAPAL",
     "DEPARTS": "KEBERANGKATAN",
     "DESTINATION": "TUJUAN",
-    "SEAT": "KURSI"
+    "SEAT": "KURSI",
+    "Honor": "Kehormatan",
+    "Honor leaderboard": "Papan peringkat kehormatan"
   },
   "ms": {
     "Choose your language": "Pilih bahasa anda",
@@ -2956,7 +3015,9 @@
     "BOARDING PASS": "PAS NAIK KAPAL",
     "DEPARTS": "BERLEPAS",
     "DESTINATION": "DESTINASI",
-    "SEAT": "TEMPAT DUDUK"
+    "SEAT": "TEMPAT DUDUK",
+    "Honor": "Kehormatan",
+    "Honor leaderboard": "Papan kedudukan kehormatan"
   },
   "fil": {
     "Choose your language": "Piliin ang iyong wika",
@@ -3058,7 +3119,9 @@
     "BOARDING PASS": "BOARDING PASS",
     "DEPARTS": "PAG-ALIS",
     "DESTINATION": "DESTINASYON",
-    "SEAT": "UPUAN"
+    "SEAT": "UPUAN",
+    "Honor": "Karangalan",
+    "Honor leaderboard": "Talaan ng karangalan"
   },
   "vi": {
     "Choose your language": "Chọn ngôn ngữ của bạn",
@@ -3160,6 +3223,8 @@
     "BOARDING PASS": "THẺ LÊN TÀU",
     "DEPARTS": "KHỞI HÀNH",
     "DESTINATION": "ĐIỂM ĐẾN",
-    "SEAT": "CHỖ NGỒI"
+    "SEAT": "CHỖ NGỒI",
+    "Honor": "Danh dự",
+    "Honor leaderboard": "Bảng xếp hạng danh dự"
   }
 }

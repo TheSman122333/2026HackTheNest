@@ -15,10 +15,14 @@ export function dailyMoves(input: {
   steps: number;
   activityMoves: number;
   streak: StreakState;
+  /** Quest-Move cap: higher on devices that can't track steps (see REWARDS). */
+  activityCap?: number;
+  /** Step-Move cap: 10 for tracked steps, 6 for typed-in steps. */
+  stepsCap?: number;
 }): MovesBreakdown {
   const base = REWARDS.baseMovesPerDay;
-  const fromSteps = stepsToMoves(input.steps);
-  const fromActivities = Math.max(0, Math.min(input.activityMoves, REWARDS.movesFromActivitiesPerDay));
+  const fromSteps = stepsToMoves(input.steps, input.stepsCap);
+  const fromActivities = Math.max(0, Math.min(input.activityMoves, input.activityCap ?? REWARDS.movesFromActivitiesPerDay));
   const multiplier = streakMultiplier(input.streak);
   return {
     base,
@@ -29,14 +33,17 @@ export function dailyMoves(input: {
   };
 }
 
-export function stepsToMoves(steps: number): number {
+/** Tracked Android steps vs. typed-in steps (iPhone/web). */
+export const stepsCapFor = (tracking: boolean) => tracking ? REWARDS.movesFromStepsPerDay : REWARDS.movesFromSelfReportedStepsPerDay;
+
+export function stepsToMoves(steps: number, cap: number = REWARDS.movesFromStepsPerDay): number {
   if (!Number.isFinite(steps) || steps <= 0) return 0;
-  return Math.min(Math.floor(steps / REWARDS.stepsPerMove), REWARDS.movesFromStepsPerDay);
+  return Math.min(Math.floor(steps / REWARDS.stepsPerMove), cap);
 }
 
 /** Steps still needed for the next Move (for a progress ring). null when capped. */
-export function stepsToNextMove(steps: number): number | null {
-  if (stepsToMoves(steps) >= REWARDS.movesFromStepsPerDay) return null;
+export function stepsToNextMove(steps: number, cap: number = REWARDS.movesFromStepsPerDay): number | null {
+  if (stepsToMoves(steps, cap) >= cap) return null;
   const s = Math.max(0, Math.floor(steps));
   return REWARDS.stepsPerMove - (s % REWARDS.stepsPerMove);
 }

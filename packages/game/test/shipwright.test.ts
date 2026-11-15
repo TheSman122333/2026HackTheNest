@@ -26,9 +26,10 @@ describe('shipwright', () => {
     expect(r.tips.length).toBeLessThanOrEqual(3);
   });
 
-  it('skips step and scroll tips when the device cannot track', () => {
+  it('on iPhone/web: asks for typed-in steps, never mentions scrolling', () => {
     const r = shipwrightReport({ ...base, tracking: false });
-    expect(r.tips.join(' ')).not.toMatch(/steps|scroll|swipes/);
+    expect(r.tips.join(' ')).toContain('Enter your steps');
+    expect(r.tips.join(' ')).not.toMatch(/scroll|swipes/);
     expect(r.tips.length).toBeGreaterThan(0);
   });
 

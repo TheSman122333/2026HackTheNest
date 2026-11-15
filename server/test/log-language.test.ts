@@ -6,7 +6,7 @@ import { formatLogText, relativeLogTime, type LogTranslator } from '../../apps/m
 function translator() {
   const calls: { source: string; params?: TranslationParams }[] = [];
   const dictionary: Record<string, string> = {
-    Captain: 'TRANSLATED PLAYER NAME', Legend: 'Légende', Supplies: 'Provisions',
+    Captain: 'TRANSLATED PLAYER NAME', Legend: 'Légende', Honor: 'Honneur', Supplies: 'Provisions',
     '{name} found {count} {item}': '{name} a trouvé {count} {item}',
     '{name} dealt {damage} damage to {boss}.': '{name} a infligé {damage} dégâts à {boss}.',
   };
@@ -40,6 +40,20 @@ describe('localized ledger copy', () => {
       expect(formatLogText({ text, item: 'supplies', delta: 2, reason: 'activity:walk' }, tx)).toBe('Walk: +2 Provisions');
       expect(calls.at(-1)).toEqual({ source: '{activity}: {amount} {item}', params: { activity: 'Walk', amount: '+2', item: 'Provisions' } });
     }
+  });
+
+  it('displays stored legend rewards with current Honor terminology', () => {
+    const { tx, calls } = translator();
+    expect(formatLogText({ text: '+2 legend (activity:walk)', item: 'legend', delta: 2, reason: 'activity:walk' }, tx)).toBe('Walk: +2 Honneur');
+    expect(calls).toContainEqual({ source: 'Honor', params: undefined });
+  });
+
+  it('preserves ship names and the one Lodestar award in current season logs', () => {
+    const entry = Object.freeze({ text: 'The Honor claimed the Lodestar with 1200 Honor! The only one in all the Tidewake.', item: 'lodestar', delta: 1, reason: 'season:lodestar' });
+    const { tx, calls } = translator();
+    expect(formatLogText(entry, tx)).toBe('The Honor claimed the Lodestar with 1,200 Honor! The only one in all the Tidewake.');
+    expect(calls).toEqual([{ source: 'The {crew} claimed the Lodestar with {honor} Honor! The only one in all the Tidewake.', params: { crew: 'Honor', honor: '1,200' } }]);
+    expect(entry.text).toBe('The Honor claimed the Lodestar with 1200 Honor! The only one in all the Tidewake.');
   });
 
   it.each([

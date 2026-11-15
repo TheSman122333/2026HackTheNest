@@ -46,7 +46,8 @@ export async function api<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?
   const t = await loadToken();
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { 'content-type': 'application/json', 'X-App-Language': language, ...(t ? { authorization: `Bearer ${t}` } : {}) },
+    // Platform decides the quest rules: Android tracks steps/scrolling, iPhone/web get extra quests.
+    headers: { 'content-type': 'application/json', 'X-App-Language': language, 'x-lv-platform': Platform.OS === 'android' ? 'android' : Platform.OS === 'ios' ? 'ios' : 'web', ...(t ? { authorization: `Bearer ${t}` } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: options?.signal,
   });
