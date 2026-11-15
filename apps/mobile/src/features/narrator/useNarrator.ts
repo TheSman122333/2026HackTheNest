@@ -11,18 +11,28 @@ import { useIsland } from '@/state/island';
 
 export type NarratorLine = { id: string; who: 'narrator' | 'you' | 'world'; text: string; sources?: GmEvent['event']['sources'] };
 
+export type GmTelemetry = {
+  status: GmEvent['status'];
+  sourceTitle: string | null;
+  changedTile: GmEvent['island']['changedTile'];
+};
+
 type NarratorState = {
   lines: NarratorLine[];
   busy: 'briefing' | 'command' | 'gm' | null;
   error: string | null;
   conversationId: string | null;
   briefed: boolean;
+  gmTelemetry: GmTelemetry | null;
+  sfxCueKeys: string[];
+  sfxCueNonce: number;
   /** latest audio to play (path on our server) */
   audioPath: string | null;
   audioNonce: number;
   briefing: () => Promise<void>;
   say: (input: { text: string } | { audio: { mimeType: string; base64: string } }) => Promise<void>;
   worldEvent: () => Promise<void>;
+  clearSfxCueKeys: (nonce: number) => void;
 };
 
 const add = (lines: NarratorLine[], ...more: NarratorLine[]) => [...more.reverse(), ...lines].slice(0, 20);
@@ -52,6 +62,8 @@ export const useNarrator = create<NarratorState>((set, get) => {
       set({
         conversationId: r.conversationId,
         lines: add(get().lines, ...lines),
+        sfxCueKeys: r.sfxCueKeys,
+        sfxCueNonce: get().sfxCueNonce + 1,
         audioPath: r.audio?.url ?? null,
         audioNonce: get().audioNonce + 1,
       });
@@ -71,8 +83,14 @@ export const useNarrator = create<NarratorState>((set, get) => {
     error: null,
     conversationId: null,
     briefed: false,
+    gmTelemetry: null,
+    sfxCueKeys: [],
+    sfxCueNonce: 0,
     audioPath: null,
     audioNonce: 0,
+    clearSfxCueKeys: (nonce) => {
+      if (get().sfxCueNonce === nonce) set({ sfxCueKeys: [] });
+    },
     briefing: async () => {
       if (get().briefed || get().busy) return;
       set({ briefed: true });
@@ -85,6 +103,11 @@ export const useNarrator = create<NarratorState>((set, get) => {
         const r = await api<GmEvent>('POST', '/island/gm-event', { requestId: uuid(), trigger: 'daily_briefing' });
         set({
           lines: add(get().lines, { id: r.event.id + r.requestId, who: 'world', text: r.event.narration, sources: r.event.sources }),
+          gmTelemetry: {
+            status: r.status,
+            sourceTitle: r.event.sources[0]?.title ?? null,
+            changedTile: r.island.changedTile,
+          },
         });
         if (r.island.changedTile) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

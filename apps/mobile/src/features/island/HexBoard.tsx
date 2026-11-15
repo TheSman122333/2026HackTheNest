@@ -3,8 +3,8 @@
  * pirates use approved sprites. Positions/tap logic come from @last-voyage/game.
  */
 import { distance, parseKey, toPixel, type HexKey, type Terrain } from '@last-voyage/game';
-import { memo } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { memo, useEffect, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { C, F } from '@/components/kit';
 import { avatarFor, BOSS_SPRITE, ITEM_SPRITE, Sprite } from '@/components/sprites';
@@ -29,10 +29,12 @@ type Props = {
   meId: string;
   onTap: (k: HexKey) => void;
   disabled?: boolean;
+  highlightHex?: string | null;
 };
 
-export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: Props) {
+export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled, highlightHex }: Props) {
   const { width } = useWindowDimensions();
+  const [glow] = useState(() => new Animated.Value(0.35));
   const r = view.island.radius;
   const size = (width - 24) / (Math.sqrt(3) * (2 * r + 1));
   const w = Math.sqrt(3) * size;
@@ -41,6 +43,21 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
   const me = view.explorer.pos;
   const mates = new Map(view.crewmates.map((m) => [m.pos, m]));
   const bossSprite = BOSS_SPRITE[view.boss.key] ?? 'b_octopus';
+
+  useEffect(() => {
+    if (!highlightHex) {
+      glow.setValue(0.35);
+      return;
+    }
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glow, { toValue: 1, duration: 520, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0.3, duration: 520, useNativeDriver: true }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [glow, highlightHex]);
 
   return (
     <View style={[s.board, { width: boardW + 12, height: boardH + 12 }]}>
@@ -71,9 +88,15 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
                   left: boardW / 2 + x - d / 2,
                   top: boardH / 2 + y - d / 2,
                   backgroundColor: bg,
-                  borderColor: tappable ? C.orange : terrain === 'sea' ? 'transparent' : C.ink,
+                  borderColor: tappable ? '#C8963E' : terrain === 'sea' ? 'transparent' : '#65583E',
                   borderWidth: tappable ? 3 : terrain === 'sea' ? 0 : 2,
                   opacity: terrain === 'sea' ? 0.45 : 1,
+                  ...(k === highlightHex && {
+                    shadowColor: '#FFD36A',
+                    shadowOpacity: 0.95,
+                    shadowRadius: 12,
+                    elevation: 10,
+                  }),
                 },
               ]}
             >
@@ -102,6 +125,19 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
               ) : !terrain ? (
                 <Text style={[s.fog, { fontSize: d * 0.4 }]}>?</Text>
               ) : null}
+              {k === highlightHex ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    s.glow,
+                    {
+                      borderRadius: d * 0.3,
+                      opacity: glow,
+                      transform: [{ scale: 1.12 }],
+                    },
+                  ]}
+                />
+              ) : null}
             </Pressable>
           );
         })}
@@ -111,8 +147,9 @@ export const HexBoard = memo(function HexBoard({ view, meId, onTap, disabled }: 
 });
 
 const s = StyleSheet.create({
-  board: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center', backgroundColor: C.deep, borderRadius: 24, borderWidth: 3, borderColor: C.ink },
+  board: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0D1B2A', borderRadius: 24, borderWidth: 2, borderColor: '#C8963E' },
   hex: { position: 'absolute', alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
+  glow: { ...StyleSheet.absoluteFill, borderWidth: 3, borderColor: '#FFD36A', backgroundColor: 'rgba(255, 211, 106, 0.12)' },
   token: { backgroundColor: C.cloud, borderWidth: 2, borderColor: C.orange, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   cost: { fontFamily: F.ui, color: C.ink },
   fog: { fontFamily: F.ui, color: C.peri, opacity: 0.6 },
