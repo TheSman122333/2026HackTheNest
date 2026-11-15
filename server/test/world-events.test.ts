@@ -23,3 +23,28 @@ describe('world event schedule', () => {
     expect(patterns.size).toBeGreaterThan(1);
   });
 });
+
+describe('tidekeeper brain providers', () => {
+  it('tries Gemini first, then OpenAI', async () => {
+    const { brainProviders } = await import('../src/brain');
+    expect(brainProviders({ GEMINI_API_KEY: 'g', OPENAI_API_KEY: 'o', OPENAI_MODEL: 'm' }).map((p) => p.name)).toEqual(['gemini', 'openai']);
+    expect(brainProviders({ OPENAI_API_KEY: 'o', OPENAI_MODEL: 'm' }).map((p) => p.name)).toEqual(['openai']);
+    expect(brainProviders({})).toEqual([]);
+  });
+});
+
+describe('franchise guard', () => {
+  it('rewrites other franchises names into this game', async () => {
+    const { scrubFranchise } = await import('../src/voice-style');
+    const out = scrubFranchise('Gol D. Roger, the Pirate King, hid the One Piece past the Grand Line. Whitebeard laughed.');
+    expect(out).not.toMatch(/roger|pirate king|one piece|grand line|whitebeard/i);
+    expect(out).toContain('Lodestar');
+    expect(scrubFranchise('Gold coins and a golden sunset.')).toBe('Gold coins and a golden sunset.');
+  });
+
+  it('the opening narration is original', async () => {
+    const { OPENING_NARRATION } = await import('../src/opening');
+    expect(OPENING_NARRATION).toBe((await import('../src/voice-style')).scrubFranchise(OPENING_NARRATION));
+    expect(OPENING_NARRATION).not.toMatch(/wealth, fame|roger|one piece|grand line/i);
+  });
+});

@@ -7,7 +7,7 @@ import type { Collections, UserDoc } from './db';
 import { synthesizeSpeech } from './voice';
 
 /** The passage explicitly supplied by the project lead for the opening cutscene. */
-export const OPENING_NARRATION = 'Wealth, fame, power. Gold Roger, the King of the Pirates, attained everything this world has to offer. And so, many men head for the Grand Line to find the great treasure he left behind... the One Piece.';
+export const OPENING_NARRATION = 'Long ago, a star fell into the Tidewake, and every captain who ever lived has chased it. The greatest of them sailed every sea, and before the waves took him, he left one last word: the Lodestar belongs to whoever lives the boldest life. So raise your sails. Your voyage begins today.';
 
 /** A public, fixed passage: callers cannot submit arbitrary text or choose a voice. */
 export function registerOpening(app: Hono<{ Variables: { user: UserDoc } }>, c: Collections, options: { env: NodeJS.ProcessEnv; fetchImpl: typeof fetch }) {

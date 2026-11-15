@@ -12,7 +12,7 @@ import { useSession } from '@/state/session';
 import { useDeviceMotionEnabled } from '@/ui/motion';
 
 // The supplied narration, with the missing opening W restored.
-export const OPENING_WORDS = 'Wealth, fame, power. Gold Roger, the King of the Pirates, attained everything this world has to offer. And so, many men head for the Grand Line to find the great treasure he left behind... the One Piece.';
+export const OPENING_WORDS = 'Long ago, a star fell into the Tidewake, and every captain who ever lived has chased it. The greatest of them sailed every sea, and before the waves took him, he left one last word: the Lodestar belongs to whoever lives the boldest life. So raise your sails. Your voyage begins today.';
 
 /** Auth callbacks finish behind their own screen; the opening never steals their URL. */
 export function OpeningVoyage() {
