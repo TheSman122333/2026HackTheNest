@@ -33,6 +33,21 @@ const call = async (method: string, path: string, token?: string, body?: unknown
 };
 
 describe('api', () => {
+  it('iPhone/web can type in steps (max +6 Moves); Android cannot', async () => {
+    const as = (platform: string) => async (method: string, path: string, token: string, body?: unknown) => {
+      const res = await app.request(path, { method, headers: { 'content-type': 'application/json', 'x-lv-platform': platform, authorization: `Bearer ${token}` }, body: body === undefined ? undefined : JSON.stringify(body) });
+      return { status: res.status, json: (await res.json()) as any };
+    };
+    const ios = as('ios');
+    const droid = as('android');
+    const a = (await call('POST', '/auth/dev', undefined, { name: 'Iris', tz: 'UTC' })).json;
+    const r = await ios('PUT', '/moves/steps', a.token, { steps: 9400 });
+    expect(r.json.today.moves).toMatchObject({ fromSteps: 6 });
+    expect((await ios('PUT', '/moves/steps', a.token, { steps: 2500 })).json.today.moves.fromSteps).toBe(2);
+    const b = (await call('POST', '/auth/dev', undefined, { name: 'Andy', tz: 'UTC' })).json;
+    expect((await droid('PUT', '/moves/steps', b.token, { steps: 9000 })).status).toBe(409);
+  });
+
   it('lets you change your name, trimmed and capped', async () => {
     const a = (await call('POST', '/auth/dev', undefined, { name: 'Sailor', tz: 'UTC' })).json;
     expect((await call('PUT', '/me/name', a.token, { name: '  Captain   Rin ' })).json.user.name).toBe('Captain Rin');

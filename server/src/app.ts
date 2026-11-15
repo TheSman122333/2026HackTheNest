@@ -339,6 +339,24 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
     return ctx.json({ today: await todayMoves(c, user, now) });
   });
 
+  /**
+   * iPhone/web can't read step counters, so players type in today's steps from their Health
+   * app (honor system, worth up to 6 Moves). Android counts steps automatically instead.
+   */
+  app.put('/moves/steps', async (ctx) => {
+    const user = ctx.get('user');
+    if (user.platform === 'android') throw new HTTPException(409, { message: 'Steps are counted automatically on Android.' });
+    const { steps } = await body(ctx, z.object({ steps: z.number().int().min(0).max(100_000) }));
+    const now = new Date();
+    const day = dayKeyInTz(now, user.tz);
+    await c.dayLogs.updateOne(
+      { userId: user._id, day },
+      { $set: { steps, updatedAt: now }, $setOnInsert: { movesSpent: 0, screen: { swipes: 0, minutes: 0, opens: 0, tracked: false } } },
+      { upsert: true },
+    );
+    return ctx.json({ today: await todayMoves(c, user, now) });
+  });
+
   /** Island board spends Moves. Atomic: fails if not enough left. */
   app.post('/moves/spend', async (ctx) => {
     const user = ctx.get('user');

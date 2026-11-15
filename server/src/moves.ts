@@ -1,6 +1,7 @@
 /** Server-side Moves: folds finished days into the streak and computes today's Moves. */
 import {
   activityCapFor,
+  stepsCapFor,
   advanceStreak,
   dailyMoves,
   dayKeyInTz,
@@ -45,7 +46,7 @@ export async function todayMoves(c: Collections, user: UserDoc, now = new Date()
     c.activities.find({ userId: user._id, day: today }).toArray(),
   ]);
   const activityMoves = acts.reduce((n, a) => n + a.moves, 0);
-  const moves = dailyMoves({ steps: doc?.steps ?? 0, activityMoves, streak, activityCap: activityCapForUser(user) });
+  const moves = dailyMoves({ steps: doc?.steps ?? 0, activityMoves, streak, activityCap: activityCapForUser(user), stepsCap: stepsCapFor(user.platform === 'android') });
   const spent = doc?.movesSpent ?? 0;
   return {
     day: today,

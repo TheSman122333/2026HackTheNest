@@ -75,7 +75,7 @@ export default function Ship() {
 
       <Panel>
         <H>Today&apos;s Moves</H>
-        <P dim>{m.base} free{TRACKING ? ` + ${m.fromSteps} steps` : ''} + {m.fromActivities} quests</P>
+        <P dim>{m.base} free + {m.fromSteps} steps + {m.fromActivities} quests</P>
         <Row>
           {TRACKING ? <Tag label={`×${m.multiplier} STREAK`} color={C.gold} /> : null}
           <P>{m.total} earned · {m.spent} spent</P>

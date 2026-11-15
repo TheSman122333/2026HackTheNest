@@ -40,6 +40,11 @@ Everything you do in real life turns into **Moves** (plus Supplies, XP and Legen
 ### 3b. Steps ✅ (Android Health Connect)
 - **1 Move per 1,000 steps**, max **10 Moves a day** from steps.
 
+### 3b-2. iPhone and web ✅ (no step or scroll tracking there)
+- **Typed-in steps:** enter today's steps from the Health app (honor system). 1 Move per 1,000 steps, max **6** a day.
+- **2 extra daily quests** (5 instead of 3) and a quest-Move cap of **10** instead of 6.
+- The app tells the server its platform; Android keeps automatic steps (max 10) and Calm Seas streaks.
+
 ### 3c. Free Moves ✅
 - Everyone gets **2 base Moves a day**, so nobody is ever fully locked out.
 
@@ -85,7 +90,7 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 - ⬜ **Rival crews:** game-run crews racing you to islands.
 
 ## 8. Islands: the hex board ✅
-- Generated from a seed. The board is a hex disk of radius 5 (91 hexes): an outer **sea ring**, a **landing beach**, and the **boss lair at the center**.
+- Generated from a seed. The board is a hex disk of radius 15 (721 hexes; you drag the chart around): an outer **sea ring**, a **landing beach**, and the **boss lair at the center**.
 - **4 themes:** tropical, spooky, winter, volcanic. Each has its own terrain mix and boss.
 - **Tap to move:** you can tap any revealed hex or the fog edge next to it. The cheapest path is taken and its cost paid in Moves.
 - **Fog of war:** clears 1 hex around you as you walk.

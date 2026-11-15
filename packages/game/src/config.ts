@@ -51,6 +51,8 @@ export const REWARDS = {
   /** Steps → Island Moves */
   stepsPerMove: 1000,
   movesFromStepsPerDay: 10,
+  /** iPhone/web type in today's steps from their Health app (honor system): smaller cap. */
+  movesFromSelfReportedStepsPerDay: 6,
   /** Base Moves everyone gets daily so nobody is ever fully locked out */
   baseMovesPerDay: 2,
 } as const;
