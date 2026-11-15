@@ -15,7 +15,7 @@ beforeAll(async () => {
   await client.connect();
   const c = collections(client.db('test'));
   await ensureIndexes(c);
-  app = createApp({ c, jwtSecret: 'test-secret', allowDevLogin: true });
+  app = createApp({ c, jwtSecret: 'test-secret', allowDevLogin: true, env: { ...process.env, NODE_ENV: 'test', LODESTAR_PASSWORD: 'test-lodestar' } });
 }, 120_000);
 
 afterAll(async () => {
@@ -70,10 +70,12 @@ describe('api', () => {
     expect(mine.honor).toBe(board.crew.reduce((n: number, r: { legend: number }) => n + r.legend, 0));
     expect(board.ships[0].honor).toBeGreaterThanOrEqual(board.ships.at(-1).honor);
 
-    const first = (await call('POST', '/legend/end-year', a.token)).json;
+    expect((await call('POST', '/legend/end-year', a.token, {})).status).toBe(403);
+    expect((await call('POST', '/legend/end-year', a.token, { password: 'nope' })).status).toBe(403);
+    const first = (await call('POST', '/legend/end-year', a.token, { password: 'test-lodestar' })).json;
     expect(first.alreadyClaimed).toBe(false);
     expect(first.season.winner.honor).toBe(board.ships[0].honor);
-    const again = (await call('POST', '/legend/end-year', b.token)).json;
+    const again = (await call('POST', '/legend/end-year', b.token, { password: 'test-lodestar' })).json;
     expect(again.alreadyClaimed).toBe(true);
     expect(again.season.id).toBe(first.season.id);
     const after = (await call('GET', '/legend', a.token)).json;

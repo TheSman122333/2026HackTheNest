@@ -1,7 +1,7 @@
 /** Honor leaderboard: your crew, all pirates, and all ships; the one Lodestar and the demo "End the Year". */
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Btn, C, F, P, Panel, Row, Screen, Tag, Title } from '@/components/kit';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
@@ -22,6 +22,7 @@ export default function HonorScreen() {
   const [tab, setTab] = useState<Tab>('ships');
   const [error, setError] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
+  const [password, setPassword] = useState('');
 
   const load = useCallback(() => {
     api<LegendBoard>('GET', '/legend').then((b) => { setBoard(b); setError(null); }).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
@@ -31,7 +32,8 @@ export default function HonorScreen() {
   const endYear = async () => {
     setEnding(true);
     try {
-      const r = await api<{ season: { winner: unknown } }>('POST', '/legend/end-year');
+      const r = await api<{ season: { winner: unknown } }>('POST', '/legend/end-year', { password });
+      setPassword('');
       if (r.season.winner) router.push('/lodestar');
       else setError('No ship has earned Honor yet. Log a real-life quest first.');
     } catch (e) {
@@ -93,8 +95,10 @@ export default function HonorScreen() {
       ) : (
         <Panel color={C.deep}>
           <Text style={s.eyebrow}>DEMO</Text>
-          <P dim>End the year: the ship with the most Honor claims the one and only Lodestar. It can only be claimed once.</P>
-          <Btn label="End the Year" color={C.gold} busy={ending} onPress={endYear} />
+          <P dim>End the year: the ship with the most Honor claims the one and only Lodestar. It can only be claimed once, so it needs the organisers&apos; password.</P>
+          <TextInput value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor={C.dimLight} secureTextEntry autoCapitalize="none" autoCorrect={false}
+            accessibilityLabel="End the Year password" onSubmitEditing={() => password && endYear()} style={s.input} />
+          <Btn label="End the Year" color={C.gold} busy={ending} disabled={!password} onPress={endYear} />
         </Panel>
       )}
     </Screen>
@@ -151,6 +155,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, paddingHorizontal: 6, borderRadius: 12 },
   rowYou: { backgroundColor: '#FFD16A22' },
   rank: { width: 24, textAlign: 'center', fontFamily: F.ui, fontSize: 16, color: C.cloud },
+  input: { borderWidth: 1, borderColor: '#3976A2', borderRadius: 10, paddingHorizontal: 14, minHeight: 50, fontFamily: F.body, fontSize: 16, color: C.cloud, backgroundColor: C.navy },
   shipBadge: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.navy, alignItems: 'center', justifyContent: 'center' },
   name: { fontFamily: F.bodyBold, fontSize: 15, color: C.cloud },
   crew: { fontFamily: F.body, fontSize: 12, color: C.dimLight },

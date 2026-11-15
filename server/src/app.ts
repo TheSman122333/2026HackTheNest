@@ -414,7 +414,7 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   registerMusic(app, c, { env, fetchImpl });
   registerOpening(app, c, { env, fetchImpl });
   registerShip(app, c);
-  registerLegend(app, c);
+  registerLegend(app, c, env);
   registerQuests(app, c, { env, fetchImpl, now });
   registerSoundtrack(app, c, { env, fetchImpl });
 

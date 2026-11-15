@@ -8,7 +8,10 @@
  * Ties go to whoever set sail first (earlier account / older crew), then by id, so ranks are stable.
  */
 import type { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { ObjectId } from 'mongodb';
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { z } from 'zod';
 
 import type { Collections, SeasonDoc, UserDoc } from './db';
 import { ledger } from './moves';
@@ -61,7 +64,14 @@ const publicSeason = (s: SeasonDoc, me: UserDoc) => ({
     : null,
 });
 
-export function registerLegend(app: Hono<{ Variables: { user: UserDoc } }>, c: Collections) {
+/** Constant-time password check (hashes first so lengths never leak). */
+function passwordOk(given: string, expected: string) {
+  const a = createHash('sha256').update(given).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
+export function registerLegend(app: Hono<{ Variables: { user: UserDoc } }>, c: Collections, env: NodeJS.ProcessEnv = process.env) {
   const crewNames = async (ids: (ObjectId | null)[]) => {
     const unique = [...new Set(ids.filter((id): id is ObjectId => !!id).map((id) => id.toHexString()))].map((id) => new ObjectId(id));
     const crews = await c.crews.find({ _id: { $in: unique } }, { projection: { name: 1 } }).toArray();
@@ -109,6 +119,11 @@ export function registerLegend(app: Hono<{ Variables: { user: UserDoc } }>, c: C
 
   app.post('/legend/end-year', async (ctx) => {
     const user = ctx.get('user');
+    // Awarding the one Lodestar is permanent, so it needs the organisers' password (server-only).
+    const expected = env.LODESTAR_PASSWORD;
+    if (!expected) throw new HTTPException(403, { message: 'End the Year is locked on this server.' });
+    const parsed = z.object({ password: z.string().max(200) }).safeParse(await ctx.req.json().catch(() => ({})));
+    if (!parsed.success || !passwordOk(parsed.data.password, expected)) throw new HTTPException(403, { message: 'Wrong password.' });
     const claimed = await c.seasons.findOne({ key: 'lodestar' });
     if (isShipSeason(claimed)) return ctx.json({ season: publicSeason(claimed, user), alreadyClaimed: true });
 
