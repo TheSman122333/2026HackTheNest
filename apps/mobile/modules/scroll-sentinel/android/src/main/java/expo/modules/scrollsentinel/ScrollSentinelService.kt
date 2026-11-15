@@ -43,6 +43,8 @@ class ScrollSentinelService : AccessibilityService() {
   private val lastIndex = HashMap<String, Int>()
   private var lastScrollAt = 0L
   private var lastHeartbeat = 0L
+  private var lastPagerCheck = 0L
+  private val lastPagerChild = HashMap<String, Int>()
   private val idleEnd = Runnable { endSession() }
 
   override fun onServiceConnected() {
@@ -84,11 +86,54 @@ class ScrollSentinelService : AccessibilityService() {
     if (discoveryOn) recordDiscovery(event, pkg)
     if (rule == null) return
 
+    val pagerIds = PAGER_IDS[pkg]
     when (event.eventType) {
       AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> surfaceCache = null
-      AccessibilityEvent.TYPE_VIEW_SCROLLED -> onScrolled(event, pkg, rule)
+      // Apps with a known full-screen pager are counted by pagerCheck (their scroll events are
+      // too sparse: YouTube Shorts fires ~1 per several swipes, with no index or delta).
+      AccessibilityEvent.TYPE_VIEW_SCROLLED -> if (pagerIds == null || !lastPagerChild.containsKey(pkg)) onScrolled(event, pkg, rule)
     }
+    if (pagerIds != null) pagerCheck(pkg, rule, pagerIds)
     heartbeat(pkg, rule)
+  }
+
+  /**
+   * Swipe = the full-screen video in the pager changed. Each video is its own child view, and
+   * AccessibilityNodeInfo identity (hashCode = window + view id) differs per view, so a new
+   * settled child means a new video. Reads ids and bounds only, never content.
+   */
+  private fun pagerCheck(pkg: String, rule: SurfaceRule, pagerIds: List<String>) {
+    val up = SystemClock.uptimeMillis()
+    if (up - lastPagerCheck < PAGER_CHECK_MS) return
+    lastPagerCheck = up
+    val root = rootInActiveWindow ?: return
+    val pager = pagerIds.asSequence().flatMap { root.findAccessibilityNodeInfosByViewId("$pkg:id/$it").asSequence() }.firstOrNull()
+    if (pager == null) {
+      if (lastPagerChild.remove(pkg) != null) log("pager gone in $pkg (left the feed)")
+      return
+    }
+    val pb = android.graphics.Rect().also { pager.getBoundsInScreen(it) }
+    if (pb.height() <= 0) return
+    var best: AccessibilityNodeInfo? = null
+    var bestH = 0
+    val r = android.graphics.Rect()
+    for (i in 0 until pager.childCount) {
+      val ch = pager.getChild(i) ?: continue
+      ch.getBoundsInScreen(r)
+      val h = minOf(r.bottom, pb.bottom) - maxOf(r.top, pb.top)
+      if (h > bestH) { bestH = h; best = ch }
+    }
+    val child = best ?: return
+    // Only judge once a video has settled (fills most of the pager), not mid-animation.
+    if (bestH < pb.height() * SETTLED_FRACTION) return
+    val key = child.hashCode()
+    val prev = lastPagerChild.put(pkg, key)
+    if (prev == null) {
+      log("pager primed in $pkg (children=${pager.childCount})")
+    } else if (prev != key) {
+      log("pager SWIPE in $pkg (children=${pager.childCount})")
+      recordSwipe(pkg, rule)
+    }
   }
 
   /**
@@ -129,7 +174,6 @@ class ScrollSentinelService : AccessibilityService() {
       return
     }
 
-    val now = System.currentTimeMillis()
     val key = "$pkg|${srcId ?: cls ?: "?"}"
     val sinceLast = SystemClock.uptimeMillis() - lastScrollAt
     lastScrollAt = SystemClock.uptimeMillis()
@@ -145,8 +189,11 @@ class ScrollSentinelService : AccessibilityService() {
       else -> false
     }
     log("scroll ${if (swiped) "SWIPE" else "same "} prev=$prev gap=${sinceLast}ms $info")
-    if (!swiped) return
+    if (swiped) recordSwipe(pkg, rule)
+  }
 
+  private fun recordSwipe(pkg: String, rule: SurfaceRule) {
+    val now = System.currentTimeMillis()
     val a = active ?: Active(pkg, rule, now, now, 0).also { active = it }
     a.swipes += 1
     a.lastMs = now
@@ -252,6 +299,14 @@ class ScrollSentinelService : AccessibilityService() {
   companion object {
     private const val IDLE_END_MS = 30_000L
     private const val HEARTBEAT_MS = 3_000L
+    private const val PAGER_CHECK_MS = 400L
+    private const val SETTLED_FRACTION = 0.85
+
+    /** Full-screen video pagers (view ids without the package prefix). */
+    private val PAGER_IDS = mapOf(
+      "com.google.android.youtube" to listOf("reel_recycler"),
+      "com.instagram.android" to listOf("clips_viewer_view_pager", "clips_viewer_pager", "clips_viewer"),
+    )
     private const val TAG = "ScrollSentinel"
 
     /** Verbose debug log: `adb logcat -s ScrollSentinel`. Ids/indices only, never content. */
