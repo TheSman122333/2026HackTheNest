@@ -126,9 +126,11 @@ describe('shared original game audio', () => {
   });
 });
 
-describe('brief neutral narration', () => {
-  it('uses a neutral default voice and explicit narrator override rather than a legacy character voice', async () => {
-    expect(narratorVoiceId({ ELEVENLABS_VOICE_ID: 'old-pirate' })).toBe('21m00Tcm4TlvDq8ikWAM');
+describe('narrator voice', () => {
+  it('uses the custom captain voice, an explicit override first, and a neutral voice only as a last resort', async () => {
+    expect(narratorVoiceId({ ELEVENLABS_VOICE_ID: 'captain' })).toBe('captain');
+    expect(narratorVoiceId({ ELEVENLABS_VOICE_ID: 'captain', ELEVENLABS_NARRATOR_VOICE_ID: 'override' })).toBe('override');
+    expect(narratorVoiceId({})).toBe('21m00Tcm4TlvDq8ikWAM');
     let called = false;
     const bytes = await synthesizeSpeech('Your next quest is ready.', { ELEVENLABS_API_KEY: 'test-key', ELEVENLABS_NARRATOR_VOICE_ID: 'neutral-test' }, async (url, options) => {
       called = true;
