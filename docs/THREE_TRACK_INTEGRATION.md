@@ -13,7 +13,7 @@ Status: planning spec only. Do not treat this document as permission to edit gam
 5. **The Game Master makes the world react.** Once per crew/island/day, an authenticated server-side agent reads the live island, relevant aggregate streak context, and recent game events. Exa supplies current sources; OpenAI selects a brief narrative and one permitted effect. The first demo effect is a helpful item appearing on an eligible, already revealed, empty tile. The event is persisted and audited.
 6. **The Tidekeeper speaks the result.** ElevenLabs returns the voice response; `expo-audio` records only while the player holds the talk control and plays the response and event SFX. The player can ask a follow-up or continue playing. The app never listens in the background.
 
-The current [docs/GAME.md](./GAME.md) calls the planned narrator Old Brine. This spec uses the requested name Tidekeeper; choose one canonical name before shipping UI copy.
+The current [docs/GAME.md](./GAME.md) calls the planned narrator the Tidekeeper. This spec uses the requested name Tidekeeper; choose one canonical name before shipping UI copy.
 
 ## Sponsor track alignment and guardrails
 

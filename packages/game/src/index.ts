@@ -7,3 +7,4 @@ export * from './rng';
 export * from './hex';
 export * from './island';
 export * from './combat';
+export * from './shipwright';

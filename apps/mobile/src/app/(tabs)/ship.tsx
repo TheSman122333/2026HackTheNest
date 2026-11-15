@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Btn, C, F, H, P, Panel, Row, Screen, Stat, Title } from '@/components/kit';
 import { avatarFor, ITEM_SPRITE, MONTH_CARD, Sprite } from '@/components/sprites';
+import { ShipwrightPanel } from '@/features/ship/ShipwrightPanel';
 import { api } from '@/lib/api';
 import type { CrewRoster } from '@/lib/types';
 import { useIsland } from '@/state/island';
@@ -67,6 +68,8 @@ export default function Ship() {
         <Stat label="CALM DAYS" value={t.streak.calmDays} color={C.cloud} icon={<Sprite name="t_campfire" size={22} />} />
         <Stat label="SHIELDS" value={t.streak.shields} color={C.cloud} icon={<Sprite name="shield" size={22} />} />
       </Row>
+
+      <ShipwrightPanel />
 
       <Panel>
         <H>Today&apos;s Moves</H>

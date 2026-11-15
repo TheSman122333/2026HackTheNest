@@ -1,4 +1,4 @@
-# Connecting Old Brine to the game later
+# Connecting the Tidekeeper to the game later
 
 This branch stages a working narration prototype under `design/narration/` and a stock script bank under `content/narration/`. It does not change or import the live app, game rules, or server. The prototype lives here to respect repository ownership while the engineering branch continues. The server owner should move and adapt the modules into `server/` when integration is agreed; the mobile owner should add playback and event wiring.
 
@@ -67,9 +67,9 @@ Fetch narration through the authenticated backend. Keep provider API keys on the
 
 ## Voice and writing choices
 
-ElevenLabs supplies the voice; the game supplies the facts; the optional local Ollama writer supplies a small amount of original personality. Selecting AI wording defaults to local generation and does not require Claude tokens. Keep Claude behind explicit `NARRATION_WRITER=claude` opt-in if retaining that legacy adapter. Select a voice available to the project's ElevenLabs account, audition the same script across models, and keep one consistent Old Brine identity. The prototype supports `eleven_flash_v2_5`, `eleven_multilingual_v2`, and `eleven_v3`; its default is Flash v2.5. See the official [speech endpoint](https://elevenlabs.io/docs/api-reference/text-to-speech/convert) and [voice listing endpoint](https://elevenlabs.io/docs/api-reference/voices/search) for the request contracts. The model allowlist can be extended by engineering after checking compatibility.
+ElevenLabs supplies the voice; the game supplies the facts; the optional local Ollama writer supplies a small amount of original personality. Selecting AI wording defaults to local generation and does not require Claude tokens. Keep Claude behind explicit `NARRATION_WRITER=claude` opt-in if retaining that legacy adapter. Select a voice available to the project's ElevenLabs account, audition the same script across models, and keep one consistent the Tidekeeper identity. The prototype supports `eleven_flash_v2_5`, `eleven_multilingual_v2`, and `eleven_v3`; its default is Flash v2.5. See the official [speech endpoint](https://elevenlabs.io/docs/api-reference/text-to-speech/convert) and [voice listing endpoint](https://elevenlabs.io/docs/api-reference/voices/search) for the request contracts. The model allowlist can be extended by engineering after checking compatibility.
 
-Keep face photos, private journal text, calendar descriptions, raw screen data, and credentials out of narration inputs. Player and crew names in the final script are sent to the speech provider when speech is generated; use display aliases if needed. Follow [Old Brine's voice direction](../../content/narration/VOICE_DIRECTION.md) when expanding the stock bank or prompts.
+Keep face photos, private journal text, calendar descriptions, raw screen data, and credentials out of narration inputs. Player and crew names in the final script are sent to the speech provider when speech is generated; use display aliases if needed. Follow [the Tidekeeper's voice direction](../../content/narration/VOICE_DIRECTION.md) when expanding the stock bank or prompts.
 
 ## Future interactive dungeon master
 

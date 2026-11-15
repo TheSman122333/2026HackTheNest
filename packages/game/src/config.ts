@@ -77,3 +77,5 @@ export const STREAK = {
 
 /** The ship's narrator. Rename here (and in content/ lines) — every UI/server string reads this. */
 export const NARRATOR = { name: 'Tidekeeper', withThe: 'the Tidekeeper' } as const;
+/** Steers the ship and keeps it up to speed (Ship screen). */
+export const SHIPWRIGHT = { name: 'Shipwright', withThe: 'the Shipwright' } as const;

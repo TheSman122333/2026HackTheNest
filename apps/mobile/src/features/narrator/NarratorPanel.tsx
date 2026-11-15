@@ -14,14 +14,14 @@ import { File } from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Btn, C, F, H, P, Panel, Row, Tag } from '@/components/kit';
+import { Btn, C, F, P, Panel, Row, Tag } from '@/components/kit';
 import { Sprite } from '@/components/sprites';
 import { authedSource } from '@/lib/api';
 
 import { useNarrator } from './useNarrator';
 
 const MAX_MS = 15_000;
-const title = NARRATOR.name.toUpperCase();
+const title = `THE ${NARRATOR.name.toUpperCase()}`;
 
 export function NarratorPanel() {
   const { lines, busy, error, audioPath, audioNonce, briefing, say, worldEvent } = useNarrator();
@@ -109,11 +109,8 @@ export function NarratorPanel() {
     <Panel color={C.indigo}>
       <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
         <Row gap={10} style={{ flexShrink: 1, flexWrap: 'nowrap' }}>
-          <View style={s.portrait}>
-            <Sprite name="b_turtle" size={56} />
-          </View>
           <View style={{ flexShrink: 1 }}>
-            <H>{title}</H>
+            <Text style={s.name}>{title}</Text>
             <P dim>Ask about your Moves, the boss, or say “strike”.</P>
           </View>
         </Row>
@@ -176,7 +173,7 @@ export function NarratorPanel() {
 }
 
 const s = StyleSheet.create({
-  portrait: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.navy, borderWidth: 3, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
+  name: { fontFamily: F.title, fontSize: 28, letterSpacing: 2, color: C.gold },
   bubble: { borderWidth: 2, borderColor: C.ink, borderRadius: 14, padding: 10 },
   narr: { backgroundColor: C.cloud, borderTopLeftRadius: 4 },
   you: { backgroundColor: C.sky, alignSelf: 'flex-end', borderTopRightRadius: 4 },

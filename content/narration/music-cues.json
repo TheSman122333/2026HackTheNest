@@ -45,7 +45,7 @@
     },
     {
       "id": "return_recap",
-      "situation": "Old Brine presents the returning player's ship log",
+      "situation": "The Tidekeeper presents the returning player's ship log",
       "prompt": "Original instrumental seafaring adventure storytelling bed. Very soft plucked acoustic strings, occasional wooden taps and a distant gentle flute around 72 BPM. Welcoming, reflective and lightly amused, like opening a well-kept ship log. Minimal melodic movement, no dramatic peaks, ample space for speech. Repeating texture suitable for a loop edit. No vocals, chanting or lyrics.",
       "durationMs": 60000,
       "loopIntent": true

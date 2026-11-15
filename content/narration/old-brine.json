@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "narrator": "Old Brine",
+  "narrator": "the Tidekeeper",
   "lines": {
     "intro": [
-      "Old Brine, at your service. I am the spirit in the figurehead. You bring the life; I will keep the tale.",
-      "Welcome aboard. I am Old Brine. Every fine voyage begins with somebody getting out the door.",
-      "Aye, I am the wooden fellow at the bow. Old Brine. Go live a little, then come tell me what we are sailing on."
+      "The Tidekeeper, at your service. I am the spirit in the figurehead. You bring the life; I will keep the tale.",
+      "Welcome aboard. I am the Tidekeeper. Every fine voyage begins with somebody getting out the door.",
+      "Aye, I am the wooden fellow at the bow. The Tidekeeper. Go live a little, then come tell me what we are sailing on."
     ],
     "activity_logged": [
       "{actor} logged {activity}. Into the log: {supplies} Supplies, {moves} Island Moves, and {legend} Legend. Real life keeps us sailing.",

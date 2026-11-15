@@ -4,7 +4,7 @@ import { examples, EVENT_TYPES } from './engine.mjs';
 import { toSrt, toVtt } from './subtitles.mjs';
 
 const [command, target, ...options] = process.argv.slice(2);
-const usage = `Old Brine narration sandbox (Node 22+; no npm install)
+const usage = `the Tidekeeper narration sandbox (Node 22+; no npm install)
   node cli.mjs preview activity|pickup|boss|recap [--ai]
   node cli.mjs preview path/to/event.json [--ai]
   node cli.mjs subtitles recap [--ai] [--format=srt|vtt|json]

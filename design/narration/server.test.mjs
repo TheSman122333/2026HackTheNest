@@ -24,7 +24,7 @@ test('local preview and config are usable without keys; configs never expose sec
   const page = await fetch(base);
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
-  assert.match(await page.text(), /Old Brine/);
+  assert.match(await page.text(), /the Tidekeeper/);
   const config = await (await fetch(`${base}/api/config`)).json();
   assert.equal(config.speechReady, false);
   assert.equal(config.writerReady, false);

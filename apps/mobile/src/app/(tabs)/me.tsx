@@ -21,7 +21,7 @@ const ROLE: Record<Skill, string> = {
   grit: 'Bosun',
   charm: 'Silver-tongue',
   lore: 'Navigator',
-  craft: 'Shipwright',
+  craft: 'Carpenter',
   seacraft: 'Quartermaster',
 };
 

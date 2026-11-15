@@ -15,7 +15,7 @@ REAL LIFE ──► MOVES ──► ISLAND (explore + loot) ──► BOSS FIGHT
 ```
 - **Daytime:** log real life, play life events on the ship, spend Moves on the island, queue crew decisions.
 - **Midnight:** the crew turn resolves: sail, arrive, chaos spawns, disasters, rival moves.
-- **Morning:** Old Brine (the narrator) tells you what happened while you were away.
+- **Morning:** the Tidekeeper (the narrator) tells you what happened while you were away.
 
 ## 3. Moves: earned from real life ✅
 Everything you do in real life turns into **Moves** (plus Supplies, XP and Legend). Moves are what you spend on islands and in boss fights.
@@ -71,7 +71,7 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 ## 6. The Ship: life sim ⬜ (stats exist ✅)
 - **Your pirate:** a chibi with your **real photo as the face**, drawn in manga style by a shader. A drawn face is the fallback.
 - **5 skills (0–100):** **Grit, Charm, Lore, Craft, Seacraft**. All start at 10 and grow from activity XP ✅.
-- **Role title** = your highest skill (Navigator, Shipwright, Quartermaster, Silver-tongue, Bosun), shown as your hat.
+- **Role title** = your highest skill (Navigator, Carpenter, Quartermaster, Silver-tongue, Bosun), shown as your hat.
 - **Life-event cards:** logging an activity unlocks a story card. Pick a choice, a dice roll plus your skills decides the result, and stats, loot or friendships change. Comic tone.
 - **Journal → traits:** private journal entries go to Claude, which proposes a trait from a fixed list (e.g. *Tinkerer*, *Bookworm*). You approve it, and each trait gives a small bonus.
 - **Ship rooms:** Helm, Workshop, Hold, Galley, Armory (levels 1–3), paid for with crew Supplies. Total room levels raise the hull: **Skiff → Sloop → Brigantine** (→ the Lodestar form for the yearly winner's crew).
@@ -165,10 +165,18 @@ Example: 6,200 steps, a workout and a walk (3 activity Moves), on a 5-day streak
 ## 11. Monthly islands ⬜ (live events)
 Jan New Year · Feb Black History Month · Mar Women's History Month · Apr Spring · May Mental Health Awareness · Jun Pride · Jul Summer · Aug Back to School · Sep Self-Care · Oct Spooky · Nov Remembrance · Dec Winter Holidays.
 
-## 12. Old Brine, the narrator ⬜ (ElevenLabs)
-- The ship's spirit, living in the figurehead.
-- **Morning recap:** narrates everything you missed since you last opened the app.
-- Pre-recorded intro and stock lines (cheap). The dynamic recap is shown off in the demo.
+## 12. The crew's companions 🟡
+### The Tidekeeper, the narrator (ElevenLabs) 🟡
+- The ship's spirit, living in the figurehead. He tells the story; he never decides outcomes.
+- **Briefing:** when you open the island, he tells you your Moves, HP, streak and the boss's HP ✅.
+- **Hold to talk:** ask a question ("how many moves?") or give an order ("strike") by voice or text ✅. Mic only while held; recordings are deleted after upload.
+- **World events (AI Game Master):** OpenAI + Exa search real sources and place one helpful item on a revealed empty tile, with source links ✅.
+- **Morning recap** of everything you missed ⬜. Pre-recorded intro and stock lines ⬜.
+
+### The Shipwright 🟡
+- Steers the ship and keeps it up to speed. Lives on the Ship screen.
+- Reports today's speed (Moves), what's slowing the ship (scrolling, no steps yet) and how to go faster ✅.
+- Ship upgrades (rooms, hull tiers) will be bought through him ⬜.
 
 ## 13. App screens
 | Screen | Status |
@@ -187,7 +195,7 @@ Jan New Year · Feb Black History Month · Mar Women's History Month · Apr Spri
 - **Native:** `modules/scroll-sentinel` (Kotlin) and Health Connect for steps.
 - **Rules:** `packages/game`, pure TypeScript shared by the app and the server, with tests.
 - **Server:** Node + Hono + **MongoDB** (Atlas, or a local database that starts automatically). Our own JWT login (dev login now, SSOJet later).
-- **AI and voice:** Claude (journal → traits, recap text), ElevenLabs (Old Brine).
+- **AI and voice:** Claude (journal → traits, recap text), ElevenLabs (the Tidekeeper).
 
 ## 15. Hard rules
 - **IP:** genre-inspired only (see `docs/DESIGN_BRIEF.md`).

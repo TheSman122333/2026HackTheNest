@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Old Brine · Narration workshop</title>
+<title>the Tidekeeper · Narration workshop</title>
 <style>
   :root { color-scheme:light; font-family:system-ui,sans-serif; color:#141414; background:#fff6e3; }
   * { box-sizing:border-box; } body { margin:0 auto; padding:36px 24px 64px; max-width:1000px; }
@@ -25,7 +25,7 @@
 <body>
 <div class="eyebrow">The Last Voyage / Local sandbox</div>
 <h1>Give the voyage<br>a voice.</h1>
-<p>Meet Old Brine, the spirit in your ship's figurehead. Try silent subtitles now, and add his voice later. These are sample events; the game is untouched.</p>
+<p>Meet the Tidekeeper, the spirit in your ship's figurehead. Try silent subtitles now, and add his voice later. These are sample events; the game is untouched.</p>
 <p id="configuration" class="muted">Checking local configuration…</p>
 <section class="panel" aria-label="Narration input">
   <div class="row"><label for="example">Scene</label><select id="example"><option value="activity">A walk earns Moves</option><option value="pickup">Cannon discovered</option><option value="boss">A guardian defeated</option><option value="recap">While you were away</option></select></div>
@@ -34,7 +34,7 @@
   <button id="generate" disabled>Write subtitles</button>
 </section>
 <section class="panel" aria-label="Narration output">
-  <div class="eyebrow">Old Brine says</div><p id="transcript">Your next tale starts here.</p>
+  <div class="eyebrow">the Tidekeeper says</div><p id="transcript">Your next tale starts here.</p>
   <p id="status" role="status" aria-live="polite"></p>
   <div id="subtitle-preview" hidden>
     <div class="subtitle-stage"><div class="speaker">OLD BRINE</div><p id="subtitle" aria-live="polite"></p></div>
@@ -44,7 +44,7 @@
     <div class="exports"><a id="export-srt" download>Download SRT</a><a id="export-vtt" download>Download VTT</a></div>
   </div>
   <button id="speak" disabled>Generate voice · ElevenLabs credits</button>
-  <audio id="audio" controls hidden preload="none" aria-label="Old Brine narration"></audio>
+  <audio id="audio" controls hidden preload="none" aria-label="the Tidekeeper narration"></audio>
   <p id="pagination" class="muted"></p>
 </section>
 <p class="muted">Nothing plays automatically. Review the transcript, then generate a voice clip. Repeated scripts and audio are cached locally. No app account, photos, or journal data are connected.</p>
@@ -81,7 +81,7 @@
     catch(error) { byId('status').textContent=error.message; } finally { lock(false); }
   };
   byId('speak').onclick=async()=>{
-    if(busy || !scriptId)return; stopSubtitles();lock(true); byId('status').textContent='Old Brine is finding his voice…';
+    if(busy || !scriptId)return; stopSubtitles();lock(true); byId('status').textContent='the Tidekeeper is finding his voice…';
     try { const result=await api('/api/speech',{scriptId}); byId('audio').src=result.audioUrl; byId('audio').hidden=false; byId('status').textContent=result.cached ? 'Cached clip ready. Press play to listen.' : 'Voice clip ready. Press play to listen.'; }
     catch(error){ byId('status').textContent=error.message; } finally { lock(false); }
   };

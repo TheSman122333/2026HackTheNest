@@ -1,4 +1,4 @@
-# Old Brine narration sandbox
+# The Tidekeeper narration sandbox
 
 A working, isolated prototype for The Last Voyage. The Expo app, Hono server, game rules, root config, dependencies and lockfile are untouched by this feature. All narration changes stay in `design/` and `content/`; engineering can integrate them later using [INTEGRATION.md](INTEGRATION.md).
 
@@ -14,7 +14,7 @@ Event categories only → local Ollama → fresh lead-in ───────�
                                                    → optional ElevenLabs → MP3
 ```
 
-ElevenLabs speaks the script; it does not decide game outcomes. At the user's request, this branch uses **local Ollama by default** instead of the originally planned Claude writer. No Anthropic key is needed. `docs/GAME.md` is not modified. The narrator remains **Old Brine**, and the game backend remains MongoDB.
+ElevenLabs speaks the script; it does not decide game outcomes. At the user's request, this branch uses **local Ollama by default** instead of the originally planned Claude writer. No Anthropic key is needed. `docs/GAME.md` is not modified. The narrator remains **the Tidekeeper**, and the game backend remains MongoDB.
 
 Included:
 
@@ -54,7 +54,7 @@ node cli.mjs subtitles recap --ai | Set-Content -Encoding utf8 output/recap.srt
 
 Timings should later be replaced with ElevenLabs character alignment when voice generation is enabled. The current plain MP3 speech adapter does not return alignment. See [INTEGRATION.md](INTEGRATION.md).
 
-## 2. Choose Old Brine's voice
+## 2. Choose the Tidekeeper's voice
 
 In your ElevenLabs account, audition voices in the voice library or design an original voice. Aim for a warm, weathered storyteller with clear diction, dry humor, and an occasional smile. Save a voice that your account can use. You do not need to train or clone a model for narration.
 

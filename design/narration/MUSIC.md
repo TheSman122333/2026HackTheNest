@@ -12,7 +12,7 @@ This change supplies **seven original instrumental briefs only**, in [music-cues
 | `boss_battle` | Active guardian combat |
 | `storm_disaster` | Hurricane or eruption |
 | `crew_victory` | Short victory announcement |
-| `return_recap` | Quiet accompaniment to Old Brine's log |
+| `return_recap` | Quiet accompaniment to the Tidekeeper's log |
 
 All briefs use an original acoustic palette: plucked strings, wooden percussion, low drums, flute and occasional bells. They avoid performer, franchise and existing-song references. `loopIntent` is a playback/design intention; it does not mean a generated file will loop seamlessly. Audition and edit loop boundaries before using it as a repeating bed.
 
@@ -37,6 +37,6 @@ The endpoint returns an audio file. Save the reviewed output with its cue ID, mo
 
 Use game state to choose an existing cue. Give active combat or disaster precedence over ordinary exploration, play a victory cue once per confirmed victory, and return to the appropriate background bed afterward. Ignore repeated requests for the cue already playing. A short minimum hold time can prevent rapid mood switching while moving between adjacent terrain tiles.
 
-Crossfade between reviewed background tracks over about **1.5 seconds** as a starting setting. Lower music to roughly **25% of its normal gain** while Old Brine speaks, then restore it smoothly; tune this by listening on the demo phone. Subtitle-only mode can leave music at its ordinary setting because no voice competes with it. Keep separate music and narration volume/mute controls.
+Crossfade between reviewed background tracks over about **1.5 seconds** as a starting setting. Lower music to roughly **25% of its normal gain** while the Tidekeeper speaks, then restore it smoothly; tune this by listening on the demo phone. Subtitle-only mode can leave music at its ordinary setting because no voice competes with it. Keep separate music and narration volume/mute controls.
 
 The game can react immediately by switching cached cues. That is adaptive playback of generated music; it does not guarantee instantaneous composition, continuous live rescoring, beat-matched transitions or seamless loops. If a track is unavailable, keep the current safe background cue or fade to silence while the next one loads.

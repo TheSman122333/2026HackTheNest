@@ -83,5 +83,5 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('NARRATION_PORT must be 1024-65535.');
   const server = createPreviewServer();
   server.on('error', (error) => { console.error(`Preview could not start: ${error.code ?? 'unknown'}`); process.exitCode = 1; });
-  server.listen(port, '127.0.0.1', () => console.log(`Old Brine preview: http://127.0.0.1:${port} (Ctrl+C to stop)`));
+  server.listen(port, '127.0.0.1', () => console.log(`the Tidekeeper preview: http://127.0.0.1:${port} (Ctrl+C to stop)`));
 }
