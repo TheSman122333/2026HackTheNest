@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, Animated, AppState, Easing, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, Animated, AppState, Easing, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 
 const MotionContext = createContext(false);
 
@@ -52,41 +52,97 @@ export function Float({ children, amplitude = 4, duration = 3000, tilt = 0, styl
   ] }]}>{children}</Animated.View>;
 }
 
-/** Sunny chart contours and a passing tide, behind every screen. */
-export function OceanBackdrop() {
-  const enabled = useMotionEnabled();
-  const [tide] = useState(() => new Animated.Value(0));
+/** One looping clock (0 → 1) for the whole backdrop; frozen when motion is off or the screen is hidden. */
+function useLoop(enabled: boolean, duration: number) {
+  const [value] = useState(() => new Animated.Value(0));
   useEffect(() => {
-    if (!enabled) { tide.setValue(0); return; }
-    const loop = Animated.loop(Animated.sequence([
-      Animated.timing(tide, { toValue: 1, duration: 7000, easing: Easing.inOut(Easing.sin), useNativeDriver: true, isInteraction: false }),
-      Animated.timing(tide, { toValue: 0, duration: 7000, easing: Easing.inOut(Easing.sin), useNativeDriver: true, isInteraction: false }),
-    ]));
+    if (!enabled) { value.setValue(0.5); return; }
+    value.setValue(0);
+    const loop = Animated.loop(Animated.timing(value, { toValue: 1, duration, easing: Easing.linear, useNativeDriver: true, isInteraction: false }));
     loop.start();
     return () => loop.stop();
-  }, [enabled, tide]);
+  }, [enabled, duration, value]);
+  return value;
+}
+
+const CREST = 64; // one wave crest, in dp; rows are two screens wide so the loop is seamless
+const WAVE_ROWS = [
+  { top: '46%', color: '#2E9BD6', foam: '#E9F8FF', speed: 1, scale: 0.7, opacity: 0.55 },
+  { top: '58%', color: '#1C86C6', foam: '#F4FCFF', speed: -1, scale: 0.85, opacity: 0.6 },
+  { top: '71%', color: '#0E70AE', foam: '#FFFFFF', speed: 1, scale: 1, opacity: 0.65 },
+  { top: '85%', color: '#075C94', foam: '#FFFFFF', speed: -1, scale: 1.15, opacity: 0.7 },
+] as const;
+
+function WaveRow({ row, clock, width }: { row: (typeof WAVE_ROWS)[number]; clock: Animated.Value; width: number }) {
+  const crest = CREST * row.scale;
+  const count = Math.ceil((width * 2) / crest) + 2;
   return (
-    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
-      <View style={styles.sunGlow} />
-      <Animated.View style={[styles.cloud, { transform: [{ translateX: tide.interpolate({ inputRange: [0, 1], outputRange: [-28, 20] }) }] }]}>
-        <View style={styles.cloudPuff} /><View style={[styles.cloudPuff, { width: 90, height: 32, left: 32, top: 8 }]} />
-      </Animated.View>
-      <Animated.View style={[styles.chart, { transform: [{ translateY: tide.interpolate({ inputRange: [0, 1], outputRange: [-16, 16] }) }, { rotate: '-24deg' }] }]}>
-        {[0, 1, 2].map((line) => <View key={line} style={[styles.contour, { width: 250 + line * 80, height: 250 + line * 80, borderRadius: 250 + line * 80 }]} />)}
-      </Animated.View>
-      <Animated.View style={[styles.tide, { opacity: tide.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.7] }), transform: [{ translateX: tide.interpolate({ inputRange: [0, 1], outputRange: [-50, 50] }) }] }]}>
-        <View style={styles.wave} /><View style={[styles.wave, { marginLeft: 90, width: 180 }]} /><View style={[styles.wave, { marginLeft: 30, width: 90 }]} />
-      </Animated.View>
+    <Animated.View style={[styles.waveRow, { top: row.top, opacity: row.opacity, transform: [{ translateX: clock.interpolate({ inputRange: [0, 1], outputRange: row.speed > 0 ? [-crest * 2, 0] : [0, -crest * 2] }) }] }]}>
+      {Array.from({ length: count }, (_, i) => (
+        <View key={i} style={{ width: crest, height: crest * 0.42 }}>
+          <View style={[styles.crest, { backgroundColor: row.color, borderTopColor: row.foam, height: crest * 0.42, borderTopLeftRadius: crest * 0.5, borderTopRightRadius: crest * 0.5 }]} />
+        </View>
+      ))}
+    </Animated.View>
+  );
+}
+
+/**
+ * The open sea behind every screen: sky, sun, drifting clouds, a horizon, rolling foam-capped
+ * waves, manga speed lines and sparkles. Plain Views, native-driven, paused when not visible.
+ */
+export function OceanBackdrop() {
+  const enabled = useMotionEnabled();
+  const { width } = useWindowDimensions();
+  const waves = useLoop(enabled, 6000);
+  const drift = useLoop(enabled, 60000);
+  const twinkle = useLoop(enabled, 3200);
+  return (
+    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, styles.sea]}>
+      {/* Sky */}
+      <View style={styles.sky} />
+      <View style={[styles.skyBand, { top: '24%', opacity: 0.5 }]} />
+      <View style={[styles.skyBand, { top: '30%', opacity: 0.3 }]} />
+      {/* Sun with a soft halo */}
+      <View style={styles.sunHalo} />
+      <View style={styles.sun} />
+      {/* Manga speed lines across the sky */}
+      {[0, 1, 2, 3].map((i) => <View key={i} style={[styles.speed, { top: 40 + i * 22, left: -20 + i * 14, width: 120 - i * 18 }]} />)}
+      {/* Clouds drift across the whole sky once a minute */}
+      {[{ top: '19%', size: 0.75, offset: 0 }, { top: '27%', size: 0.55, offset: 0.45 }, { top: '13%', size: 0.45, offset: 0.75 }].map((cl, i) => (
+        <Animated.View key={i} style={[styles.cloud, { top: cl.top, transform: [
+          { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [width * (1.1 - cl.offset * 2), width * (1.1 - cl.offset * 2) - width * 1.6] }) },
+          { scale: cl.size },
+        ] }]}>
+          <View style={[styles.puff, { left: 0, top: 18, width: 70, height: 34 }]} />
+          <View style={[styles.puff, { left: 30, top: 0, width: 70, height: 52 }]} />
+          <View style={[styles.puff, { left: 78, top: 12, width: 64, height: 40 }]} />
+        </Animated.View>
+      ))}
+      {/* Horizon and rolling waves */}
+      <View style={styles.horizon} />
+      {WAVE_ROWS.map((row, i) => <WaveRow key={i} row={row} clock={waves} width={width} />)}
+      <View style={styles.depth} />
+      {/* Sun sparkles on the water */}
+      {[{ l: '68%', t: '50%' }, { l: '20%', t: '63%' }, { l: '80%', t: '76%' }, { l: '42%', t: '90%' }].map((p, i) => (
+        <Animated.View key={i} style={[styles.sparkle, { left: p.l, top: p.t, opacity: twinkle.interpolate({ inputRange: [0, 0.25 + i * 0.15, 0.5 + i * 0.1, 1], outputRange: [0.1, 0.9, 0.2, 0.1] }) }]} />
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sunGlow: { position: 'absolute', top: -100, right: -90, width: 350, height: 350, borderRadius: 175, backgroundColor: '#168BC3', opacity: 0.3 },
-  cloud: { position: 'absolute', top: 55, right: -14, width: 150, height: 60, opacity: 0.08 },
-  cloudPuff: { position: 'absolute', width: 65, height: 30, borderRadius: 30, backgroundColor: '#E6F9FF' },
-  chart: { position: 'absolute', right: -220, top: -90, width: 520, height: 520, alignItems: 'center', justifyContent: 'center', opacity: 0.34 },
-  contour: { position: 'absolute', borderWidth: 1, borderColor: '#6FC9ED' },
-  tide: { position: 'absolute', bottom: 8, left: 0, right: -100, gap: 5 },
-  wave: { height: 1.5, width: 230, backgroundColor: '#A0E5FF', borderRadius: 1 },
+  sea: { backgroundColor: '#087DBB', overflow: 'hidden' },
+  sky: { position: 'absolute', left: 0, right: 0, top: 0, height: '38%', backgroundColor: '#2B9FD9' },
+  skyBand: { position: 'absolute', left: 0, right: 0, height: '9%', backgroundColor: '#5DBDEA' },
+  sunHalo: { position: 'absolute', top: 92, right: 22, width: 128, height: 128, borderRadius: 64, backgroundColor: '#FFF3C4', opacity: 0.22 },
+  sun: { position: 'absolute', top: 112, right: 42, width: 88, height: 88, borderRadius: 44, backgroundColor: '#FBE6A2', borderWidth: 2.5, borderColor: '#25221C' },
+  speed: { position: 'absolute', height: 2, borderRadius: 1, backgroundColor: '#FFFFFF', opacity: 0.35, transform: [{ rotate: '-8deg' }] },
+  cloud: { position: 'absolute', left: 0, width: 150, height: 60 },
+  puff: { position: 'absolute', borderRadius: 40, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#25221C33', opacity: 0.92 },
+  horizon: { position: 'absolute', left: 0, right: 0, top: '38%', height: 3, backgroundColor: '#E9F8FF', opacity: 0.6 },
+  waveRow: { position: 'absolute', left: 0, flexDirection: 'row' },
+  crest: { width: '100%', borderTopWidth: 3 },
+  depth: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '12%', backgroundColor: '#063B65', opacity: 0.35 },
+  sparkle: { position: 'absolute', width: 10, height: 3, borderRadius: 2, backgroundColor: '#FFFFFF' },
 });

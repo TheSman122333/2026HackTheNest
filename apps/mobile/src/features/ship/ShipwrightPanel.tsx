@@ -27,7 +27,7 @@ export function ShipwrightPanel({ crewAverageMoves }: { crewAverageMoves?: numbe
   const level = SPEEDS.indexOf(r.speed);
 
   return (
-    <Panel color={C.deep}>
+    <Panel>
       <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
         <View style={{ flexShrink: 1 }}>
           <Text style={s.name}>The {SHIPWRIGHT.name}</Text>
@@ -41,7 +41,7 @@ export function ShipwrightPanel({ crewAverageMoves }: { crewAverageMoves?: numbe
 
       <View style={s.gauge}>
         {SPEEDS.map((sp, i) => (
-          <View key={sp} style={[s.notch, { backgroundColor: i <= level ? SPEED_COLOR[sp] : C.fog }]}>
+          <View key={sp} style={[s.notch, { backgroundColor: i <= level ? SPEED_COLOR[sp] : '#EBD3A0' }]}>
             <Text style={[s.notchText, i <= level && { color: C.ink }]}>{sp}</Text>
           </View>
         ))}
@@ -49,22 +49,26 @@ export function ShipwrightPanel({ crewAverageMoves }: { crewAverageMoves?: numbe
 
       <View style={s.quote}>
         <Text style={s.quoteText}>“{cleanText(r.headline)}”</Text>
+        <View style={s.tail} />
       </View>
       {personal.tips.map((tip) => (
-        <P key={tip}>{tip}</P>
+        <View key={tip} style={s.tip}><Text style={s.tipMark}>✦</Text><View style={{ flex: 1 }}><P>{tip}</P></View></View>
       ))}
     </Panel>
   );
 }
 
 const s = StyleSheet.create({
-  name: { fontFamily: F.title, fontSize: 28, color: C.gold },
-  knots: { borderWidth: 1, borderColor: '#38535D', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center' },
-  knotsN: { fontFamily: F.ui, fontSize: 28, color: C.ink, lineHeight: 32 },
-  knotsL: { fontFamily: F.bodyBold, fontSize: 10, color: C.ink, letterSpacing: 1 },
-  gauge: { flexDirection: 'row', gap: 4 },
-  notch: { flex: 1, borderRadius: 4, paddingVertical: 6, alignItems: 'center' },
-  notchText: { fontFamily: F.bodyBold, fontSize: 8, color: C.dimLight },
-  quote: { backgroundColor: C.cloud, borderRadius: 10, padding: 14 },
-  quoteText: { fontFamily: F.bodyBold, fontSize: 15, color: C.ink, lineHeight: 21 },
+  name: { fontFamily: F.title, fontSize: 30, lineHeight: 38, color: C.ink },
+  knots: { borderWidth: 3, borderColor: C.ink, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, alignItems: 'center', transform: [{ rotate: '4deg' }] },
+  knotsN: { fontFamily: F.ui, fontSize: 30, color: C.ink, lineHeight: 36 },
+  knotsL: { fontFamily: F.ui, fontSize: 13, color: C.ink, lineHeight: 16 },
+  gauge: { flexDirection: 'row', gap: 5 },
+  notch: { flex: 1, borderRadius: 14, borderWidth: 2, borderColor: C.ink, paddingVertical: 5, alignItems: 'center' },
+  notchText: { fontFamily: F.ui, fontSize: 11, color: C.ink, textTransform: 'uppercase' },
+  quote: { backgroundColor: '#FFF8E6', borderRadius: 16, borderWidth: 2.5, borderColor: C.ink, padding: 14, marginBottom: 6 },
+  quoteText: { fontFamily: F.ui, fontSize: 17, color: C.ink, lineHeight: 23 },
+  tail: { position: 'absolute', left: 26, bottom: -12, width: 18, height: 18, backgroundColor: '#FFF8E6', borderRightWidth: 2.5, borderBottomWidth: 2.5, borderColor: C.ink, transform: [{ rotate: '45deg' }] },
+  tip: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  tipMark: { fontFamily: F.ui, color: C.red, fontSize: 16, lineHeight: 21 },
 });

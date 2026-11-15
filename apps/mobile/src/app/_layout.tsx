@@ -24,6 +24,8 @@ export default function RootLayout() {
     VoyageSans: require('../../assets/fonts/VoyageSans.ttf'),
     VoyageSansMedium: require('../../assets/fonts/VoyageSansMedium.ttf'),
     VoyageSansBold: require('../../assets/fonts/VoyageSansBold.ttf'),
+    Kalam: require('../../assets/fonts/Kalam-Regular.ttf'),
+    KalamBold: require('../../assets/fonts/Kalam-Bold.ttf'),
   });
   const ready = useSession((s) => s.ready);
   const invitesReady = usePendingInvite((s) => s.ready);

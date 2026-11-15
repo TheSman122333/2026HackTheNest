@@ -81,11 +81,9 @@ export function ShipScene({ sailing, personal = false, onBoard }: { sailing: Sai
   };
 
   return <View style={s.scene}>
-    <View pointerEvents="none" style={s.sky} />
-    <View pointerEvents="none" style={s.sun} />
-    <View pointerEvents="none" style={s.cloud}><View style={s.cloudCrown} /></View>
     <View style={s.heading}>
       <Text style={s.eyebrow}>{personal ? 'YOUR WIND TODAY' : 'POWERED BY YOUR CREW'}</Text>
+      <View style={s.rule} />
       <Text style={s.pace}>{config.label}</Text>
     </View>
     <View pointerEvents="none" style={s.farSea} />
@@ -119,39 +117,39 @@ export function ShipScene({ sailing, personal = false, onBoard }: { sailing: Sai
       <Text style={s.interact}>{onBoard ? 'Tap the ship to come aboard' : 'Tap the ship to make a splash'}</Text>
     </View>
     <View style={s.stats}>
-      <View style={{ flex: 1 }}><Text style={s.statN}>{sailing.totalMoves}</Text><Text style={s.statL}>{personal ? 'YOUR MOVES EARNED' : 'CREW MOVES EARNED'}</Text></View>
-      <View style={s.divider} />
-      <View style={{ flex: 1 }}><Text style={s.statN}>{sailing.activities}</Text><Text style={s.statL}>QUESTS LOGGED</Text></View>
-      <View style={s.divider} />
-      <View style={{ flex: 1 }}><Text style={s.statN}>{sailing.activeMembers}/{sailing.members}</Text><Text style={s.statL}>SAILORS ACTIVE</Text></View>
+      <View style={s.tile}><Text style={s.statN}>{sailing.totalMoves}</Text><Text style={s.statL}>{personal ? 'YOUR MOVES EARNED' : 'CREW MOVES EARNED'}</Text></View>
+      <View style={s.tile}><Text style={s.statN}>{sailing.activities}</Text><Text style={s.statL}>QUESTS LOGGED</Text></View>
+      <View style={s.tile}><Text style={s.statN}>{sailing.activeMembers}/{sailing.members}</Text><Text style={s.statL}>SAILORS ACTIVE</Text></View>
     </View>
   </View>;
 }
 
+// Frame only: the ship art, bob, wake, gusts and splash are unchanged. It spans the full width
+// so the ship sits on the open sea, with a parchment banner, caption plaque and stat tiles.
+const INK = '#25221C';
+const PAPER = '#F4D99C';
+const cut = { borderTopLeftRadius: 12, borderTopRightRadius: 5, borderBottomRightRadius: 14, borderBottomLeftRadius: 6 } as const;
 const s = StyleSheet.create({
-  scene: { borderRadius: 24, overflow: 'hidden', backgroundColor: '#0C4D82', borderWidth: 1, borderColor: '#52B6E0' },
-  sky: { position: 'absolute', top: 0, left: 0, right: 0, height: 270, backgroundColor: '#4BB9E6' },
-  sun: { position: 'absolute', width: 90, height: 90, borderRadius: 45, right: -22, top: 30, backgroundColor: '#FFE5A2', opacity: 0.8 },
-  cloud: { position: 'absolute', left: 34, top: 109, width: 75, height: 14, borderRadius: 20, backgroundColor: '#E9F8FF', opacity: 0.55 },
-  cloudCrown: { position: 'absolute', width: 34, height: 24, borderRadius: 20, left: 18, bottom: 0, backgroundColor: '#E9F8FF' },
-  heading: { paddingHorizontal: 22, paddingTop: 20, gap: 3, zIndex: 1 },
-  eyebrow: { fontFamily: F.bodyBold, fontSize: 9, letterSpacing: 1.8, color: '#0B416E' },
-  pace: { fontFamily: F.title, fontSize: 31, color: '#063A65' },
-  farSea: { position: 'absolute', top: 178, height: 180, left: -60, right: -60, borderTopLeftRadius: 170, borderTopRightRadius: 90, backgroundColor: '#239ED0', transform: [{ rotate: '-3deg' }] },
-  nearSea: { position: 'absolute', top: 259, bottom: 67, left: -40, right: -40, borderTopLeftRadius: 120, borderTopRightRadius: 170, backgroundColor: '#117AB6', transform: [{ rotate: '3deg' }] },
-  foamField: { position: 'absolute', left: -80, width: 720, height: 105, top: 245 },
-  foam: { position: 'absolute', height: 2, borderRadius: 2, backgroundColor: '#D6F9FF' },
-  shipTouch: { marginTop: 8, height: 251, width: 266, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  scene: { marginHorizontal: -18, overflow: 'hidden', paddingBottom: 6 },
+  heading: { marginHorizontal: 18, marginTop: 4, paddingHorizontal: 18, paddingVertical: 10, gap: 2, zIndex: 4, alignSelf: 'flex-start', backgroundColor: PAPER, borderWidth: 2.5, borderColor: INK, ...cut, transform: [{ rotate: '-1.2deg' }] },
+  eyebrow: { fontFamily: F.bodyBold, fontSize: 11, letterSpacing: 1.6, color: INK },
+  rule: { height: 2, backgroundColor: INK, opacity: 0.7, borderRadius: 1, marginVertical: 2 },
+  pace: { fontFamily: F.title, fontSize: 32, lineHeight: 40, color: INK },
+  farSea: { position: 'absolute', top: 205, height: 180, left: -60, right: -60, borderTopLeftRadius: 170, borderTopRightRadius: 90, backgroundColor: '#2E9BD6', borderTopWidth: 3, borderColor: '#E9F8FF', transform: [{ rotate: '-3deg' }] },
+  nearSea: { position: 'absolute', top: 280, bottom: 0, left: -40, right: -40, borderTopLeftRadius: 120, borderTopRightRadius: 170, backgroundColor: '#0E70AE', borderTopWidth: 4, borderColor: '#FFFFFF', transform: [{ rotate: '3deg' }] },
+  foamField: { position: 'absolute', left: -80, width: 720, height: 105, top: 265 },
+  foam: { position: 'absolute', height: 3, borderRadius: 2, backgroundColor: '#FFFFFF' },
+  shipTouch: { marginTop: 0, height: 251, width: 266, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
   ship: { width: 258, height: 258 },
-  wakePosition: { position: 'absolute', top: 294, alignSelf: 'center', width: 260, height: 18 },
-  wake: { height: 16, width: 246, borderBottomWidth: 3, borderTopWidth: 1, borderColor: '#C6F7FF', borderRadius: 80, transform: [{ rotate: '-3deg' }] },
+  wakePosition: { position: 'absolute', top: 300, alignSelf: 'center', width: 260, height: 18 },
+  wake: { height: 16, width: 246, borderBottomWidth: 3, borderTopWidth: 1, borderColor: '#FFFFFF', borderRadius: 80, transform: [{ rotate: '-3deg' }] },
   gust: { position: 'absolute', left: 0, height: 2, backgroundColor: '#FFFFFF', borderRadius: 2, zIndex: 3 },
-  splash: { position: 'absolute', top: 280, alignSelf: 'center', width: 228, height: 37, borderWidth: 3, borderColor: '#D7FAFF', borderRadius: 100, zIndex: 3 },
-  caption: { paddingHorizontal: 18, paddingTop: 5, paddingBottom: 18, alignItems: 'center', gap: 5, minHeight: 61, zIndex: 3 },
-  wind: { fontFamily: F.bodyBold, color: '#FFFFFF', textAlign: 'center', fontSize: 12 },
-  interact: { fontFamily: F.body, color: '#D3F2FF', fontSize: 10 },
-  stats: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 12, backgroundColor: '#075185' },
-  statN: { fontFamily: F.ui, color: '#FFE2A0', fontSize: 22, textAlign: 'center', fontVariant: ['tabular-nums'] },
-  statL: { fontFamily: F.bodyBold, color: '#D4F0FF', fontSize: 8, textAlign: 'center', letterSpacing: 0.6, marginTop: 3 },
-  divider: { width: 1, height: 26, backgroundColor: '#68BFE14D' },
+  splash: { position: 'absolute', top: 300, alignSelf: 'center', width: 228, height: 37, borderWidth: 3, borderColor: '#FFFFFF', borderRadius: 100, zIndex: 3 },
+  caption: { alignSelf: 'center', marginTop: 2, paddingHorizontal: 22, paddingVertical: 8, alignItems: 'center', gap: 2, zIndex: 3, backgroundColor: PAPER, borderWidth: 2.5, borderColor: INK, ...cut, transform: [{ rotate: '0.8deg' }] },
+  wind: { fontFamily: F.ui, color: INK, textAlign: 'center', fontSize: 17, lineHeight: 22 },
+  interact: { fontFamily: F.ui, color: '#5B4A2E', fontSize: 14, lineHeight: 18 },
+  stats: { flexDirection: 'row', gap: 8, paddingHorizontal: 18, paddingTop: 14, zIndex: 3 },
+  tile: { flex: 1, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center', backgroundColor: PAPER, borderWidth: 2.5, borderColor: INK, ...cut, borderBottomWidth: 6 },
+  statN: { fontFamily: F.ui, color: INK, fontSize: 28, lineHeight: 34, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  statL: { fontFamily: F.ui, color: INK, fontSize: 12, lineHeight: 15, textAlign: 'center' },
 });
