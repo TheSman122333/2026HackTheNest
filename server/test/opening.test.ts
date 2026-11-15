@@ -36,7 +36,7 @@ describe('opening cutscene narration', () => {
       return new Response(new Uint8Array([11, 22, 33]).buffer);
     };
     const app = createApp({ c, jwtSecret: 'opening-test', allowDevLogin: true, env, fetchImpl });
-    expect(await (await app.request('/opening/narration')).json()).toEqual({ text: OPENING_NARRATION, audioUrl: '/opening/audio' });
+    expect(await (await app.request('/opening/narration')).json()).toEqual({ text: OPENING_NARRATION, audioUrl: expect.stringMatching(/^\/opening\/audio\?v=[0-9a-f]{24}$/) });
     const results = await Promise.all([app.request('/opening/audio'), app.request('/opening/audio?text=ignored')]);
     for (const response of results) {
       expect(response.status).toBe(200);

@@ -34,13 +34,15 @@ export function registerOpening(app: Hono<{ Variables: { user: UserDoc } }>, c: 
     }
     return generating;
   };
-  app.get('/opening/narration', (ctx) => ctx.json({ text: OPENING_NARRATION, audioUrl: configured ? '/opening/audio' : null }));
-  app.get('/opening/audio', async () => {
+  // The URL carries the version, so a new text or voice can never replay an old cached recording.
+  app.get('/opening/narration', (ctx) => ctx.json({ text: OPENING_NARRATION, audioUrl: configured ? `/opening/audio?v=${version}` : null }));
+  app.get('/opening/audio', async (ctx) => {
     try {
       const bytes = await audio();
       const buffer = new ArrayBuffer(bytes.byteLength);
       new Uint8Array(buffer).set(bytes);
-      return new Response(buffer, { headers: { 'content-type': 'audio/mpeg', 'content-length': String(bytes.byteLength), 'cache-control': 'public, max-age=3600' } });
+      const current = ctx.req.query('v') === version;
+      return new Response(buffer, { headers: { 'content-type': 'audio/mpeg', 'content-length': String(bytes.byteLength), 'cache-control': current ? 'public, max-age=604800, immutable' : 'no-store' } });
     } catch (error) {
       if (error instanceof HTTPException) throw error;
       throw new HTTPException(503, { message: 'opening speech is unavailable' });
