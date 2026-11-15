@@ -42,6 +42,7 @@ class ScrollSentinelService : AccessibilityService() {
   private var surfaceCache: SurfaceCache? = null
   private val lastIndex = HashMap<String, Int>()
   private var lastScrollAt = 0L
+  private var lastHeartbeat = 0L
   private val idleEnd = Runnable { endSession() }
 
   override fun onServiceConnected() {
@@ -73,41 +74,77 @@ class ScrollSentinelService : AccessibilityService() {
     val rule = rules[pkg]
 
     // Switching between tracked apps closes the running session.
-    active?.let { if (it.pkg != pkg) endSession() }
+    active?.let {
+      if (it.pkg != pkg) {
+        log("switch ${it.pkg} -> $pkg: end session")
+        endSession()
+      }
+    }
 
     if (discoveryOn) recordDiscovery(event, pkg)
     if (rule == null) return
 
     when (event.eventType) {
-      AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-        surfaceCache = null
-        // Left the short-form surface (e.g. Reels -> Instagram home)? End the session.
-        if (active != null && rule.mode == "match" && !scanForSurface(pkg, rule)) endSession()
-      }
+      AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> surfaceCache = null
       AccessibilityEvent.TYPE_VIEW_SCROLLED -> onScrolled(event, pkg, rule)
+    }
+    heartbeat(pkg, rule)
+  }
+
+  /**
+   * Time on the short-form surface counts even without swiping (watching one long Short).
+   * Throttled: at most one surface check every HEARTBEAT_MS.
+   */
+  private fun heartbeat(pkg: String, rule: SurfaceRule) {
+    val up = SystemClock.uptimeMillis()
+    if (up - lastHeartbeat < HEARTBEAT_MS) return
+    lastHeartbeat = up
+    val on = rule.mode == "all" || onSurface(pkg, rule)
+    val now = System.currentTimeMillis()
+    val a = active
+    if (on) {
+      if (a == null) {
+        active = Active(pkg, rule, now, now, 0)
+        log("heartbeat: on ${rule.surface} in $pkg -> session START")
+      } else {
+        a.lastMs = now
+      }
+      main.removeCallbacks(idleEnd)
+      main.postDelayed(idleEnd, IDLE_END_MS)
+    } else if (a != null) {
+      log("heartbeat: left ${rule.surface} in $pkg -> session END")
+      endSession()
     }
   }
 
   private fun onScrolled(event: AccessibilityEvent, pkg: String, rule: SurfaceRule) {
     val source = event.source
     val srcId = source?.viewIdResourceName
-    if (!isShortFormScroll(pkg, rule, srcId)) return
+    val cls = source?.className?.toString() ?: event.className?.toString()
+    val idx = event.fromIndex
+    val dy = if (Build.VERSION.SDK_INT >= 28) event.scrollDeltaY else 0
+    val info = "pkg=$pkg id=$srcId cls=$cls from=$idx to=${event.toIndex} count=${event.itemCount} dy=$dy"
+    if (!isShortFormScroll(pkg, rule, srcId)) {
+      log("scroll IGNORED (not short-form) $info")
+      return
+    }
 
     val now = System.currentTimeMillis()
-    val key = "$pkg|${srcId ?: source?.className ?: "?"}"
-    val idx = event.fromIndex
+    val key = "$pkg|${srcId ?: cls ?: "?"}"
     val sinceLast = SystemClock.uptimeMillis() - lastScrollAt
     lastScrollAt = SystemClock.uptimeMillis()
 
-    val swiped = if (idx >= 0) {
-      // Paged feeds report the first visible item; it changes exactly once per video.
-      val prev = lastIndex.put(key, idx)
-      prev != null && prev != idx
-    } else {
-      // No index info: a new burst of scroll events after >700ms quiet = one swipe.
-      val deltaOk = Build.VERSION.SDK_INT < 28 || event.scrollDeltaY != 0
-      deltaOk && sinceLast > BURST_GAP_MS
+    val prev = if (idx >= 0) lastIndex.put(key, idx) else null
+    val swiped = when {
+      // Paged feeds report the visible item; it changes exactly once per video.
+      idx >= 0 && prev != null -> prev != idx
+      // First event seen for this feed but already past video 0: that was a swipe.
+      idx > 0 -> true
+      // No index info: a new burst of scroll events after a quiet gap = one swipe.
+      idx < 0 -> (Build.VERSION.SDK_INT < 28 || dy != 0) && sinceLast > BURST_GAP_MS
+      else -> false
     }
+    log("scroll ${if (swiped) "SWIPE" else "same "} prev=$prev gap=${sinceLast}ms $info")
     if (!swiped) return
 
     val a = active ?: Active(pkg, rule, now, now, 0).also { active = it }
@@ -121,9 +158,14 @@ class ScrollSentinelService : AccessibilityService() {
 
   private fun isShortFormScroll(pkg: String, rule: SurfaceRule, srcId: String?): Boolean {
     if (rule.mode == "all") return srcId == null || !rule.excluded(srcId)
-    // Precise path: the scrolling view itself has an id -> decide by it alone.
-    if (srcId != null) return rule.matchesId(srcId)
-    // Fallback: throttled scan of the active window for a marker id.
+    if (srcId != null && rule.excluded(srcId)) return false
+    // The scrolling view itself is the short-form pager: definitely counts.
+    if (srcId != null && rule.matchesId(srcId)) return true
+    // Otherwise count it only if the short-form surface is on screen right now.
+    return onSurface(pkg, rule)
+  }
+
+  private fun onSurface(pkg: String, rule: SurfaceRule): Boolean {
     val c = surfaceCache
     val now = SystemClock.uptimeMillis()
     if (c != null && c.pkg == pkg && now - c.at < SURFACE_TTL_MS) return c.onSurface
@@ -133,9 +175,15 @@ class ScrollSentinelService : AccessibilityService() {
   private fun scanForSurface(pkg: String, rule: SurfaceRule): Boolean {
     val root = rootInActiveWindow ?: return false
     var found = false
+    val sample = LinkedHashSet<String>()
     walk(root) { node ->
       val id = node.viewIdResourceName
+      if (id != null && sample.size < 25) sample.add(id.substringAfter(":id/"))
       if (id != null && rule.matchesId(id)) { found = true; false } else true
+    }
+    val prev = surfaceCache
+    if (prev == null || prev.pkg != pkg || prev.onSurface != found) {
+      log("surface ${if (found) "ON" else "OFF"} ${rule.surface} in $pkg; ids seen: ${sample.joinToString(",")}")
     }
     surfaceCache = SurfaceCache(pkg, found, SystemClock.uptimeMillis())
     return found
@@ -158,8 +206,9 @@ class ScrollSentinelService : AccessibilityService() {
     main.removeCallbacks(idleEnd)
     val a = active ?: return
     active = null
-    lastIndex.clear()
+    // lastIndex is kept so the next swipe after a brief window change still counts.
     val s = ScrollSession(a.rule.app, a.pkg, a.rule.surface, a.startMs, a.lastMs, a.swipes)
+    log("session saved ${a.pkg} swipes=${a.swipes} secs=${(a.lastMs - a.startMs) / 1000}")
     io.execute { store.appendSession(s) }
     listener?.get()?.onSessionEnd(s)
   }
@@ -201,10 +250,15 @@ class ScrollSentinelService : AccessibilityService() {
   }
 
   companion object {
-    private const val IDLE_END_MS = 60_000L
+    private const val IDLE_END_MS = 30_000L
+    private const val HEARTBEAT_MS = 3_000L
+    private const val TAG = "ScrollSentinel"
+
+    /** Verbose debug log: `adb logcat -s ScrollSentinel`. Ids/indices only, never content. */
+    fun log(msg: String) { android.util.Log.d(TAG, msg) }
     private const val BURST_GAP_MS = 700L
-    private const val SURFACE_TTL_MS = 1_000L
-    private const val MAX_NODES = 600
+    private const val SURFACE_TTL_MS = 2_500L
+    private const val MAX_NODES = 1500
     private const val DISCOVERY_CAP = 400
 
     @Volatile var listener: WeakReference<Listener>? = null

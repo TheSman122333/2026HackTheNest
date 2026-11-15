@@ -10,6 +10,7 @@ import {
 } from '@last-voyage/game';
 import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
 import { HTTPException } from 'hono/http-exception';
 import { SignJWT, jwtVerify } from 'jose';
 import { ObjectId } from 'mongodb';
@@ -35,6 +36,8 @@ export function createApp({ c, jwtSecret, allowDevLogin, env = process.env, fetc
   const key = new TextEncoder().encode(jwtSecret);
   const app = new Hono<Env>();
   app.use('*', cors());
+  // Verbose request log in dev (method, path, status, time). Off in tests.
+  if (env.NODE_ENV !== 'test') app.use('*', logger());
 
   const body = async <T extends z.ZodType>(ctx: Context, schema: T): Promise<z.infer<T>> => {
     const parsed = schema.safeParse(await ctx.req.json().catch(() => ({})));

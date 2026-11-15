@@ -58,6 +58,7 @@ export const useNarrator = create<NarratorState>((set, get) => {
       cueHaptics(r.sfxCueKeys);
       if (r.result) await useIsland.getState().load();
     } catch (e) {
+      console.warn('[voice] turn failed', e);
       set({ error: e instanceof Error ? e.message : String(e) });
     } finally {
       set({ busy: null });

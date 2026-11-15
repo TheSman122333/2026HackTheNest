@@ -545,6 +545,7 @@ export function registerIsland(
         transcript = await transcribeAudio(input.audio, env.ELEVENLABS_API_KEY, fetchImpl);
       } catch (error) {
         if (error instanceof VoiceProviderError) {
+          console.error('[voice] transcription failed:', error.message);
           const status = error.message.includes('invalid') || error.message.includes('unsupported') || error.message.includes('15 seconds') ? 400 : 503;
           throw new HTTPException(status, { message: error.message });
         }

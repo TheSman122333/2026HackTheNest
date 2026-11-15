@@ -83,8 +83,10 @@ export function registerMusic(
       const tmp = `${file(user)}.${version}.tmp`;
       await writeFile(tmp, bytes);
       await rename(tmp, file(user));
+      console.log('[music] ready for', user.name, bytes.length, 'bytes');
       await c.users.updateOne({ _id: user._id, 'theme.version': version }, { $set: { 'theme.status': 'ready', 'theme.updatedAt': new Date() } });
-    } catch {
+    } catch (e) {
+      console.error('[music] compose failed for', user.name, e instanceof Error ? e.message : e);
       await c.users.updateOne({ _id: user._id, 'theme.version': version }, { $set: { 'theme.status': 'failed', 'theme.updatedAt': new Date() } });
     }
   }

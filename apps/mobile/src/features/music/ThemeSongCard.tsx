@@ -5,7 +5,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Btn, C, F, P, Panel, Row, Tag } from '@/components/kit';
 import { Sprite } from '@/components/sprites';
-import { api, authedSource } from '@/lib/api';
+import { api } from '@/lib/api';
+import { fetchAudio } from '@/lib/audio';
 
 type Theme = { status: 'none' | 'pending' | 'ready' | 'failed'; prompt: string | null; version: number; audio: string | null };
 
@@ -45,15 +46,20 @@ export function ThemeSongCard() {
   useEffect(() => {
     if (theme?.status !== 'ready' || !theme.audio) return;
     let alive = true;
-    authedSource(theme.audio).then((src) => {
-      if (!alive) return;
-      player.replace(src);
-      player.loop = true;
-    });
+    fetchAudio(theme.audio, `theme-${theme.version}`)
+      .then((uri) => {
+        if (!alive) return;
+        player.replace({ uri });
+        player.loop = true;
+      })
+      .catch((e: unknown) => {
+        console.warn('[audio] theme download failed', e);
+        setErr('Could not load your song. Pull to refresh or tap Remix.');
+      });
     return () => {
       alive = false;
     };
-  }, [theme?.status, theme?.audio, player]);
+  }, [theme?.status, theme?.audio, theme?.version, player]);
 
   const compose = async () => {
     setBusy(true);
@@ -62,6 +68,7 @@ export function ThemeSongCard() {
       player.pause();
       setTheme(await api<Theme>('POST', '/me/theme'));
     } catch (e) {
+      console.warn('[music] compose failed', e);
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);

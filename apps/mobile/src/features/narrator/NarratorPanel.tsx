@@ -16,7 +16,7 @@ import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-nat
 
 import { Btn, C, F, P, Panel, Row, Tag } from '@/components/kit';
 import { Sprite } from '@/components/sprites';
-import { authedSource } from '@/lib/api';
+import { fetchAudio } from '@/lib/audio';
 
 import { useNarrator } from './useNarrator';
 
@@ -42,11 +42,13 @@ export function NarratorPanel() {
   useEffect(() => {
     if (!audioPath) return;
     let alive = true;
-    authedSource(audioPath).then((src) => {
-      if (!alive) return;
-      player.replace(src);
-      player.play();
-    });
+    fetchAudio(audioPath, `narrator-${audioNonce}`)
+      .then((uri) => {
+        if (!alive) return;
+        player.replace({ uri });
+        player.play();
+      })
+      .catch((e: unknown) => console.warn('[audio] narrator playback failed', e));
     return () => {
       alive = false;
     };
@@ -71,8 +73,10 @@ export function NarratorPanel() {
       } catch {
         // best effort: cache dir is cleaned by the OS anyway
       }
+      console.log('[voice] recorded', uri, Math.round((base64.length * 3) / 4), 'bytes');
       await say({ audio: { mimeType: 'audio/mp4', base64 } });
     } catch (e) {
+      console.warn('[voice] recording failed', e);
       setMicError(e instanceof Error ? e.message : String(e));
     }
   };
